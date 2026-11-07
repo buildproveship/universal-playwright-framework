@@ -11,14 +11,16 @@ and `JSON.stringify` branches; file-load output follows `JSON.parse` and the
 failure-to-`null` branch. These relationships intentionally inherit the upstream
 permissiveness; they are not unrelated aliases for `any`.
 
-Three declaration-local lint exceptions preserve contracts with no suitable
+Two declaration-local lint exceptions preserve contracts with no suitable
 operation-derived replacement:
 
-| Declaration                              | Exception                            | Reason and rejected alternative                                                                                                                                                                                                                |
-| ---------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ApiClient.uploadFile` additional fields | `@typescript-eslint/no-explicit-any` | Existing callers may supply arbitrary record values. The precise Playwright multipart record narrows source inputs, even when those inputs later fail at runtime. An unrelated JSON type would misrepresent multipart handling.                |
-| `TestUtils.getPerformanceMetrics` return | `@typescript-eslint/no-explicit-any` | The implementation constructs four numeric fields, but the existing public return is permissive. Narrowing it changes callers' source compatibility. A generic browser-evaluation type would obscure the actual computed result.               |
-| `globalSetup` parameter                  | `@typescript-eslint/no-unused-vars`  | The callback accepts a configuration argument and retains runtime arity one. `_config` expresses its intentionally unused status to TypeScript. Removing the formal argument changes arity; dummy reads or metadata rewriting are unnecessary. |
+| Declaration                              | Exception                            | Reason and rejected alternative                                                                                                                                                                                                  |
+| ---------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ApiClient.uploadFile` additional fields | `@typescript-eslint/no-explicit-any` | Existing callers may supply arbitrary record values. The precise Playwright multipart record narrows source inputs, even when those inputs later fail at runtime. An unrelated JSON type would misrepresent multipart handling.  |
+| `TestUtils.getPerformanceMetrics` return | `@typescript-eslint/no-explicit-any` | The implementation constructs four numeric fields, but the existing public return is permissive. Narrowing it changes callers' source compatibility. A generic browser-evaluation type would obscure the actual computed result. |
+
+The setup callback explicitly discards its unused configuration binding with `void`,
+preserving its callable signature and runtime arity one without accessing properties.
 
 Each exception is limited to its declaration and rule. No ESLint configuration,
 assertion, deadline or concurrency setting changes. The regression aggregate now

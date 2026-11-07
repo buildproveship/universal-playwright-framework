@@ -8,8 +8,9 @@ import { Logger } from "./logger";
 
 const logger = new Logger("GlobalSetup");
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Preserve the Playwright callback signature and runtime arity of one.
 async function globalSetup(_config: FullConfig) {
+  // Keep Playwright's one-argument callback contract; no configuration fields are used.
+  void _config;
   logger.info("Starting global setup...");
 
   try {
