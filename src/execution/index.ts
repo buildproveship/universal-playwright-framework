@@ -1,3 +1,8 @@
+import {
+  cleanupDiagnosticsSchema,
+  type CleanupDiagnostic,
+} from "./cleanup-diagnostics";
+export type { CleanupDiagnostic } from "./cleanup-diagnostics";
 import { OWNED_EVIDENCE_ID, readOwnedEvidence } from "./owned-evidence";
 import { randomUUID } from "node:crypto";
 import { lstatSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -52,6 +57,7 @@ export interface ScenarioExecutionResult {
   readonly cucumber?: CucumberScenarioEvidence;
   readonly cleanupStatus: ResourceCleanupStatus;
   readonly cleanupFailures: readonly string[];
+  readonly cleanupDiagnostics?: readonly CleanupDiagnostic[];
   readonly cleanupFaultInjected: boolean;
   readonly workerStopped: boolean;
   readonly workerStallInjected: boolean;
@@ -148,6 +154,7 @@ interface WorkerPayload {
 }
 
 interface CleanupReport {
+  readonly diagnostics?: readonly CleanupDiagnostic[];
   readonly status: ResourceCleanupStatus;
   readonly failures: readonly string[];
   readonly injectedFailure: boolean;
@@ -542,6 +549,17 @@ function safeCleanupReport(reportPath: string): CleanupReport | undefined {
     ) {
       return undefined;
     }
+    if (report.diagnostics !== undefined) {
+      const diagnostics = cleanupDiagnosticsSchema.safeParse(
+        report.diagnostics,
+      );
+      if (
+        !diagnostics.success ||
+        diagnostics.data.some((item) => !report.failures?.includes(item.phase))
+      )
+        return undefined;
+      return { ...report, diagnostics: diagnostics.data } as CleanupReport;
+    }
     return report as CleanupReport;
   } catch {
     return undefined;
@@ -823,6 +841,9 @@ async function executeScenario(
     ...(cucumber ? { cucumber } : {}),
     cleanupStatus: cleanup?.status ?? "unknown",
     cleanupFailures: cleanup?.failures ?? ["cleanup-evidence-missing"],
+    ...(cleanup?.diagnostics
+      ? { cleanupDiagnostics: cleanup.diagnostics }
+      : {}),
     cleanupFaultInjected: cleanup?.injectedFailure ?? false,
     workerStopped: true,
     workerStallInjected: testCleanupFailure === "worker-stall",

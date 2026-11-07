@@ -17,7 +17,7 @@ export const REVIEWED_SOURCE_REVISION = "rrdweb4-synthetic-source-1";
 export const REVIEWED_FEATURE_REVISION =
   "3067cf359002bc03e262c3ef61824fe48caebf268cea48758e7d4ffee32b205f";
 export const REVIEWED_IMPLEMENTATION_REVISION =
-  "5a48ebbf8684e9fe30fb6c221865688fd38ce0b4425b9737d4459cff1c628358";
+  "17f2c3b8527b34c65cb9a305ba130f97429f9339a5b254ae6099fb5f227b1f2b";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,
@@ -157,6 +157,7 @@ export function calculateReviewedImplementationRevision(): string {
     "dist/cucumber/src/adapter/v2.js",
     "dist/cucumber/src/adapter/v1.js",
     "src/execution/index.ts",
+    "src/execution/cleanup-diagnostics.ts",
     "src/execution/owned-evidence.ts",
     "src/execution/owned-evidence-formatter.ts",
     "src/reporting/index.ts",
@@ -172,6 +173,7 @@ export function calculateReviewedImplementationRevision(): string {
     "src/validation/feature-validator.ts",
     "src/validation/scenario-selector.ts",
     "dist/cucumber/src/execution/index.js",
+    "dist/cucumber/src/execution/cleanup-diagnostics.js",
     "dist/cucumber/src/execution/owned-evidence.js",
     "dist/cucumber/src/execution/owned-evidence-formatter.js",
     "dist/cucumber/src/execution/cli.js",

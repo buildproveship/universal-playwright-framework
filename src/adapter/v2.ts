@@ -1,3 +1,4 @@
+import { cleanupDiagnosticsSchema } from "../execution/cleanup-diagnostics";
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
@@ -522,11 +523,12 @@ export function validateOwnedLocalEvidence(
   return true;
 }
 
-export async function executeOwnedLocalAdapter(
+async function executeOwnedLocalAdapterInternal(
   input: unknown,
   trustedContext: unknown,
   signal?: AbortSignal,
   beforeBrowserAcquire?: () => Promise<void>,
+  diagnostics?: OwnedLocalDiagnosticEnvelope["cleanupDiagnostics"],
 ): Promise<OwnedLocalResult> {
   const parsed = requestSchema.safeParse(input);
   if (!parsed.success) return reject("INVALID_REQUEST");
@@ -648,5 +650,106 @@ export async function executeOwnedLocalAdapter(
   };
   if (!validateOwnedLocalEvidence(request, result))
     throw new Error("Owned local evidence unavailable");
+  if (diagnostics) {
+    for (const attempt of summary.attempts) {
+      for (const scenario of attempt.scenarios) {
+        const business = result.report.attempts
+          .find((item) => item.attemptNumber === attempt.attemptNumber)
+          ?.scenarios.find((item) => item.scenarioId === scenario.scenarioId);
+        if (business?.evidenceStatus !== "available") continue;
+        for (const item of scenario.cleanupDiagnostics ?? []) {
+          diagnostics.push({
+            attemptNumber: 1,
+            scenarioId: "local-demo-navigation",
+            ...item,
+          });
+        }
+      }
+    }
+  }
   return result;
+}
+
+const diagnosticEnvelopeSchema = z
+  .object({
+    diagnosticsVersion: z.literal(1),
+    result: z.union([acceptedSchema, rejectedSchema]),
+    cleanupDiagnostics: z
+      .array(
+        cleanupDiagnosticsSchema.element
+          .extend({
+            attemptNumber: z.literal(1),
+            scenarioId: z.literal("local-demo-navigation"),
+          })
+          .strict(),
+      )
+      .max(2)
+      .refine(
+        (items) =>
+          new Set(items.map((item) => item.phase)).size === items.length,
+      ),
+  })
+  .strict();
+
+export type OwnedLocalDiagnosticEnvelope = z.infer<
+  typeof diagnosticEnvelopeSchema
+>;
+
+/** Explicit opt-in envelope; the nested result retains the strict v2 contract. */
+export function validateOwnedLocalDiagnosticEnvelope(
+  input: unknown,
+  evidence: unknown,
+): evidence is OwnedLocalDiagnosticEnvelope {
+  const parsed = diagnosticEnvelopeSchema.safeParse(evidence);
+  if (!parsed.success || !validateOwnedLocalEvidence(input, parsed.data.result))
+    return false;
+  const { result, cleanupDiagnostics } = parsed.data;
+  if (!result.accepted) return cleanupDiagnostics.length === 0;
+  return cleanupDiagnostics.every((item) => {
+    const attempt = result.lifecycle.attempts.find(
+      (attempt) => attempt.attemptNumber === item.attemptNumber,
+    );
+    const scenario = attempt?.scenarios.find(
+      (scenario) => scenario.scenarioId === item.scenarioId,
+    );
+    const business = result.report.attempts
+      .find((attempt) => attempt.attemptNumber === item.attemptNumber)
+      ?.scenarios.find((scenario) => scenario.scenarioId === item.scenarioId);
+    return (
+      business?.evidenceStatus === "available" &&
+      scenario?.cleanupFailures.includes(item.phase) === true
+    );
+  });
+}
+
+export function executeOwnedLocalAdapter(
+  input: unknown,
+  trustedContext: unknown,
+  signal?: AbortSignal,
+  beforeBrowserAcquire?: () => Promise<void>,
+): Promise<OwnedLocalResult> {
+  return executeOwnedLocalAdapterInternal(
+    input,
+    trustedContext,
+    signal,
+    beforeBrowserAcquire,
+  );
+}
+
+export async function executeOwnedLocalAdapterWithDiagnostics(
+  input: unknown,
+  trustedContext: unknown,
+  signal?: AbortSignal,
+  beforeBrowserAcquire?: () => Promise<void>,
+): Promise<OwnedLocalDiagnosticEnvelope> {
+  const cleanupDiagnostics: OwnedLocalDiagnosticEnvelope["cleanupDiagnostics"] =
+    [];
+  const result = await executeOwnedLocalAdapterInternal(
+    input,
+    trustedContext,
+    signal,
+    beforeBrowserAcquire,
+    cleanupDiagnostics,
+  );
+  return { diagnosticsVersion: 1, result, cleanupDiagnostics };
 }
