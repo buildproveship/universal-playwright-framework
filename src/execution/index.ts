@@ -423,20 +423,77 @@ async function waitForGroupExit(
   return !groupExists(pid);
 }
 
+const TASKKILL_VARIABLE = "PLAYWRIGHT_FRAMEWORK_TASKKILL_EXECUTABLE";
+
+/**
+ * @internal Exported for focused regression tests, not the public package API.
+ * Deployment trust boundary: the operator must provide a taskkill.exe whose
+ * file and parent directories are protected against untrusted modification.
+ * Syntax validation does NOT validate ACLs, provenance, or reparse points.
+ * Never derive this executable from PATH, SystemRoot, or the working directory.
+ */
+export function resolveWindowsTaskkill(
+  environment: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const executable = environment[TASKKILL_VARIABLE];
+  if (
+    !executable ||
+    !/^[a-z]:\\/i.test(executable) ||
+    /["<>|?*]/.test(executable) ||
+    [...executable].some((character) => character.charCodeAt(0) < 32) ||
+    executable.slice(2).includes(":") ||
+    executable.includes("/") ||
+    executable
+      .split("\\")
+      .some(
+        (segment) =>
+          !segment ||
+          segment === "." ||
+          segment === ".." ||
+          /[. ]$/.test(segment),
+      ) ||
+    path.win32.basename(executable).toLowerCase() !== "taskkill.exe"
+  ) {
+    return undefined;
+  }
+  return executable;
+}
+
+/**
+ * @internal Exported for focused regression tests, not the public package API.
+ * Success confirms taskkill's exit only; callers must still observe child exit.
+ */
+export async function terminateWindowsProcessTree(
+  pid: number,
+): Promise<boolean> {
+  if (process.platform !== "win32") {
+    return false;
+  }
+  const executable = resolveWindowsTaskkill();
+  if (!executable) {
+    return false;
+  }
+  return new Promise<boolean>((resolve) => {
+    try {
+      execFile(
+        executable,
+        ["/PID", String(pid), "/T", "/F"],
+        { timeout: 3_000, windowsHide: true },
+        (error) => resolve(!error),
+      );
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
 async function terminateOwnedProcess(child: ChildProcess): Promise<boolean> {
   const pid = child.pid;
   if (!pid) {
     return true;
   }
   if (process.platform === "win32") {
-    const treeTerminated = await new Promise<boolean>((resolve) => {
-      execFile(
-        "taskkill.exe",
-        ["/PID", String(pid), "/T", "/F"],
-        { timeout: 3_000, windowsHide: true },
-        (error) => resolve(!error),
-      );
-    });
+    const treeTerminated = await terminateWindowsProcessTree(pid);
     if (treeTerminated) {
       return waitForChildExit(child, 1_000);
     }

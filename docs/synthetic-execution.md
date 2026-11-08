@@ -11,3 +11,9 @@ Results retain each attempt's status, scenario evidence, cleanup result, and dia
 Retries are coordinated by the execution adapter rather than Cucumber's scenario-retry option so each attempt can close its owned browser and servers before a new runtime starts.
 
 `npm run execute:synthetic` also writes a bounded local text and JSON report; see the [local reporting guide](local-reporting.md). The execution adapter retains only validated Cucumber names and step statuses before temporary worker reports are removed. This small shared-file seam is included in the reviewed implementation pin; report errors never change execution outcomes.
+
+## Windows cleanup configuration
+
+Windows deployments must explicitly configure the trusted taskkill executable.
+See [Windows process-tree termination](windows-taskkill.md) for the operator trust
+boundary and the conservative fallback when it is unavailable.
