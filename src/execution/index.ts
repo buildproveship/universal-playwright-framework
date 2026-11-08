@@ -1,3 +1,9 @@
+import {
+  cleanupDiagnosticsSchema,
+  type CleanupDiagnostic,
+} from "./cleanup-diagnostics";
+export type { CleanupDiagnostic } from "./cleanup-diagnostics";
+import { OWNED_EVIDENCE_ID, readOwnedEvidence } from "./owned-evidence";
 import { randomUUID } from "node:crypto";
 import { lstatSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -51,6 +57,7 @@ export interface ScenarioExecutionResult {
   readonly cucumber?: CucumberScenarioEvidence;
   readonly cleanupStatus: ResourceCleanupStatus;
   readonly cleanupFailures: readonly string[];
+  readonly cleanupDiagnostics?: readonly CleanupDiagnostic[];
   readonly cleanupFaultInjected: boolean;
   readonly workerStopped: boolean;
   readonly workerStallInjected: boolean;
@@ -147,6 +154,7 @@ interface WorkerPayload {
 }
 
 interface CleanupReport {
+  readonly diagnostics?: readonly CleanupDiagnostic[];
   readonly status: ResourceCleanupStatus;
   readonly failures: readonly string[];
   readonly injectedFailure: boolean;
@@ -347,14 +355,14 @@ function closeServer(
   return new Promise((resolve) => {
     let settled = false;
     let injectedTimer: ReturnType<typeof setTimeout> | undefined;
-    let forceTimer: ReturnType<typeof setTimeout> | undefined;
+    const forcedClose: { timer?: ReturnType<typeof setTimeout> } = {};
     let finalTimer: ReturnType<typeof setTimeout> | undefined;
     const finish = (closed: boolean): void => {
       if (settled) {
         return;
       }
       settled = true;
-      for (const timer of [injectedTimer, forceTimer, finalTimer]) {
+      for (const timer of [injectedTimer, forcedClose.timer, finalTimer]) {
         if (timer) {
           clearTimeout(timer);
         }
@@ -388,7 +396,7 @@ function closeServer(
     } else {
       initiateClose(true);
     }
-    forceTimer = setTimeout(() => {
+    forcedClose.timer = setTimeout(() => {
       for (const socket of sockets) {
         socket.destroy();
       }
@@ -540,6 +548,17 @@ function safeCleanupReport(reportPath: string): CleanupReport | undefined {
       typeof report.injectedFailure !== "boolean"
     ) {
       return undefined;
+    }
+    if (report.diagnostics !== undefined) {
+      const diagnostics = cleanupDiagnosticsSchema.safeParse(
+        report.diagnostics,
+      );
+      if (
+        !diagnostics.success ||
+        diagnostics.data.some((item) => !report.failures?.includes(item.phase))
+      )
+        return undefined;
+      return { ...report, diagnostics: diagnostics.data } as CleanupReport;
     }
     return report as CleanupReport;
   } catch {
@@ -695,6 +714,12 @@ async function executeScenario(
       `@scenario-id=${scenarioId}`,
       "--format",
       `json:${reportPath}`,
+      ...(scenarioId === OWNED_EVIDENCE_ID
+        ? [
+            "--format",
+            `${path.join(REPOSITORY_ROOT, "dist/cucumber/src/execution/owned-evidence-formatter.js")}:${reportPath}.completed`,
+          ]
+        : []),
       "--strict",
     ],
     {
@@ -796,7 +821,9 @@ async function executeScenario(
   }
 
   const cleanup = safeCleanupReport(cleanupPath);
-  const cucumber = cucumberScenarioEvidence(reportPath, scenarioId);
+  const cucumber =
+    cucumberScenarioEvidence(reportPath, scenarioId) ??
+    readOwnedEvidence(`${reportPath}.completed`, scenarioId);
   const scenarioPassed = cucumber
     ? cucumber.steps.every((step) => step.status === "passed")
     : undefined;
@@ -814,6 +841,9 @@ async function executeScenario(
     ...(cucumber ? { cucumber } : {}),
     cleanupStatus: cleanup?.status ?? "unknown",
     cleanupFailures: cleanup?.failures ?? ["cleanup-evidence-missing"],
+    ...(cleanup?.diagnostics
+      ? { cleanupDiagnostics: cleanup.diagnostics }
+      : {}),
     cleanupFaultInjected: cleanup?.injectedFailure ?? false,
     workerStopped: true,
     workerStallInjected: testCleanupFailure === "worker-stall",

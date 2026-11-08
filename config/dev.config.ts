@@ -23,7 +23,7 @@ const config: PlaywrightTestConfig = {
   projects: [
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testMatch: /\.setup\.ts/,
     },
     {
       name: 'dev-chromium',

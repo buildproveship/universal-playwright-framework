@@ -15,7 +15,13 @@ import path from "node:path";
 import { getStepTimeoutMs } from "../../support/step-timeout";
 import type { ExecutionPayload, ExecutionWorld } from "./world";
 
+import {
+  classifyCleanupError,
+  type CleanupDiagnostic,
+} from "../../../src/execution/cleanup-diagnostics";
+
 const failures: string[] = [];
+const diagnostics: CleanupDiagnostic[] = [];
 let browser: Browser | undefined;
 let payload: ExecutionPayload | undefined;
 let cleanupPath: string | undefined;
@@ -179,8 +185,9 @@ After(async function (this: CucumberExecutionWorld) {
   try {
     await this.context.close();
     contextClosed = true;
-  } catch {
+  } catch (error) {
     failures.push("context-close");
+    diagnostics.push(classifyCleanupError("context-close", error));
     throw new Error("Scenario context cleanup failed");
   }
   if (process.env.WEB_EXECUTION_TEST_CLEANUP_FAILURE === "context") {
@@ -195,8 +202,9 @@ AfterAll(async function () {
     try {
       await browser.close();
       browserDisconnected = true;
-    } catch {
+    } catch (error) {
       failures.push("browser-close");
+      diagnostics.push(classifyCleanupError("browser-close", error));
     }
   }
   const cleanupStatus = failures.some(
@@ -214,7 +222,12 @@ AfterAll(async function () {
     }
     writeFileSync(
       cleanupPath,
-      JSON.stringify({ status: cleanupStatus, failures, injectedFailure }),
+      JSON.stringify({
+        status: cleanupStatus,
+        failures,
+        injectedFailure,
+        ...(diagnostics.length ? { diagnostics } : {}),
+      }),
       { encoding: "utf8", flag: "wx" },
     );
   } catch {
