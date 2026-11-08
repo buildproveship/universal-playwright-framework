@@ -56,7 +56,11 @@ Then(
       this.dataReview.rows.every(
         (row) =>
           Object.keys(row.secret ?? {})
-            .sort()
+            .sort((left, right) => {
+              // Preserve the original locale-independent UTF-16 code-unit ordering.
+              if (left < right) return -1;
+              return Number(left > right);
+            })
             .join() === "id,revision",
       ),
     );
