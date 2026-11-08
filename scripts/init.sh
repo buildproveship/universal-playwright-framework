@@ -16,16 +16,23 @@ echo -e "${BLUE}   Plug-and-play E2E testing for any web application${NC}"
 echo ""
 
 # Check if we're in the right directory
-if [ ! -f "package.json" ]; then
+if [[ ! -f "package.json" ]]; then
     echo -e "${YELLOW}⚠️  Please run this script from the playwright-framework directory${NC}"
     exit 1
 fi
 
 echo -e "${BOLD}1. Installing framework dependencies...${NC}"
-npm install
+# Dependency lifecycle scripts stay disabled; the reviewed framework build runs explicitly.
+npm install --ignore-scripts
 
 echo -e "${BOLD}2. Installing Playwright browsers...${NC}"
-npx playwright install
+# Use only the exact Playwright version installed from package.json/package-lock.json.
+# Do not fall back to npx or a global CLI when the local installation is incomplete.
+if [[ ! -f "./node_modules/@playwright/test/cli.js" ]]; then
+    echo "❌ Local Playwright CLI is missing. Reinstall the framework dependencies before installing browsers." >&2
+    exit 1
+fi
+node ./node_modules/@playwright/test/cli.js install
 
 echo -e "${BOLD}3. Creating required directories...${NC}"
 mkdir -p screenshots
@@ -36,7 +43,7 @@ mkdir -p test-results
 mkdir -p allure-results
 
 echo -e "${BOLD}4. Setting up generic environment file...${NC}"
-if [ ! -f ".env" ]; then
+if [[ ! -f ".env" ]]; then
     cat > .env << EOF
 # Base URLs for different environments (update for your app)
 BASE_URL_DEV=http://localhost:3000
@@ -69,7 +76,7 @@ else
 fi
 
 echo -e "${BOLD}5. Building TypeScript...${NC}"
-npm run build
+npm run --ignore-scripts build
 
 echo -e "${BOLD}6. Running initial linting...${NC}"
 npm run lint || echo -e "${YELLOW}⚠️  Some linting issues found, run 'npm run lint:fix' to fix them${NC}"

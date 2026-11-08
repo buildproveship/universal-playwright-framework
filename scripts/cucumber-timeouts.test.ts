@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import "./setup-safety.test";
 import {
   DEFAULT_STEP_TIMEOUT_MS,
   MAX_STEP_TIMEOUT_MS,
@@ -26,14 +27,16 @@ const results = JSON.parse(resultsBytes.toString()) as {
   elements?: Array<{ steps: Array<{ result: { status: string } }> }>;
 }[];
 
-assert.ok(
-  results.some((feature) =>
-    feature.elements?.some((scenario) =>
-      scenario.steps.every((step) => step.result.status === "passed"),
+test("the real Cucumber E2E report contains a passed scenario", () => {
+  assert.ok(
+    results.some((feature) =>
+      feature.elements?.some((scenario) =>
+        scenario.steps.every((step) => step.result.status === "passed"),
+      ),
     ),
-  ),
-  "The real Cucumber E2E report must contain a passed scenario",
-);
+    "The real Cucumber E2E report must contain a passed scenario",
+  );
+});
 
 function runScenario(
   feature: string,
