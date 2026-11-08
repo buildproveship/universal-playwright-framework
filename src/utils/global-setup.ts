@@ -8,17 +8,19 @@ import { Logger } from "./logger";
 
 const logger = new Logger("GlobalSetup");
 
-async function globalSetup(config: FullConfig) {
+async function globalSetup(_config: FullConfig) {
+  // Keep Playwright's one-argument callback contract; no configuration fields are used.
+  void _config;
   logger.info("Starting global setup...");
 
   try {
     // Create browser instance for setup
     const browser = await chromium.launch();
     const context = await browser.newContext();
-    const page = await context.newPage();
+    await context.newPage();
 
     // Setup authentication if needed
-    await setupAuthentication(page);
+    await setupAuthentication();
 
     // Setup test data if needed
     await setupTestData();
@@ -33,11 +35,12 @@ async function globalSetup(config: FullConfig) {
   }
 }
 
-async function setupAuthentication(page: any) {
+async function setupAuthentication() {
   // Implementation for setting up authentication
   // This could include logging in and saving auth state
   logger.info("Setting up authentication...");
 
+  // To implement authentication, pass the setup page to this helper.
   // Example: Navigate to login page and authenticate
   // await page.goto('/login');
   // await page.fill('[name="email"]', 'test@example.com');

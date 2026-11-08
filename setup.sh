@@ -9,7 +9,7 @@ echo "🎯 Universal Playwright Framework Setup"
 echo "======================================="
 
 # Check if we're in the right directory
-if [ ! -f "package.json" ]; then
+if [[ ! -f "package.json" ]]; then
     echo "❌ Error: package.json not found. Please run this script from the framework root directory."
     exit 1
 fi
@@ -220,11 +220,22 @@ EOF
 
 # Install dependencies
 echo "Installing dependencies..."
-npm install
+# Dependency lifecycle scripts stay disabled; the reviewed framework build runs explicitly.
+npm install --ignore-scripts
+
+# Replace the package prepare hook without enabling dependency lifecycle scripts.
+echo "Building TypeScript..."
+npm run --ignore-scripts build
 
 # Install browsers
 echo "Installing Playwright browsers..."
-npx playwright install
+# Use only the exact Playwright version installed from package.json/package-lock.json.
+# Do not fall back to npx or a global CLI when the local installation is incomplete.
+if [[ ! -f "./node_modules/@playwright/test/cli.js" ]]; then
+    echo "❌ Local Playwright CLI is missing. Reinstall the framework dependencies before installing browsers." >&2
+    exit 1
+fi
+node ./node_modules/@playwright/test/cli.js install
 
 echo ""
 echo "✅ Setup Complete!"
@@ -248,4 +259,3 @@ echo "   3. Add more tests in tests/${TEST_DIR}/"
 echo "   4. See docs/integration-guide.md for detailed examples"
 echo ""
 echo "Happy testing! 🧪✨"
-EOF

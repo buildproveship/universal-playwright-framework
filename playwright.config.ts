@@ -1,11 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
-import * as path from 'path';
+import { config } from 'dotenv';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-require('dotenv').config();
+config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -57,7 +57,7 @@ export default defineConfig({
   projects: [
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testMatch: /\.setup\.ts/,
     },
     {
       name: 'chromium',
