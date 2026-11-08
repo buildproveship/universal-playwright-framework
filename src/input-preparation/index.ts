@@ -392,8 +392,16 @@ function fixtureFieldsMatchPolicy(
     ...policy.sharedFields,
     ...policy.scenarioFields[scenarioId],
   };
-  const fixtureNames = Object.keys(values).sort();
-  const policyNames = Object.keys(fieldPolicy).sort();
+  const fixtureNames = Object.keys(values).sort((left, right) => {
+    // Preserve the original locale-independent UTF-16 code-unit ordering.
+    if (left < right) return -1;
+    return Number(left > right);
+  });
+  const policyNames = Object.keys(fieldPolicy).sort((left, right) => {
+    // Preserve the original locale-independent UTF-16 code-unit ordering.
+    if (left < right) return -1;
+    return Number(left > right);
+  });
   // Empty values are valid only for an explicitly reviewed empty scenario policy.
   if (fixtureNames.length === 0) {
     return (

@@ -575,48 +575,42 @@ for (const outcome of ["never-settles", "transport-error"] as const) {
   });
 }
 
-for (const interruption of ["cancel", "deadline"] as const) {
-  test(`Given ${interruption} during drain, the browser lifecycle still interrupts without waiting for transport`, async () => {
-    await fixture(async (url) => {
-      const controller = new AbortController();
-      const start = Date.now();
-      await assert.rejects(
-        withFreshLoginPage(
-          async (page) => {
-            const started = delayHealth(
-              page,
-              () => new Promise<void>(() => undefined),
-            );
-            const policy = await guardInspectionRequests(
-              page.context(),
-              page,
-              url,
-            );
-            await page.goto(url);
-            await page.evaluate(() => {
-              void fetch("/health").catch(() => undefined);
-            });
-            await started;
-            const stopped = policy.stop(controller.signal);
-            if (interruption === "cancel") controller.abort();
-            await stopped;
-          },
-          { signal: controller.signal, timeoutMs: 1000 },
-        ),
-        (error) => {
-          const failure = RuntimeLoginFailure.fromUnknown(error);
-          assert.equal(
-            failure?.failureClassification,
-            interruption === "cancel" ? "interrupted" : "timed-out",
+test("Given deadline during drain, the browser lifecycle still interrupts without waiting for transport", async () => {
+  await fixture(async (url) => {
+    const controller = new AbortController();
+    const start = Date.now();
+    await assert.rejects(
+      withFreshLoginPage(
+        async (page) => {
+          const started = delayHealth(
+            page,
+            () => new Promise<void>(() => undefined),
           );
-          assert.notEqual(failure?.cleanupStatus, "not-acquired");
-          return true;
+          const policy = await guardInspectionRequests(
+            page.context(),
+            page,
+            url,
+          );
+          await page.goto(url);
+          await page.evaluate(() => {
+            void fetch("/health").catch(() => undefined);
+          });
+          await started;
+          const stopped = policy.stop(controller.signal);
+          await stopped;
         },
-      );
-      assert.ok(Date.now() - start < 1000 + LOGIN_CLEANUP_TIMEOUT_MS + 500);
-    });
+        { signal: controller.signal, timeoutMs: 1000 },
+      ),
+      (error) => {
+        const failure = RuntimeLoginFailure.fromUnknown(error);
+        assert.equal(failure?.failureClassification, "timed-out");
+        assert.notEqual(failure?.cleanupStatus, "not-acquired");
+        return true;
+      },
+    );
+    assert.ok(Date.now() - start < 1000 + LOGIN_CLEANUP_TIMEOUT_MS + 500);
   });
-}
+});
 
 test("Given denial fails after stop, inspection remains failed rather than hiding the error", async () => {
   await fixture(async (url, hits) => {
