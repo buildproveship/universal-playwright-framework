@@ -63,15 +63,19 @@ export class TestUtils {
       .toLowerCase()
       .replace(/[^\w\s-]/g, "") // Remove special characters
       .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
-      .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+      .replace(/^-|-$/g, ""); // Remove the collapsed edge hyphens
   }
 
   /**
    * Validate email format
    */
   static isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    if (!/^[^\s@]+@[^\s@]+$/.test(email)) return false;
+
+    // Require a dot with at least one domain character on either side.
+    const separator = email.indexOf("@");
+    const domainDot = email.lastIndexOf(".", email.length - 2);
+    return domainDot > separator + 1;
   }
 
   /**
@@ -96,7 +100,7 @@ export class TestUtils {
    * Parse currency string to number
    */
   static parseCurrency(currencyString: string): number {
-    return parseFloat(currencyString.replace(/[^0-9.-]+/g, ""));
+    return Number.parseFloat(currencyString.replace(/[^0-9.-]+/g, ""));
   }
 
   /**
