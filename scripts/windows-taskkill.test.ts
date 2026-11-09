@@ -128,7 +128,7 @@ describe("Windows taskkill deployment trust boundary", () => {
     const source = readFileSync(
       path.join(process.cwd(), "src/execution/index.ts"),
       "utf8",
-    );
+    ).replace(/\r\n/g, "\n");
     const branch = source.slice(
       source.indexOf('  if (process.platform === "win32")'),
       source.indexOf('  try {\n    process.kill(-pid, "SIGTERM")'),

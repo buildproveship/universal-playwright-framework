@@ -26,3 +26,15 @@ A Windows-native validation must additionally exercise an actual owned process
 tree on a trusted installation (including a non-C installation if supported by
 the deployment). Linux unit tests do not validate Windows process behavior,
 filesystem ACLs or reparse-point security.
+
+## Artifact identity and platform scope
+
+Build reviewed artifacts from exact Git blob bytes (LF line endings). A Windows
+checkout that converts source files to CRLF is not byte-identical to the reviewed
+artifact and must not be treated as satisfying its implementation fingerprint.
+The source-text regression tolerates checkout line endings only for its assertion;
+this does not normalize or relax implementation approval checks.
+
+The trusted taskkill helper does not broaden the public adapter's platform
+contract. Its existing Windows descriptor refusal remains in force. Focused
+native helper validation is not public Windows adapter or browser acceptance.
