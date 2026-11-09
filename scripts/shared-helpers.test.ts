@@ -100,6 +100,19 @@ test("phone fixture generation reuses the utility with unchanged numeric bounds"
   }
 });
 
+test("email validation preserves domain separator boundaries", () => {
+  for (const email of ["a@b.c", "a.b@c.d.", "a@b..c"])
+    assert.equal(TestUtils.isValidEmail(email), true, email);
+  for (const email of ["a.b@c", "a@.b", "a@b.", "a@b.c d", "a@b.c@d"])
+    assert.equal(TestUtils.isValidEmail(email), false, email);
+  assert.equal(TestUtils.isValidEmail(`a@${"b".repeat(100_000)}.`), false);
+});
+
+test("slug normalization trims collapsed separators at both edges", () => {
+  assert.equal(TestUtils.toSlug(" --Example_ Name-- "), "example-name");
+  assert.equal(TestUtils.toSlug(" -_ "), "");
+});
+
 test("reviewed test fixture factories return independent copies without broadening approval", () => {
   const manifest = createValidationManifest("review-a");
   const fields = createOutlineFixtureFields();
