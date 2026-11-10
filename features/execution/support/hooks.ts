@@ -10,6 +10,7 @@ import {
   type IWorldOptions,
 } from "@cucumber/cucumber";
 import { chromium, type Browser } from "@playwright/test";
+import { settleApprovedRoute } from "../../../src/execution/guarded-route";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { getStepTimeoutMs } from "../../support/step-timeout";
@@ -152,26 +153,15 @@ Before(async function (
       await route.abort("blockedbyclient");
       return;
     }
-    try {
-      const response = await route.fetch({ maxRedirects: 0 });
-      if (response.status() >= 300 && response.status() < 400) {
-        const location = response.headers().location;
-        if (location) {
-          try {
-            const redirected = new URL(location, destination);
-            this.blockedDestinations.push(redirected.href);
-          } catch {
-            this.blockedDestinations.push("invalid-redirect");
-          }
+    await settleApprovedRoute(route, (location) => {
+      if (location) {
+        try {
+          this.blockedDestinations.push(new URL(location, destination).href);
+        } catch {
+          this.blockedDestinations.push("invalid-redirect");
         }
-        await route.abort("blockedbyclient");
-        await response.dispose();
-        return;
       }
-      await route.fulfill({ response });
-    } catch {
-      await route.abort("failed");
-    }
+    });
   });
   this.page = await this.context.newPage();
   this.page.setDefaultTimeout(5_000);
