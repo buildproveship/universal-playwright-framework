@@ -49,15 +49,51 @@ export function findAuthoredJavaScriptPaths(
 
       return !/\.(?:generated|gen|min)\.(?:js|jsx|mjs|cjs)$/i.test(fileName);
     })
-    .sort();
+    .sort((left, right) => {
+      // Preserve the original locale-independent UTF-16 code-unit ordering.
+      if (left < right) return -1;
+      return Number(left > right);
+    });
+}
+
+/**
+ * Git is never resolved through PATH. Custom/Nix/non-C Windows installations
+ * must set PLAYWRIGHT_FRAMEWORK_GIT_EXECUTABLE to a trusted absolute executable.
+ * This configuration is a trust boundary, not an ownership/ACL safety check.
+ */
+export function resolveGitExecutable(
+  platform: NodeJS.Platform = process.platform,
+  configured: string | undefined = process.env
+    .PLAYWRIGHT_FRAMEWORK_GIT_EXECUTABLE,
+): string {
+  if (configured !== undefined) {
+    const absolute =
+      platform === "win32"
+        ? path.win32.isAbsolute(configured) && /^[a-z]:[\\/]/i.test(configured)
+        : path.posix.isAbsolute(configured);
+    if (!absolute || configured.includes("\0")) {
+      throw new Error(
+        "PLAYWRIGHT_FRAMEWORK_GIT_EXECUTABLE must be a trusted absolute local executable path",
+      );
+    }
+    return configured;
+  }
+  if (platform === "win32") return "C:\\Program Files\\Git\\cmd\\git.exe";
+  if (platform === "freebsd") return "/usr/local/bin/git";
+  return "/usr/bin/git";
 }
 
 function listRepositoryFiles(): string[] {
-  const repositoryRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], {
-    encoding: "utf8",
-  }).trim();
+  const gitExecutable = resolveGitExecutable();
+  const repositoryRoot = execFileSync(
+    gitExecutable,
+    ["rev-parse", "--show-toplevel"],
+    {
+      encoding: "utf8",
+    },
+  ).trim();
   const fileList = execFileSync(
-    "git",
+    gitExecutable,
     ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
     { cwd: repositoryRoot },
   );

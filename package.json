@@ -39,12 +39,12 @@
     "test:parallel": "playwright test --workers=4",
     "build:cucumber": "tsc --project tsconfig.cucumber.json",
     "test:input-preparation": "npm run build:cucumber && cucumber-js --config cucumber-input-preparation.json && node --test dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/reference-only-preparation.test.js",
-    "test:customer-login": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/shared-helpers.test.js",
+    "test:customer-login": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js",
     "test:customer-login-ui": "npm run build:cucumber && cucumber-js --config cucumber-login-ui.json",
     "verify:partay-login": "npm run build:cucumber && node dist/cucumber/scripts/verify-partay-login.js",
     "test:validation": "npm run build:cucumber && node --test dist/cucumber/scripts/feature-validation.test.js",
     "test:features": "npm run build:cucumber && cucumber-js --config cucumber.json",
-    "test:execution": "npm run build:cucumber && node --test dist/cucumber/scripts/execution-adapter.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js && cucumber-js --config cucumber-retry-regression.json",
+    "test:execution": "npm run build:cucumber && node --test dist/cucumber/scripts/windows-taskkill.test.js dist/cucumber/scripts/execution-adapter.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js && cucumber-js --config cucumber-retry-regression.json",
     "test:reporting": "npm run build:cucumber && node --test dist/cucumber/scripts/reporting.test.js && cucumber-js --config cucumber-reporting.json",
     "test:adapter": "npm run build:cucumber && node --test dist/cucumber/scripts/adapter-contract.test.js && cucumber-js --config cucumber-adapter.json",
     "review:revision": "npm run build && node dist/cucumber/scripts/reviewed-revision.js",
@@ -61,7 +61,7 @@
     "prepare": "npm run build",
     "check:typescript": "npm run build && node dist/cucumber/scripts/check-typescript-source-policy.js",
     "test:typescript-source-policy": "npm run check:typescript && node --test dist/cucumber/scripts/typescript-source-policy.test.js",
-    "test:login-inspection": "npm run build:cucumber && node --test dist/cucumber/scripts/login-inspection.test.js",
+    "test:login-inspection": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/login-inspection.test.js dist/cucumber/scripts/paused-work-clock.test.js dist/cucumber/scripts/login-inspection-cancellation.test.js",
     "inspect:partay-login": "npm run build:cucumber && node dist/cucumber/scripts/inspect-partay-login.js",
     "test:authentication-only": "npm run build:cucumber && node --test dist/cucumber/scripts/authentication-only.test.js",
     "test:owned-local": "npm run build:cucumber && node --test dist/cucumber/scripts/owned-local-adapter.test.js",
@@ -95,7 +95,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-playwright": "^0.18.0",
     "prettier": "^3.0.0",
-    "rimraf": "^5.0.0",
+    "rimraf": "^6.1.4",
     "typescript": "^5.0.0"
   },
   "dependencies": {
@@ -120,12 +120,19 @@
     "README.md",
     "docs/input-preparation-contract.md",
     "docs/partay-login.md",
-    "docs/runtime-login-entry.md"
+    "docs/runtime-login-entry.md",
+    "docs/windows-taskkill.md"
   ],
   "publishConfig": {
     "access": "public"
   },
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
+  },
+  "overrides": {
+    "@cucumber/cucumber": {
+      "glob": "14.0.4"
+    },
+    "minimatch@>=9": "11.0.5"
   }
 }
