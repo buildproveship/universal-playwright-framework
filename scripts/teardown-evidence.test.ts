@@ -667,8 +667,10 @@ test("new source and runtime helpers are fingerprinted; changed artifacts reject
     const baseline = calculateReviewedImplementationRevision();
     for (const file of [
       "src/execution/owned-evidence.ts",
+      "src/execution/guarded-route.ts",
       "src/execution/owned-evidence-formatter.ts",
       "dist/cucumber/src/execution/owned-evidence.js",
+      "dist/cucumber/src/execution/guarded-route.js",
       "dist/cucumber/src/execution/owned-evidence-formatter.js",
     ]) {
       const full = path.join(isolated, file),
