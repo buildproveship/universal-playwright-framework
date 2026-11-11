@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import type { AdapterResult } from "../src/adapter/v1";
 import { REPOSITORY_ROOT } from "../src/execution/reviewed-scenarios";
+import { resolvePackedTarball } from "./npm-pack-metadata";
 
 const exec = promisify(execFile);
 
@@ -36,8 +37,11 @@ export async function installedPackageSmoke(): Promise<AdapterResult> {
         maxBuffer: 1024 * 1024,
       },
     );
-    const metadata = JSON.parse(packed.stdout) as { filename: string }[];
-    const tarball = path.join(consumer, metadata[0].filename);
+    const tarball = resolvePackedTarball(
+      consumer,
+      packed.stdout,
+      "@universal/playwright-framework",
+    );
     const digest = hash(tarball);
     writeFileSync(
       path.join(consumer, "package.json"),

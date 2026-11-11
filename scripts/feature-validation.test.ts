@@ -23,6 +23,9 @@ import {
   type ScenarioApproval,
 } from "../src/validation/scenario-selector";
 import { createValidationManifest } from "../fixtures/input-preparation/reviewed-fixtures";
+// Registers reuse-readiness tests in the validation stage without changing the
+// pinned package.json scripts; see docs/reuse-readiness.md.
+import "./reuse-readiness.test";
 
 const repositoryRoot = path.resolve(__dirname, "../../..");
 const fixturePath = "fixtures/validation/reviewed-scenarios.feature";

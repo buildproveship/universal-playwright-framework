@@ -9,6 +9,9 @@ import * as engine from "../src/execution";
 import { executeAdapter, type AdapterResult } from "../src/adapter/v1";
 import { examples } from "../features/adapter/examples";
 import rejectedExample from "../fixtures/adapter/v1-rejected.json";
+// Registers installed-package pack-metadata tests in the adapter stage without
+// changing the pinned package.json scripts.
+import "./npm-pack-metadata.test";
 
 test("validation and execution use the same approved step matcher", () => {
   const runnerRequire = createRequire(require.resolve("@cucumber/cucumber"));

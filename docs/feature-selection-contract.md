@@ -31,3 +31,6 @@ place customer scenarios in the public repository or routine logs.
 
 Run the focused checks with `npm run test:validation`. The aggregate local
 feature-regression command also includes these checks.
+
+For the reference-only reuse/readiness report built on this validator and
+selector, see [reuse readiness](reuse-readiness.md).
