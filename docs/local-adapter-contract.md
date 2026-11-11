@@ -156,6 +156,14 @@ builds the same output and includes the fixed sources/configuration/fixtures use
 by approval, compiled workers, declarations, and contract examples.
 No registry publication is needed or performed.
 
+The installed smoke reads `npm pack --json` through
+`scripts/npm-pack-metadata.ts`. npm 11 and earlier print `[entry]`. npm 12
+(verified with 12.2.2 on Node 26.13.0) prints `{ "<package name>": entry }`.
+Both shapes are accepted only when they describe exactly this one package. The
+tarball name must be a plain `.tgz` file name, and it must resolve to a regular,
+non-symlinked file inside the temporary pack destination. Otherwise the smoke
+fails before installing anything. These checks run in `npm run test:adapter`.
+
 The direct Cucumber, parser, Zod and Playwright runtime versions/manifests are
 checked through Node resolution from the installed package (including hoisted
 dependencies), not a checkout-local `node_modules`. npm intentionally excludes
