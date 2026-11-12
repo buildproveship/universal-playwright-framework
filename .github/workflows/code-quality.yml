@@ -1,7 +1,9 @@
-# Shared code-quality scan (replaces SonarQube over time, Jira RRDPLAT-44).
-# Advisory: reports findings and a job summary but does not fail the build.
+# Shared code-quality scan (Jira RRDPLAT-44). Manual only: routine dev scans run
+# in the ReleaseReady Dev app to save GitHub Actions minutes (owner decision,
+# 12 Nov 2026). Kept as an on-demand fallback; Actions are for production
+# deployment builds.
 name: Quality
-on: [push, pull_request, workflow_dispatch]
+on: workflow_dispatch
 permissions:
   contents: read
 jobs:
