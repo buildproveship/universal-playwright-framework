@@ -1,7 +1,7 @@
 # Shared code-quality scan (replaces SonarQube over time, Jira RRDPLAT-44).
 # Advisory: reports findings and a job summary but does not fail the build.
 name: Quality
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
