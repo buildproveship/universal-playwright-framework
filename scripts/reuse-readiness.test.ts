@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: exercises src/validation/reuse-readiness.ts against the synthetic reviewed-scenarios fixture through the real feature validator; does not run the product end to end.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -919,7 +923,7 @@ test("enforces snapshot size limits", async () => {
   }
 });
 
-const SECRET_MARKER = "SYNTHETIC-SECRET-MARKER-91c4";
+const LEAK_PROBE = "leak-probe-aaaa-0000";
 
 test("keeps reports reference-only without feature text, values or validator reasons", async () => {
   const input = await baseInput();
@@ -928,24 +932,24 @@ test("keeps reports reference-only without feature text, values or validator rea
     ...input,
     cases: input.cases.map((entry) => ({
       ...entry,
-      notes: SECRET_MARKER,
+      notes: LEAK_PROBE,
     })) as ReuseReadinessInput["cases"],
     validation: {
       ...validation,
       scenarios: validation.scenarios.map((scenario) => ({
         ...scenario,
-        name: `${scenario.name} ${SECRET_MARKER}`,
-        exampleRow: { caseId: "row", values: { secret: SECRET_MARKER } },
-        issues: scenario.issues.map((issue) => `${issue} ${SECRET_MARKER}`),
+        name: `${scenario.name} ${LEAK_PROBE}`,
+        exampleRow: { caseId: "row", values: { secret: LEAK_PROBE } },
+        issues: scenario.issues.map((issue) => `${issue} ${LEAK_PROBE}`),
         steps: scenario.steps.map((step) => ({
           ...step,
-          text: `${step.text} ${SECRET_MARKER}`,
+          text: `${step.text} ${LEAK_PROBE}`,
         })),
       })),
     },
   };
   const report = expectReport(assessReuseReadiness(marked));
-  assert.doesNotMatch(JSON.stringify(report), new RegExp(SECRET_MARKER));
+  assert.doesNotMatch(JSON.stringify(report), new RegExp(LEAK_PROBE));
   assert.deepEqual(Object.keys(caseOf(report, "TC-basic").steps[0] ?? {}), [
     "index",
     "status",
@@ -955,15 +959,15 @@ test("keeps reports reference-only without feature text, values or validator rea
     report,
     readyCandidate(report),
   );
-  assert.doesNotMatch(JSON.stringify(candidate), new RegExp(SECRET_MARKER));
+  assert.doesNotMatch(JSON.stringify(candidate), new RegExp(LEAK_PROBE));
 
   const failed = expectReport(
     assessReuseReadiness({
       ...input,
-      validation: { valid: false, reason: `Bad Gherkin ${SECRET_MARKER}` },
+      validation: { valid: false, reason: `Bad Gherkin ${LEAK_PROBE}` },
     }),
   );
-  assert.doesNotMatch(JSON.stringify(failed), new RegExp(SECRET_MARKER));
+  assert.doesNotMatch(JSON.stringify(failed), new RegExp(LEAK_PROBE));
 
   const issues = expectReport(
     assessReuseReadiness({
@@ -980,7 +984,7 @@ test("keeps reports reference-only without feature text, values or validator rea
     }),
   );
   assert.equal(caseOf(issues, "TC-basic").code, "scenario-validation-issues");
-  assert.doesNotMatch(JSON.stringify(issues), new RegExp(SECRET_MARKER));
+  assert.doesNotMatch(JSON.stringify(issues), new RegExp(LEAK_PROBE));
 });
 
 test("covers absent cases, uncovered missing steps and wrong feature paths", async () => {
