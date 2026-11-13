@@ -2,7 +2,7 @@
 
 ## Scope and evidence boundary
 
-This map compares the active login acceptance criteria in [RRDWEB-8](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-8) and clarification comment [10541](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-8?focusedCommentId=10541) with repository tests. The browser checks use owned local fixtures and synthetic values. They do not contact customer staging, use customer credentials, or establish that a customer account can sign in. The ticket remains **In Progress** until the separately authorized customer-login acceptance is performed.
+This map compares the active login acceptance criteria in [RRDWEB-8](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-8) and clarification comment [10541](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-8?focusedCommentId=10541) with repository tests. The browser checks use owned local fixtures and synthetic values. They do not contact customer staging, use customer credentials, or establish that a customer account can sign in. On 1 November 2026 the owner closed the ticket as **Done** on this synthetic, authentication-only evidence ([comment 10639](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-8?focusedCommentId=10639), retained in [comment 10949](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-8?focusedCommentId=10949)). That closure is not customer-login acceptance; real customer sign-in evidence remains with RRDSCRUM-17 and RRDSCRUM-30.
 
 The original RRDSCRUM-22 requirements explicitly marked historical/deferred in the ticket are outside the current one-login acceptance. Password visibility, keyboard use, and form validation are supporting synthetic UI coverage, not proof of customer authentication.
 
