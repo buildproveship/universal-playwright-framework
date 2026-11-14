@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Exercises setup scripts in isolated temporary fixtures and checks locked runtime configuration; it does not prove customer execution or hosted deployment.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -228,17 +232,17 @@ test("setup's explicit build replaces the reviewed prepare hook without dependen
     packages: Record<string, { version?: string; hasInstallScript?: boolean; optional?: boolean }>;
   };
   assert.equal(manifest.scripts.prepare, "npm run build");
-  assert.equal(manifest.dependencies["@playwright/test"], "1.55.1");
-  assert.equal(lock.packages["node_modules/@playwright/test"].version, "1.55.1");
-  assert.equal(lock.packages["node_modules/playwright"].version, "1.55.1");
+  assert.equal(manifest.dependencies["@playwright/test"], "1.65.1");
+  assert.equal(lock.packages["node_modules/@playwright/test"].version, "1.65.1");
+  assert.equal(lock.packages["node_modules/playwright"].version, "1.65.1");
   assert.deepEqual(
     Object.entries(lock.packages)
       .filter(([, metadata]) => metadata.hasInstallScript)
       .map(([name]) => name),
-    ["node_modules/fsevents"],
+    [],
     "Review lifecycle needs before accepting new install-script dependencies",
   );
-  assert.equal(lock.packages["node_modules/fsevents"].optional, true);
+  assert.equal(lock.packages["node_modules/fsevents"], undefined);
 });
 
 for (const config of ["config/dev.config.ts", "playwright.config.ts"]) {

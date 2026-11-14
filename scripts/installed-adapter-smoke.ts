@@ -76,6 +76,7 @@ export async function installedPackageSmoke(): Promise<AdapterResult> {
       env: {
         PATH: process.env.PATH,
         HOME: process.env.HOME,
+        TMPDIR: process.env.TMPDIR,
         SystemRoot: process.env.SystemRoot,
         PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH,
       },

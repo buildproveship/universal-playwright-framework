@@ -9,7 +9,7 @@
   "approval": {
     "sourceRevision": "rrdweb4-synthetic-source-1",
     "featureRevision": "3067cf359002bc03e262c3ef61824fe48caebf268cea48758e7d4ffee32b205f",
-    "implementationRevision": "1d3078c94779fd5cd96d20063b6e3c834d7707130f05e6c4ea502ba925ef870d"
+    "implementationRevision": "7cd7225db5871158e229228c70a7c64a28ddecbeef43cac348ad7ed09160a635"
   },
   "inputs": {
     "fixtureRevision": "synthetic-execution-fixtures-1",
