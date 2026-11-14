@@ -24,6 +24,10 @@
     "./runtime-login/v1": {
       "types": "./dist/cucumber/src/runtime-login/v1.d.ts",
       "default": "./dist/cucumber/src/runtime-login/v1.js"
+    },
+    "./adapter/imported-v1": {
+      "types": "./dist/cucumber/src/adapter/imported-v1.d.ts",
+      "default": "./dist/cucumber/src/adapter/imported-v1.js"
     }
   },
   "scripts": {
