@@ -180,19 +180,22 @@ change, then explicitly update the committed implementation pin and both pinned
 JSON examples together. The installed smoke also modifies a packaged worker and
 proves that the same call subsequently rejects stale approval.
 
-Playwright remains pinned to 1.55.1. The runtime remediation uses official
+The RRDSCRUM-207 compatibility candidate pins Playwright 1.65.1. See
+[upgrade evidence and review state](rrdscrum-207-playwright-compatibility.md).
+The earlier runtime remediation used official
 Cucumber 12.9.0, Gherkin 38.0.0 and cucumber-expressions 19.0.0, removing the affected nested UUID chain and
-resolving maintained glob/minimatch dependencies without overrides. Cucumber
+resolving maintained glob/minimatch dependencies through the current root override policy. Cucumber
 12.3.0 was evaluated but retained the UUID advisory through Gherkin utilities.
 Unused `faker` was removed; the installed consumer checks the existing public
 `TestDataFactory` and root adapter export. No public export was removed. Validation and execution resolve the same step
 matcher; both the source and independently installed consumer assert this.
 
 The package requires Node 22.12 or later in the Node 22 line, or Node 24 or later;
-validation uses Node 22.23.4. The production-only audit is clean for this
-candidate. Development tooling findings remain outside this runtime repair;
+RRDSCRUM-207 compatibility validation uses Node 24. The framework-root production-only audit is clean with its root overrides;
+a freshly installed consumer requires its own override policy and audit (see
+the RRDSCRUM-207 upgrade evidence above). Development tooling findings remain outside this runtime repair;
 this is not a claim that the entire dependency tree is advisory-free. No audit
-suppression, dependency override or broad automatic audit fix is used.
+suppression, new dependency override or broad automatic audit fix is introduced by this compatibility change.
 
 ## Checks and review handoff
 

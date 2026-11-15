@@ -24,6 +24,10 @@
     "./runtime-login/v1": {
       "types": "./dist/cucumber/src/runtime-login/v1.d.ts",
       "default": "./dist/cucumber/src/runtime-login/v1.js"
+    },
+    "./adapter/imported-v1": {
+      "types": "./dist/cucumber/src/adapter/imported-v1.d.ts",
+      "default": "./dist/cucumber/src/adapter/imported-v1.js"
     }
   },
   "scripts": {
@@ -102,7 +106,7 @@
     "@cucumber/cucumber": "12.9.0",
     "@cucumber/cucumber-expressions": "19.0.0",
     "@cucumber/gherkin": "38.0.0",
-    "@playwright/test": "1.55.1",
+    "@playwright/test": "1.65.1",
     "dotenv": "^16.3.0",
     "zod": "4.6.7"
   },

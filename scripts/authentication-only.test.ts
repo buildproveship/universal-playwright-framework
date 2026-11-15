@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Tests authentication transport and cleanup guards against isolated synthetic fixtures; no real customer authentication or external requests are authorized.
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -486,9 +490,9 @@ for (const variant of [
           const context = page.context();
           const register = context.route.bind(context);
           let handle: Parameters<typeof context.route>[1] | undefined;
-          context.route = async (matcher, handler) => {
+          context.route = async (matcher, handler, options) => {
             handle = handler;
-            await register(matcher, handler);
+            return register(matcher, handler, options);
           };
           const policy = createAuthenticationOnlyPolicy(page, url);
           await guardLoginRequests(context, new URL(url).origin, url, policy);
@@ -553,9 +557,9 @@ test("Given a known denial starts after asynchronous admission, do not dispatch 
         const context = page.context();
         const register = context.route.bind(context);
         let handle: Parameters<typeof context.route>[1] | undefined;
-        context.route = async (matcher, handler) => {
+        context.route = async (matcher, handler, options) => {
           handle = handler;
-          await register(matcher, handler);
+          return register(matcher, handler, options);
         };
         const policy = createAuthenticationOnlyPolicy(page, url);
         let release: () => void = () => undefined;

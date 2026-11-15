@@ -1,3 +1,9 @@
+/**
+ * Test classification: integration
+ * Review status: Not Reviewed
+ * Evidence: synthetic
+ * Scope: Installed adapter authority, lifecycle and imported fixed-artifact contracts; no founder case approval.
+ */
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { Server } from "node:http";
@@ -12,6 +18,7 @@ import rejectedExample from "../fixtures/adapter/v1-rejected.json";
 // Registers installed-package pack-metadata tests in the adapter stage without
 // changing the pinned package.json scripts.
 import "./npm-pack-metadata.test";
+import "./imported-adapter.test";
 
 test("validation and execution use the same approved step matcher", () => {
   const runnerRequire = createRequire(require.resolve("@cucumber/cucumber"));

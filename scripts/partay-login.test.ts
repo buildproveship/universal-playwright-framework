@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Exercises the login contract against owned local transport fixtures with synthetic credentials; no real customer login or external traffic is performed.
 import { launchAuthenticationFixtureBrowser } from "./fixtures/authentication-fixture-launcher";
 import assert from "node:assert/strict";
 import { inspect } from "node:util";
@@ -279,18 +283,22 @@ function ownedBrowser(mode: Mode, afterSubmit?: () => void) {
           server.close();
         });
         const registerRoute = context.route.bind(context);
-        context.route = async (url, handler) => {
-          await registerRoute(url, async (route, request) => {
-            // Only the transport is remapped. The production guard still checks
-            // the customer URL and fetch options; no customer request is sent.
-            route.fetch = async (fetchOptions) => {
-              assert.equal(fetchOptions?.maxRedirects, 0);
-              requests.push(route.request().url());
-              assert.equal(route.request().url(), PARTAY_LOGIN_URL);
-              return context.request.get(fixtureUrl, { maxRedirects: 0 });
-            };
-            await handler(route, request);
-          });
+        context.route = async (url, handler, options) => {
+          return registerRoute(
+            url,
+            async (route, request) => {
+              // Only the transport is remapped. The production guard still checks
+              // the customer URL and fetch options; no customer request is sent.
+              route.fetch = async (fetchOptions) => {
+                assert.equal(fetchOptions?.maxRedirects, 0);
+                requests.push(route.request().url());
+                assert.equal(route.request().url(), PARTAY_LOGIN_URL);
+                return context.request.get(fixtureUrl, { maxRedirects: 0 });
+              };
+              await handler(route, request);
+            },
+            options,
+          );
         };
         const newPage = context.newPage.bind(context);
         context.newPage = async () => {
