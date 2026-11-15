@@ -2,6 +2,13 @@
 
 Status: **Proposal, not approved or active**. Owner approval against this revision is required before adopting these rules in a scaffold, assistant adapter, hook, CI gate or product execution flow. This directory is the technical design record for RRDWEB-24 and RRDWEB-34, not a replacement for the visual design library. No visual change is proposed.
 
+## Bounded rehearsal update
+
+The owner subsequently authorized revision 1 for the free synthetic rehearsal only.
+See [synthetic evidence and remaining limits](synthetic-evidence.md). Product
+adoption and the other decisions below remain unapproved; this is not blanket
+approval of the proposal.
+
 ## Scope
 
 Reuse `src/validation/reuse-readiness.ts` for reviewed-step selection and candidate evidence assessment. Do not recreate it. Its reports are reference-only; they neither inspect candidate code nor grant acceptance or execution. Supplied “passed” metadata cannot replace independently captured validation.
