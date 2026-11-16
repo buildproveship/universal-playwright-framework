@@ -13,24 +13,26 @@ export const REVIEWED_FEATURE_PATH =
   "fixtures/execution/reviewed-scenarios.feature";
 export const INPUT_FIXTURE_PATH = "fixtures/execution/approved-inputs.json";
 
-export const REVIEWED_SOURCE_REVISION = "rrdweb4-synthetic-source-1";
+export const REVIEWED_SOURCE_REVISION = "rr207-synthetic-source-2";
 export const REVIEWED_FEATURE_REVISION =
-  "3067cf359002bc03e262c3ef61824fe48caebf268cea48758e7d4ffee32b205f";
+  "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f";
 export const REVIEWED_IMPLEMENTATION_REVISION =
-  "b04ad574357703d86e22e782d7c1d2ad29671ab9719c4f3ebf5ec945f1ee2e34";
+  "71fa1f41e59abb83b351958597279cc35072839ae68432ddc7d4e0519e1b5dcd";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,
   steps: [
-    { id: "explore-owned-demo", expression: "I explore the owned local demo" },
+    {
+      id: "explore-owned-demo",
+      expression: "I open owned local account registration",
+    },
     {
       id: "confirm-owned-demo",
-      expression:
-        "the owned local demo shows its synthetic workspace and project",
+      expression: "the owned local account registration page is visible",
     },
     {
       id: "leave-owned-demo",
-      expression: "I return from the owned local demo to sign in",
+      expression: "I return from owned local account registration to sign in",
     },
     {
       id: "confirm-owned-signin",

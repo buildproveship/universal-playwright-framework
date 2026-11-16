@@ -103,39 +103,39 @@ Then("the unapproved navigation was blocked", function (this: ExecutionWorld) {
   assert.equal(this.page?.url(), this.payload?.environment.initialTargetUrl);
 });
 
-When("I explore the owned local demo", async function (this: ExecutionWorld) {
-  if (!this.page) throw new Error("Owned browser page is unavailable");
-  await this.page
-    .getByRole("button", { name: "Explore the demo", exact: true })
-    .click();
-  await this.page
-    .getByRole("button", { name: "Explore demo", exact: true })
-    .click();
-});
+When(
+  "I open owned local account registration",
+  async function (this: ExecutionWorld) {
+    if (!this.page) throw new Error("Owned browser page is unavailable");
+    await this.page
+      .getByRole("button", {
+        name: "New here? Create your ReleaseReady account",
+        exact: true,
+      })
+      .click();
+  },
+);
 Then(
-  "the owned local demo shows its synthetic workspace and project",
+  "the owned local account registration page is visible",
   async function (this: ExecutionWorld) {
     if (!this.page) throw new Error("Owned browser page is unavailable");
     await expect(
       this.page.getByRole("heading", {
-        name: "Anonymous demo workspace",
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
-      this.page.getByRole("heading", {
-        name: "Synthetic demo project",
+        name: "Create your account",
         exact: true,
       }),
     ).toBeVisible();
   },
 );
 When(
-  "I return from the owned local demo to sign in",
+  "I return from owned local account registration to sign in",
   async function (this: ExecutionWorld) {
     if (!this.page) throw new Error("Owned browser page is unavailable");
     await this.page
-      .getByRole("button", { name: "Back to sign in", exact: true })
+      .getByRole("button", {
+        name: "Already have an account? Sign in",
+        exact: true,
+      })
       .click();
   },
 );
