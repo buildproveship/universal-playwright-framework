@@ -228,7 +228,7 @@ function reject(
 
 // Candidate only until independent implementation review explicitly updates it.
 export const IMPORTED_IMPLEMENTATION_REVISION =
-  "36ab04475f8ce96c8d1b63e94796c1a1ae1bd93a45b41aba278dc3906a6a696f";
+  "659ec72255f64392c71a7f6db1f989150d31812c77cd731cd81fce1fe4ecff49";
 export function calculateImportedImplementationRevision(): string {
   const digest = createHash("sha256");
   for (const file of [
@@ -487,7 +487,7 @@ export async function executeImportedCase(
             active();
             let launch = options.launchBrowser;
             if (!launch) {
-              const { chromium } = await import("@playwright/test");
+              const { chromium } = await import("playwright-core");
               launch = (remaining) =>
                 chromium.launch({ headless: true, timeout: remaining });
             }
