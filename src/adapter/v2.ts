@@ -169,9 +169,9 @@ const lifecycleSchema = z
   .strict();
 const stepName = z.enum([
   "the synthetic reviewed page is open",
-  "I explore the owned local demo",
-  "the owned local demo shows its synthetic workspace and project",
-  "I return from the owned local demo to sign in",
+  "I open owned local account registration",
+  "the owned local account registration page is visible",
+  "I return from owned local account registration to sign in",
   "the owned local sign in page is visible",
 ]);
 const reason = z.enum([
@@ -187,7 +187,7 @@ const reportScenario = z
     scenarioId: z.literal("local-demo-navigation"),
     featureName: z.literal("Execute reviewed synthetic scenarios").optional(),
     scenarioName: z
-      .literal("A visitor explores the owned local demo and returns to sign in")
+      .literal("A visitor opens account registration and returns to sign in")
       .optional(),
     status: statuses,
     executionState: z.enum(["executed", "not_executed", "unknown"]),

@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Owned worker evidence and cleanup guards; no customer case approval.
 import { createHash } from "node:crypto";
 import { errors } from "playwright-core";
 import {
@@ -46,9 +50,9 @@ const formatter = path.join(
 );
 const names = [
   "the synthetic reviewed page is open",
-  "I explore the owned local demo",
-  "the owned local demo shows its synthetic workspace and project",
-  "I return from the owned local demo to sign in",
+  "I open owned local account registration",
+  "the owned local account registration page is visible",
+  "I return from owned local account registration to sign in",
   "the owned local sign in page is visible",
 ];
 function configureFixture(directory: string, mode: string) {
@@ -609,7 +613,7 @@ test("formatter refuses identity mismatch, incomplete results and retries; emits
     willBeRetried: false,
     pickle: {
       uri: "fixtures/execution/reviewed-scenarios.feature",
-      name: "A visitor explores the owned local demo and returns to sign in",
+      name: "A visitor opens account registration and returns to sign in",
       tags: [{ name: "@scenario-id=local-demo-navigation" }],
       steps: names.map((text, i) => ({ id: String(i), text })),
     },
@@ -864,11 +868,11 @@ test("opt-in diagnostic invocations have isolated empty envelopes for rejected i
   assert.deepEqual(results[1].cleanupDiagnostics, []);
 });
 
-test("default v2 JSON schema remains byte-identical to the published strict contract", () => {
+test("v2 registration-navigation evidence retains its exact strict contract", () => {
   assert.equal(
     createHash("sha256")
       .update(JSON.stringify(ownedLocalResultJsonSchema))
       .digest("hex"),
-    "bde917ed984c94995975c39d4fa749b53bb2ee5f3d985eaba41d240865c6191f",
+    "7c9542e66f377068a24c11c0c6f27f61945f7a8b5778ab15fc2ee3f396204b03",
   );
 });

@@ -1,3 +1,7 @@
+# Test classification: integration
+# Review status: Not Reviewed
+# Evidence: synthetic
+# Scope: Bounded SDK execution fixtures, not canonical customer case approvals.
 @web-safe-execution
 Feature: Execute reviewed synthetic scenarios
 
@@ -41,9 +45,9 @@ Feature: Execute reviewed synthetic scenarios
     Then the unapproved navigation was blocked
 
   @scenario-id=local-demo-navigation @web-safe-execution-S04
-  Scenario: A visitor explores the owned local demo and returns to sign in
+  Scenario: A visitor opens account registration and returns to sign in
     Given the synthetic reviewed page is open
-    When I explore the owned local demo
-    Then the owned local demo shows its synthetic workspace and project
-    When I return from the owned local demo to sign in
+    When I open owned local account registration
+    Then the owned local account registration page is visible
+    When I return from owned local account registration to sign in
     Then the owned local sign in page is visible

@@ -12,12 +12,12 @@ import type { CucumberScenarioEvidence, CucumberStepStatus } from "./index";
 export const OWNED_EVIDENCE_ID = "local-demo-navigation";
 export const OWNED_EVIDENCE_FEATURE = "Execute reviewed synthetic scenarios";
 export const OWNED_EVIDENCE_SCENARIO =
-  "A visitor explores the owned local demo and returns to sign in";
+  "A visitor opens account registration and returns to sign in";
 export const OWNED_EVIDENCE_STEPS = [
   "the synthetic reviewed page is open",
-  "I explore the owned local demo",
-  "the owned local demo shows its synthetic workspace and project",
-  "I return from the owned local demo to sign in",
+  "I open owned local account registration",
+  "the owned local account registration page is visible",
+  "I return from owned local account registration to sign in",
   "the owned local sign in page is visible",
 ] as const;
 export const OWNED_EVIDENCE_STATUSES: readonly CucumberStepStatus[] = [

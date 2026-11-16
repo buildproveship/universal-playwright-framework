@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Real adapter/browser lifecycle against isolated synthetic registration navigation; no customer case approval.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -160,7 +164,7 @@ async function syntheticTarget(broken = false) {
     requests++;
     response.setHeader("content-type", "text/html");
     response.end(
-      `<!doctype html><h1>Sign in to ReleaseReady</h1><button onclick="document.body.innerHTML='<button onclick=showDemo()>Explore demo</button>'">Explore the demo</button><script>function showDemo(){document.body.innerHTML='<h1>${broken ? "Wrong workspace" : "Anonymous demo workspace"}</h1><h2>Synthetic demo project</h2><button onclick=location.reload()>Back to sign in</button>'}</script>`,
+      `<!doctype html><h1>Sign in to ReleaseReady</h1><button onclick="showRegistration()">New here? Create your ReleaseReady account</button><script>function showRegistration(){document.body.innerHTML='<h1>${broken ? "Wrong screen" : "Create your account"}</h1><button onclick=location.reload()>Already have an account? Sign in</button>'}</script>`,
     );
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -483,12 +487,12 @@ for (const hasBusinessEvidence of [false, true]) {
                 cucumber: {
                   featureName: "Execute reviewed synthetic scenarios",
                   scenarioName:
-                    "A visitor explores the owned local demo and returns to sign in",
+                    "A visitor opens account registration and returns to sign in",
                   steps: [
                     "the synthetic reviewed page is open",
-                    "I explore the owned local demo",
-                    "the owned local demo shows its synthetic workspace and project",
-                    "I return from the owned local demo to sign in",
+                    "I open owned local account registration",
+                    "the owned local account registration page is visible",
+                    "I return from owned local account registration to sign in",
                     "the owned local sign in page is visible",
                   ].map((name) => ({ name, status: "passed" as const })),
                 },
@@ -594,4 +598,32 @@ test("Given the public v2 export, HTTP schemas retain strict bounded request and
   assert.equal(variants.length, 2);
   for (const variant of variants)
     assert.equal(variant.additionalProperties, false);
+});
+
+test("RR207-OWNED-001 prior demo approval is stale before browser acquisition after public-navigation revision", async () => {
+  const request = await requestFor();
+  request.approval = {
+    sourceRevision: "rrdweb4-synthetic-source-1",
+    featureRevision:
+      "3067cf359002bc03e262c3ef61824fe48caebf268cea48758e7d4ffee32b205f",
+    implementationRevision:
+      "b04ad574357703d86e22e782d7c1d2ad29671ab9719c4f3ebf5ec945f1ee2e34",
+  };
+  const launch = mock.method(chromium, "launchServer", () => {
+    throw new Error("Browser must not launch");
+  });
+  try {
+    const result = await executeOwnedLocalAdapter(
+      request,
+      owner(request),
+      undefined,
+      async () => {},
+    );
+    assert.equal(result.accepted, false);
+    if (result.accepted) throw new Error("Expected stale rejection");
+    assert.equal(result.error.code, "STALE_REVIEW");
+    assert.equal(launch.mock.callCount(), 0);
+  } finally {
+    launch.mock.restore();
+  }
 });
