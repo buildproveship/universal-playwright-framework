@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Browser cleanup sequencing with controlled resource doubles; no customer scenario or production browser.
 import { launchAuthenticationFixtureBrowser } from "./fixtures/authentication-fixture-launcher";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -11,7 +15,11 @@ import {
 const delay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function fixture(offline: () => Promise<void>, browserClose = async () => {}) {
+function fixture(
+  offline: () => Promise<void>,
+  browserClose = async () => {},
+  contextClose = async () => {},
+) {
   const events: string[] = [];
   const browser = {
     newContext: async () => ({
@@ -23,6 +31,7 @@ function fixture(offline: () => Promise<void>, browserClose = async () => {}) {
       },
       close: async () => {
         events.push("context-close");
+        await contextClose();
       },
       newPage: async () => ({
         setDefaultTimeout() {},
@@ -259,4 +268,35 @@ test("authentication fixture seam preserves a synchronous launcher exception", (
     () => launchAuthenticationFixtureBrowser(browserType, 5000),
     (error) => error === failure,
   );
+});
+
+test("RR207-CLEANUP-001 cancellation waits for context close acknowledgement before closing the browser", async () => {
+  const controller = new AbortController();
+  let browserClosed = false;
+  const owned = fixture(
+    async () => {},
+    async () => {
+      browserClosed = true;
+    },
+    async () => {
+      await delay(30);
+      if (browserClosed)
+        throw new Error("Browser shutdown interrupted context acknowledgement");
+    },
+  );
+  await assert.rejects(
+    withFreshLoginPage(
+      async () => {
+        controller.abort();
+      },
+      { ...owned, signal: controller.signal },
+    ),
+    (error) => {
+      assert.ok(error instanceof RuntimeLoginFailure);
+      assert.equal(error.failureClassification, "interrupted");
+      assert.equal(error.cleanupStatus, "confirmed");
+      return true;
+    },
+  );
+  assert.equal(browserClosed, true);
 });
