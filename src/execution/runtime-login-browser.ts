@@ -294,7 +294,7 @@ export async function withFreshLoginPage(
   const work = async (): Promise<void> => {
     checkActive();
     // Load only after inputs are consumed, within the existing work deadline.
-    const { chromium, errors } = await import("@playwright/test");
+    const { chromium, errors } = await import("playwright-core");
     timeoutError = errors.TimeoutError;
     // Cold CommonJS loading can block timer delivery; still honor wall time.
     if (Date.now() >= deadline) interrupt("timed-out");

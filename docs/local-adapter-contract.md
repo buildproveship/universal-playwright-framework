@@ -205,6 +205,13 @@ S01/S02/S04/S05 and reuse S01/S02 cover this local slice only.
 Retry and cleanup fault controls exist exclusively in internal engine test seams,
 never public requests. Assertions use real Cucumber/Playwright outcomes.
 
+Browser acquisition loads the pinned `playwright-core` engine, not the
+`@playwright/test` runner. A separately installed product artifact owns its
+Playwright assertion package; loading a second test runner in the same worker
+is rejected by Playwright. The engine and assertion packages keep the same
+pinned version. No module aliasing, shared mutable installation or relaxed
+admission/cleanup policy is used.
+
 The S05 smoke uses `npm pack`, installs that immutable SHA-256-identified tarball
 with production dependencies into an independent `/tmp/rrdweb6-consumer-*`
 directory, rejects symlinks, verifies runtime resolution inside that consumer,
