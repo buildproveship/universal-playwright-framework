@@ -228,7 +228,7 @@ function reject(
 
 // Candidate only until independent implementation review explicitly updates it.
 export const IMPORTED_IMPLEMENTATION_REVISION =
-  "ef13511d3e0a5dfaf4e2cca1bfe5358dc51ef74c14c838e0548b2d1978a6ff61";
+  "36ab04475f8ce96c8d1b63e94796c1a1ae1bd93a45b41aba278dc3906a6a696f";
 export function calculateImportedImplementationRevision(): string {
   const digest = createHash("sha256");
   for (const file of [

@@ -222,13 +222,14 @@ export async function withFreshLoginPage(
               transportIsolation ??= context.setOffline(true);
               await transportIsolation;
             } else if (transportIsolation) {
-              // Cancellation starts both closes. Give isolation a bounded
-              // chance to finish before browser shutdown interrupts its ack;
-              // a stuck isolation call must not prevent process shutdown.
+              // Cancellation starts both closes. Allow the context's complete
+              // shutdown acknowledgement, not only isolation, before closing
+              // its browser transport. A stuck context still cannot prevent
+              // independent browser shutdown beyond the existing grace period.
               let timer: NodeJS.Timeout | undefined;
               try {
                 await Promise.race([
-                  transportIsolation.catch(() => undefined),
+                  closures.get(context!)!,
                   new Promise<void>((resolve) => {
                     timer = setTimeout(
                       resolve,
