@@ -134,7 +134,11 @@ export function buildStarter(output: string): {
     const original = json<PackageMetadata>(path.join(snapshot, "package.json"));
     const packaged = { ...original, private: true, scripts: {} };
     delete packaged.publishConfig;
-    writeJson(path.join(snapshot, "package.json"), packaged);
+    // Replace only our newly archived, owned snapshot manifest. Destination writes remain exclusive.
+    writeFileSync(
+      path.join(snapshot, "package.json"),
+      JSON.stringify(packaged, null, 2) + "\n",
+    );
     const packed = runNpm(
       ["pack", "--ignore-scripts", "--json", "--pack-destination", scratch],
       snapshot,

@@ -18,22 +18,22 @@ export const test = base.extend<{ demo: DemoPage }>({
       server.once("error", reject);
       server.listen(0, "127.0.0.1", resolve);
     });
-    const address = server.address();
-    if (!address || typeof address === "string")
-      throw new Error("Owned loopback fixture failed to bind");
-    const origin = `http://127.0.0.1:${address.port}`;
     let externalAttempt = false;
-    await context.route("**/*", async (route) => {
-      if (new URL(route.request().url()).origin !== origin) {
-        externalAttempt = true;
-        await route.abort("blockedbyclient");
-      } else await route.continue();
-    });
-    await context.routeWebSocket("**/*", (socket) => {
-      externalAttempt = true;
-      socket.close();
-    });
     try {
+      const address = server.address();
+      if (!address || typeof address === "string")
+        throw new Error("Owned loopback fixture failed to bind");
+      const origin = `http://127.0.0.1:${address.port}`;
+      await context.route("**/*", async (route) => {
+        if (new URL(route.request().url()).origin !== origin) {
+          externalAttempt = true;
+          await route.abort("blockedbyclient");
+        } else await route.continue();
+      });
+      await context.routeWebSocket("**/*", (socket) => {
+        externalAttempt = true;
+        socket.close();
+      });
       await use(new DemoPage(page, origin));
     } finally {
       server.closeAllConnections();

@@ -290,3 +290,80 @@ for (const mode of ["customer", "demo"]) {
     }
   });
 }
+
+for (const failure of ["route", "websocket", "use", "none"] as const) {
+  test(`owned demo closes its actual listener after ${failure} setup/use outcome`, async () => {
+    const http = await import("node:http");
+    const ts = await import("typescript");
+    const { runInNewContext } = await import("node:vm");
+    let listener: import("node:http").Server | undefined;
+    let fixtureFunction: (
+      args: unknown,
+      use: () => Promise<void>,
+    ) => Promise<void> = async () => {
+      throw new Error("Fixture not registered");
+    };
+    const compiled = ts.transpileModule(
+      readFileSync(
+        path.join(root, "starter/templates/demo/fixtures/demo.ts"),
+        "utf8",
+      ),
+      {
+        compilerOptions: {
+          module: ts.ModuleKind.CommonJS,
+          target: ts.ScriptTarget.ES2022,
+        },
+      },
+    );
+    runInNewContext(compiled.outputText, {
+      exports: {},
+      URL,
+      require: (name: string) => {
+        if (name === "node:http")
+          return {
+            createServer: (...args: Parameters<typeof http.createServer>) => {
+              listener = http.createServer(...args);
+              return listener;
+            },
+          };
+        if (name === "@playwright/test")
+          return {
+            test: {
+              extend: (fixtures: { demo: typeof fixtureFunction }) => {
+                fixtureFunction = fixtures.demo;
+              },
+            },
+            expect: (actual: unknown) => ({
+              toBe: (expected: unknown) => assert.equal(actual, expected),
+            }),
+          };
+        if (name === "../pages/demo-page.ts") return { DemoPage: class {} };
+        throw new Error("Unexpected import");
+      },
+    });
+    const context = {
+      route: async () => {
+        if (failure === "route") throw new Error("route failed");
+      },
+      routeWebSocket: async () => {
+        if (failure === "websocket") throw new Error("websocket failed");
+      },
+    };
+    const promise = fixtureFunction({ page: {}, context }, async () => {
+      if (failure === "use") throw new Error("use failed");
+    });
+    try {
+      if (failure === "none") await promise;
+      else await assert.rejects(promise, new RegExp(failure + " failed"));
+      assert.ok(listener);
+      assert.equal(
+        listener.listening,
+        false,
+        "owned listener must be closed even if setup throws",
+      );
+    } finally {
+      listener?.closeAllConnections();
+      listener?.close();
+    }
+  });
+}
