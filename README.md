@@ -32,3 +32,7 @@ Run the local, assertion-backed Gherkin + Playwright example without an applicat
 ## Reviewed synthetic execution adapter
 
 Run reviewed scenarios with bounded, isolated local browser sessions. See the [synthetic execution guide](docs/synthetic-execution.md).
+
+## Private standalone starter
+
+See [private starter v1](docs/private-starter-v1.md) for the approved version-pinned, private-artifact scaffold and fixed owned-loopback demonstration. It does not configure models or execute customer journeys.

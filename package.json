@@ -70,7 +70,10 @@
     "test:authentication-only": "npm run build:cucumber && node --test dist/cucumber/scripts/authentication-only.test.js",
     "test:owned-local": "npm run build:cucumber && node --test dist/cucumber/scripts/owned-local-adapter.test.js",
     "test:runtime-login-entry": "npm run build && node --test --test-concurrency=1 dist/cucumber/scripts/runtime-login-entry.test.js dist/cucumber/scripts/runtime-login-package.test.js",
-    "test:agentic-rehearsal": "npm run build:cucumber && node --test dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js"
+    "test:agentic-rehearsal": "npm run build:cucumber && node --test dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js",
+    "starter": "npm run build:cucumber && node dist/cucumber/scripts/private-starter.js",
+    "test:private-starter": "npm run build:cucumber && node --test dist/cucumber/scripts/private-starter.test.js",
+    "verify:private-starter": "npm run build:cucumber && VERIFY_PRIVATE_STARTER=1 node --test dist/cucumber/scripts/private-starter-artifact.test.js"
   },
   "keywords": [
     "playwright",

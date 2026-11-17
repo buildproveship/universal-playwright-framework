@@ -1,0 +1,2 @@
+Customer execution is deliberately not configured. No case IDs are allocated and no cases are registered.
+Obtain approved scope, data references, canonical IDs and founder test approval through the existing portal before adding customer journeys.
