@@ -291,7 +291,15 @@ for (const mode of ["customer", "demo"]) {
   });
 }
 
-for (const failure of ["route", "websocket", "use", "none"] as const) {
+for (const failure of [
+  "route",
+  "websocket",
+  "use",
+  "none",
+  "external-http",
+  "external-websocket",
+  "same-origin",
+] as const) {
   test(`owned demo closes its actual listener after ${failure} setup/use outcome`, async () => {
     const http = await import("node:http");
     const ts = await import("typescript");
@@ -341,20 +349,73 @@ for (const failure of ["route", "websocket", "use", "none"] as const) {
         throw new Error("Unexpected import");
       },
     });
+    type Route = {
+      request: () => { url: () => string };
+      abort: () => Promise<void>;
+      continue: () => Promise<void>;
+    };
+    let routeHandler: ((route: Route) => Promise<void>) | undefined;
+    let socketHandler: ((socket: { close: () => void }) => void) | undefined;
+    let aborted = 0,
+      continued = 0,
+      closed = 0;
     const context = {
-      route: async () => {
+      route: async (_pattern: string, handler: typeof routeHandler) => {
         if (failure === "route") throw new Error("route failed");
+        routeHandler = handler;
       },
-      routeWebSocket: async () => {
+      routeWebSocket: async (
+        _pattern: string,
+        handler: typeof socketHandler,
+      ) => {
         if (failure === "websocket") throw new Error("websocket failed");
+        socketHandler = handler;
       },
     };
     const promise = fixtureFunction({ page: {}, context }, async () => {
       if (failure === "use") throw new Error("use failed");
+      if (failure === "external-http" || failure === "same-origin") {
+        assert.ok(routeHandler);
+        const address = listener?.address();
+        assert.ok(address && typeof address !== "string");
+        await routeHandler({
+          request: () => ({
+            url: () =>
+              failure === "external-http"
+                ? "https://not-contacted.invalid/"
+                : `http://127.0.0.1:${address.port}/`,
+          }),
+          abort: async () => {
+            aborted++;
+          },
+          continue: async () => {
+            continued++;
+          },
+        });
+      }
+      if (failure === "external-websocket") {
+        assert.ok(socketHandler);
+        socketHandler({
+          close: () => {
+            closed++;
+          },
+        });
+      }
     });
     try {
-      if (failure === "none") await promise;
+      if (failure === "none" || failure === "same-origin") await promise;
+      else if (failure.startsWith("external-"))
+        await assert.rejects(promise, { name: "AssertionError" });
       else await assert.rejects(promise, new RegExp(failure + " failed"));
+      if (failure === "external-http") {
+        assert.equal(aborted, 1);
+        assert.equal(continued, 0);
+      }
+      if (failure === "same-origin") {
+        assert.equal(aborted, 0);
+        assert.equal(continued, 1);
+      }
+      if (failure === "external-websocket") assert.equal(closed, 1);
       assert.ok(listener);
       assert.equal(
         listener.listening,

@@ -18,8 +18,10 @@ test("Given the owned demo, when I confirm, then confirmation is visible", async
   await test.step("Then confirmation is visible", async () => {
     await expect(demo.status()).toHaveText("Confirmed");
   });
+  const screenshot = testInfo.outputPath("owned-demo.png");
+  await page.screenshot({ path: screenshot });
   await testInfo.attach("owned-demo", {
-    body: await page.screenshot(),
+    path: screenshot,
     contentType: "image/png",
   });
 });

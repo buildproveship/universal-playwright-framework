@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   mkdtempSync,
+  existsSync,
   readFileSync,
   mkdirSync,
   symlinkSync,
@@ -56,6 +57,14 @@ test(
       assert.equal(result.status, 0, result.stdout + result.stderr);
       const report = JSON.parse(
         readFileSync(path.join(demo, "reports/demo-results.json"), "utf8"),
+      );
+      const attachment =
+        report.suites[0].specs[0].tests[0].results[0].attachments.find(
+          (item: { name: string }) => item.name === "owned-demo",
+        );
+      assert.ok(
+        attachment && existsSync(attachment.path),
+        "actual screenshot evidence must exist",
       );
       assert.equal(report.stats.expected, 1);
       assert.equal(report.stats.unexpected, 0);
