@@ -84,7 +84,9 @@ for (const status of [301, 302, 303, 307, 308]) {
           await page.evaluate(async (path) => {
             await fetch(path).catch(() => undefined);
           }, path);
-          assert.throws(() => policy.assertComplete());
+          assert.throws(() => {
+            policy.assertComplete();
+          });
         });
         assert.deepEqual(hits, ["GET /", `GET ${path}`]);
       }, status);
@@ -140,12 +142,16 @@ test("Given forbidden origins, resource types and forms, none reach a destinatio
           }).catch(() => undefined);
           await new Promise<void>((resolve) => {
             const image = new Image();
-            image.onload = image.onerror = () => resolve();
+            image.onload = image.onerror = () => {
+              resolve();
+            };
             image.src = "/health";
           });
           await new Promise<void>((resolve) => {
             const socket = new WebSocket(externalUrl.replace("http:", "ws:"));
-            socket.onclose = socket.onerror = () => resolve();
+            socket.onclose = socket.onerror = () => {
+              resolve();
+            };
           });
           const frame = document.createElement("iframe");
           frame.name = "target";
@@ -307,9 +313,9 @@ test("Given the login overlay is absent, no similarly named eye elsewhere is cli
     await withFreshLoginPage(async (page) => {
       await guardInspectionRequests(page.context(), page, url);
       await page.goto(url);
-      await page
-        .locator("#overlay")
-        .evaluate((element) => element.removeAttribute("id"));
+      await page.locator("#overlay").evaluate((element) => {
+        element.removeAttribute("id");
+      });
       const result = await observeLoginControls(page);
       assert.deepEqual(result.overlay, { present: false, visible: false });
       assert.equal(result.eye.present, false);
@@ -329,18 +335,24 @@ test("Given an unlisted static-looking endpoints, no stylesheet, script, image, 
           const link = document.createElement("link");
           link.rel = "stylesheet";
           link.href = "/owned.css";
-          link.onload = link.onerror = () => resolve();
+          link.onload = link.onerror = () => {
+            resolve();
+          };
           document.head.append(link);
         });
         await new Promise<void>((resolve) => {
           const script = document.createElement("script");
           script.src = "/unreviewed.js";
-          script.onload = script.onerror = () => resolve();
+          script.onload = script.onerror = () => {
+            resolve();
+          };
           document.head.append(script);
         });
         await new Promise<void>((resolve) => {
           const image = new Image();
-          image.onload = image.onerror = () => resolve();
+          image.onload = image.onerror = () => {
+            resolve();
+          };
           image.src = "/unreviewed.png";
         });
         await new FontFace("Owned", "url(/unreviewed.woff2)")
@@ -561,9 +573,14 @@ for (const outcome of ["never-settles", "transport-error"] as const) {
         if (outcome === "transport-error") release.resolve();
         await stopped;
         assert.ok(Date.now() - start < 5000);
-        assert.throws(() => policy.assertComplete(), {
-          message: "Inspection transport incomplete",
-        });
+        assert.throws(
+          () => {
+            policy.assertComplete();
+          },
+          {
+            message: "Inspection transport incomplete",
+          },
+        );
         assert.ok(
           !JSON.stringify(policy.snapshot()).includes("SYNTHETIC_PRIVATE"),
         );
@@ -646,9 +663,14 @@ test("Given denial fails after stop, inspection remains failed rather than hidin
       });
       await requested;
       await handled.promise;
-      assert.throws(() => policy.assertComplete(), {
-        message: "Inspection transport incomplete",
-      });
+      assert.throws(
+        () => {
+          policy.assertComplete();
+        },
+        {
+          message: "Inspection transport incomplete",
+        },
+      );
     });
     assert.equal(hits[0], "GET /");
     assert.ok(hits.slice(1).every((hit) => hit === "GET /health"));

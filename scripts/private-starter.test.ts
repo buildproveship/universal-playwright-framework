@@ -56,7 +56,7 @@ function fixture(
   }
 }
 for (const mode of ["demo", "customer"] as const) {
-  test(`creates only the ${mode} slice with exact private provenance and no allocated identities`, () =>
+  test(`creates only the ${mode} slice with exact private provenance and no allocated identities`, () => {
     fixture((directory, artifact, digest) => {
       const target = path.join(directory, "project");
       createStarter(artifact, target, mode, digest);
@@ -80,42 +80,43 @@ for (const mode of ["demo", "customer"] as const) {
         readFileSync(path.join(target, "vendor/framework.tgz")),
         readFileSync(path.join(artifact, "common/vendor/framework.tgz")),
       );
-    }));
+    });
+  });
 }
-test("accepts an existing empty destination but refuses repeat invocation without changing bytes", () =>
+test("accepts an existing empty destination but refuses repeat invocation without changing bytes", () => {
   fixture((directory, artifact, digest) => {
     const target = path.join(directory, "project");
     mkdirSync(target);
     createStarter(artifact, target, "demo", digest);
     const before = readFileSync(path.join(target, "starter-provenance.json"));
-    assert.throws(
-      () => createStarter(artifact, target, "demo", digest),
-      /empty directory/,
-    );
+    assert.throws(() => {
+      createStarter(artifact, target, "demo", digest);
+    }, /empty directory/);
     assert.deepEqual(
       readFileSync(path.join(target, "starter-provenance.json")),
       before,
     );
-  }));
-test("refuses nonempty destinations and preserves existing canonical IDs", () =>
+  });
+});
+test("refuses nonempty destinations and preserves existing canonical IDs", () => {
   fixture((directory, artifact, digest) => {
     const target = path.join(directory, "project");
     mkdirSync(target);
     const baseline =
       '{"caseId":"existing-canonical-id","review":"owner-owned"}';
     writeFileSync(path.join(target, "identity.json"), baseline);
-    assert.throws(
-      () => createStarter(artifact, target, "demo", digest),
-      /empty directory/,
-    );
+    assert.throws(() => {
+      createStarter(artifact, target, "demo", digest);
+    }, /empty directory/);
     assert.deepEqual(readdirSync(target), ["identity.json"]);
     assert.equal(
       readFileSync(path.join(target, "identity.json"), "utf8"),
       baseline,
     );
-  }));
+  });
+});
 for (const kind of ["file", "manifest", "extra", "symlink"] as const) {
-  test(`rejects ${kind} artifact tampering before writing destination`, () =>
+  test(`rejects ${kind} artifact tampering before writing destination`, () => {
     fixture((directory, artifact, digest) => {
       if (kind === "file")
         writeFileSync(
@@ -132,37 +133,40 @@ for (const kind of ["file", "manifest", "extra", "symlink"] as const) {
           path.join(artifact, "link"),
         );
       const target = path.join(directory, "project");
-      assert.throws(() => createStarter(artifact, target, "demo", digest));
+      assert.throws(() => {
+        createStarter(artifact, target, "demo", digest);
+      });
       assert.equal(existsSync(target), false);
-    }));
+    });
+  });
 }
-test("rejects destination symlinks rather than writing into another directory", () =>
+test("rejects destination symlinks rather than writing into another directory", () => {
   fixture((directory, artifact, digest) => {
     const actual = path.join(directory, "actual");
     const target = path.join(directory, "target");
     mkdirSync(actual);
     symlinkSync(actual, target, "dir");
-    assert.throws(() => createStarter(artifact, target, "demo", digest));
+    assert.throws(() => {
+      createStarter(artifact, target, "demo", digest);
+    });
     assert.deepEqual(readdirSync(actual), []);
-  }));
-test("requires an explicit trusted manifest digest and supported mode", () =>
+  });
+});
+test("requires an explicit trusted manifest digest and supported mode", () => {
   fixture((directory, artifact) => {
-    assert.throws(
-      () =>
-        createStarter(artifact, path.join(directory, "project"), "demo", ""),
-      /SHA-256/,
-    );
-    assert.throws(
-      () =>
-        createStarter(
-          artifact,
-          path.join(directory, "project"),
-          "other" as "demo",
-          "a".repeat(64),
-        ),
-      /Choose/,
-    );
-  }));
+    assert.throws(() => {
+      createStarter(artifact, path.join(directory, "project"), "demo", "");
+    }, /SHA-256/);
+    assert.throws(() => {
+      createStarter(
+        artifact,
+        path.join(directory, "project"),
+        "other" as "demo",
+        "a".repeat(64),
+      );
+    }, /Choose/);
+  });
+});
 test("templates are reference-only, keep one rulebook and never assign canonical IDs", () => {
   const inputs = JSON.parse(
     readFileSync(
@@ -342,18 +346,20 @@ for (const failure of [
               },
             },
             expect: (actual: unknown) => ({
-              toBe: (expected: unknown) => assert.equal(actual, expected),
+              toBe: (expected: unknown) => {
+                assert.equal(actual, expected);
+              },
             }),
           };
         if (name === "../pages/demo-page.ts") return { DemoPage: class {} };
         throw new Error("Unexpected import");
       },
     });
-    type Route = {
+    interface Route {
       request: () => { url: () => string };
       abort: () => Promise<void>;
       continue: () => Promise<void>;
-    };
+    }
     let routeHandler: ((route: Route) => Promise<void>) | undefined;
     let socketHandler: ((socket: { close: () => void }) => void) | undefined;
     let aborted = 0,

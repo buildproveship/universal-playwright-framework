@@ -318,10 +318,9 @@ export class InMemoryRuntimeSecretProvider implements RuntimeSecretProvider {
   constructor(request: RuntimeLoginRequest, account: unknown) {
     this.#request = validateRequest(request);
     this.#account = validateAccount(account);
-    this.#expiry = setTimeout(
-      () => this.dispose(),
-      this.#request.expiresAt - Date.now(),
-    );
+    this.#expiry = setTimeout(() => {
+      this.dispose();
+    }, this.#request.expiresAt - Date.now());
     this.#expiry.unref();
   }
 

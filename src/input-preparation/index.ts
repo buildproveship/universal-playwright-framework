@@ -592,8 +592,7 @@ export function prepareScenarioInputs(
     );
   }
   if (
-    reviewedDataReferences &&
-    reviewedDataReferences.rows.some((reference) => {
+    reviewedDataReferences?.rows.some((reference) => {
       const fixture = scenarioInputs.find(
         (scenario) => scenario.id === reference.scenarioId,
       );
@@ -691,7 +690,7 @@ export function prepareScenarioInputs(
     }
     usedAccountReferences.add(fixture.accountReference);
     return {
-      id: scenario.id as string,
+      id: scenario.id!,
       tags: [...scenario.tags],
       ...(dataReference ? { dataReference } : {}),
       values: copyValues(fixture.values),

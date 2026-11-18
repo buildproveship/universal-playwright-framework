@@ -6,7 +6,7 @@ import type { Locator } from "@playwright/test";
  */
 export async function waitForVisible(
   locator: Locator,
-  timeout: number = 10000,
+  timeout = 10000,
 ): Promise<void> {
   if (!Number.isFinite(timeout) || timeout <= 0 || timeout > 120000) {
     throw new RangeError(

@@ -155,7 +155,9 @@ test("cancellation during teardown preserves a completed successful attempt", as
   const controller = new AbortController();
   const result = await run("browser-flow", {
     signal: controller.signal,
-    testOnAttemptCleanupStarted: () => controller.abort(),
+    testOnAttemptCleanupStarted: () => {
+      controller.abort();
+    },
   });
 
   assert.equal(result.status, "passed");
@@ -187,7 +189,9 @@ test("cancellation between attempts preserves failure and prevents another launc
     retryCount: 1,
     signal: controller.signal,
     testAssertionMismatchAttempts: [1],
-    testOnAttemptCleanupStarted: () => controller.abort(),
+    testOnAttemptCleanupStarted: () => {
+      controller.abort();
+    },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
 
@@ -230,7 +234,9 @@ test("unknown browser cleanup during late cancellation remains unknown and non-r
     retryCount: 1,
     signal: controller.signal,
     testCleanupFailure: "browser-state-unknown",
-    testOnAttemptCleanupStarted: () => controller.abort(),
+    testOnAttemptCleanupStarted: () => {
+      controller.abort();
+    },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
 

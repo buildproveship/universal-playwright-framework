@@ -32,9 +32,9 @@ export async function withOperatorLoginInputs(
     readonly signal?: AbortSignal;
   } = {},
 ): Promise<RuntimeLoginResult> {
-  void descriptor;
-  void request;
-  void consume;
-  void options;
+  descriptor;
+  request;
+  consume;
+  options;
   throw new RuntimeLoginError("runtime-input-unavailable");
 }

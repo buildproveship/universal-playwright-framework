@@ -217,13 +217,17 @@ for (const destination of [
                     const socket = new WebSocket(
                       external.replace("http:", "ws:"),
                     );
-                    socket.onclose = socket.onerror = () => resolve();
+                    socket.onclose = socket.onerror = () => {
+                      resolve();
+                    };
                   });
                 if (destination === "document") location.href = "/forbidden";
                 if (destination === "wrong-resource")
                   await new Promise<void>((resolve) => {
                     const image = new Image();
-                    image.onload = image.onerror = () => resolve();
+                    image.onload = image.onerror = () => {
+                      resolve();
+                    };
                     image.src = "/health";
                   });
               },
@@ -439,13 +443,17 @@ test("Given the five exact declared resources, abort each before transport and s
             if (resource.resourceType === "script") {
               const script = document.createElement("script");
               script.type = "module";
-              script.onload = script.onerror = () => resolve();
+              script.onload = script.onerror = () => {
+                resolve();
+              };
               script.src = resource.url;
               document.head.append(script);
             } else {
               const link = document.createElement("link");
               link.rel = "stylesheet";
-              link.onload = link.onerror = () => resolve();
+              link.onload = link.onerror = () => {
+                resolve();
+              };
               link.href = resource.url;
               document.head.append(link);
             }

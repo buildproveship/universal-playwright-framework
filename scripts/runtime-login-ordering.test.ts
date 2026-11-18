@@ -93,7 +93,9 @@ test("controlled: acquisition held until the 1000 ms deadline prevents drain can
     promise: new Promise<Browser>((resolve) => {
       releaseBrowser = resolve;
     }),
-    resolve: (browser: Browser) => releaseBrowser(browser),
+    resolve: (browser: Browser) => {
+      releaseBrowser(browser);
+    },
   };
   const controller = new AbortController();
   const { browser, closed } = resources(events);

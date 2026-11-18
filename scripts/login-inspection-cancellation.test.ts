@@ -75,9 +75,14 @@ test(
             clock.restoreWork();
             controller.abort();
             await stopped;
-            assert.throws(() => policy.assertComplete(), {
-              message: "Inspection transport incomplete",
-            });
+            assert.throws(
+              () => {
+                policy.assertComplete();
+              },
+              {
+                message: "Inspection transport incomplete",
+              },
+            );
             transportIncomplete = true;
           } finally {
             clock.restoreWork();
@@ -112,7 +117,11 @@ test(
       if (operation) await operation.catch(() => undefined);
       nativeClearTimeout(watchdog);
       server.closeAllConnections();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await new Promise<void>((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      );
       clock.finish();
     }
   },

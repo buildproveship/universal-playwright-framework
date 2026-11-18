@@ -5,15 +5,15 @@ export function pauseWorkClock() {
   const nativeSetTimeout = globalThis.setTimeout;
   const nativeClearTimeout = globalThis.clearTimeout;
   const nativeNow = Date.now;
-  type Timer = {
+  interface Timer {
     callback: (...args: unknown[]) => void;
     args: unknown[];
     due: number;
     referenced: boolean;
     native?: ReturnType<typeof setTimeout>;
-  };
+  }
   const owned = new Map<object, Timer>();
-  const known = new WeakSet<object>();
+  const known = new WeakSet();
   const now = nativeNow();
   let allocated = 0;
   let failed = false;

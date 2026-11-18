@@ -58,9 +58,9 @@ async function main() {
   });
   const listen = (server: ReturnType<typeof createServer>) =>
     new Promise<number>((resolve) =>
-      server.listen(0, "127.0.0.1", () =>
-        resolve((server.address() as { port: number }).port),
-      ),
+      server.listen(0, "127.0.0.1", () => {
+        resolve((server.address() as { port: number }).port);
+      }),
     );
   const port = await listen(own),
     other = await listen(foreign);
@@ -165,7 +165,9 @@ async function main() {
           .then(() => borrowed.page.route("**/*", (route) => route.continue()))
           .catch(() => undefined);
       if (scenario === "cancel") {
-        setTimeout(() => controller.abort(), 20);
+        setTimeout(() => {
+          controller.abort();
+        }, 20);
         await borrowed.page.waitForTimeout(1000);
       }
       return {
@@ -287,7 +289,10 @@ async function main() {
       [own, foreign].map(
         (server) =>
           new Promise<void>((resolve, reject) =>
-            server.close((error) => (error ? reject(error) : resolve())),
+            server.close((error) => {
+              if (error) reject(error);
+              else resolve();
+            }),
           ),
       ),
     );

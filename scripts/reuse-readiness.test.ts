@@ -48,7 +48,7 @@ async function validate(
     manifest,
   });
   assert.equal(validation.valid, true);
-  return validation as ValidFeature;
+  return validation;
 }
 
 function approvalFor(
@@ -136,7 +136,7 @@ async function baseInput(): Promise<ReuseReadinessInput> {
 
 function expectReport(report: ReuseReadinessReport): ValidReport {
   assert.equal(report.valid, true, report.valid ? "" : report.reason);
-  return report as ValidReport;
+  return report;
 }
 
 function caseOf(report: ValidReport, caseId: string): CaseReadiness {
@@ -460,7 +460,7 @@ test("does not reuse anything when feature validation failed", async () => {
 test("rejects malformed, empty and duplicate selections and snapshots", async () => {
   const input = await baseInput();
   const validation = input.validation as ValidFeature;
-  const cases: Array<[string, unknown, RegExp]> = [
+  const cases: [string, unknown, RegExp][] = [
     ["non-object", null, /input/i],
     ["empty selection", { ...input, selection: [] }, /at least one/i],
     [
@@ -610,9 +610,7 @@ test("blocks candidates with failed, missing or stale validation and outcome or 
   const stale = { status: "passed" as const, candidateRevision: "cand-rev-0" };
   const baseChecks = readyCandidate(report).checks;
 
-  const scenarios: Array<
-    [string, Partial<AuthoringCandidateEvidence>, string]
-  > = [
+  const scenarios: [string, Partial<AuthoringCandidateEvidence>, string][] = [
     [
       "failed lint",
       { checks: { ...baseChecks, lint: failed } },
@@ -721,7 +719,7 @@ test("blocks candidates for unapproved outcomes and rejects malformed candidate 
   }
 
   const report = expectReport(assessReuseReadiness(input));
-  const malformed: Array<[string, unknown]> = [
+  const malformed: [string, unknown][] = [
     ["empty targets", readyCandidate(report, { targetStepIndexes: [] })],
     [
       "duplicate targets",
@@ -773,7 +771,7 @@ test("applies approval manifest integrity before reuse or candidate eligibility"
     approved.map((entry) =>
       entry.id === id ? { id, tags: [...entry.tags, "@drifted"] } : entry,
     );
-  const variants: Array<[string, ScenarioApproval["scenarios"]]> = [
+  const variants: [string, ScenarioApproval["scenarios"]][] = [
     ["changed tag on missing-step scenario", retag("undefined-step")],
     ["unrelated approved scenario tag drift", retag("approved-outline/row-b")],
     ["duplicate approval identifiers", [...approved, approved[0]]],
@@ -821,7 +819,7 @@ test("rejects malformed consumed fields as invalid without throwing", async () =
     "caseRevision",
     { enumerable: true, get: () => "case-rev-1" },
   );
-  const malformed: Array<[string, unknown]> = [
+  const malformed: [string, unknown][] = [
     ["null step", withScenario({ steps: [null] })],
     ["missing tags", withScenario({ tags: undefined })],
     ["non-string tag", withScenario({ tags: [42] })],
@@ -881,7 +879,7 @@ test("enforces snapshot size limits", async () => {
   const input = await baseInput();
   const many = (count: number) =>
     Array.from({ length: count }, (_, index) => index);
-  const oversized: Array<[string, unknown]> = [
+  const oversized: [string, unknown][] = [
     [
       "selection",
       {
@@ -933,7 +931,7 @@ test("keeps reports reference-only without feature text, values or validator rea
     cases: input.cases.map((entry) => ({
       ...entry,
       notes: LEAK_PROBE,
-    })) as ReuseReadinessInput["cases"],
+    })),
     validation: {
       ...validation,
       scenarios: validation.scenarios.map((scenario) => ({
@@ -1069,7 +1067,7 @@ test("rejects malformed or internally inconsistent reports before candidate revi
     edit(copy);
     return copy as unknown as ReuseReadinessReport;
   };
-  const tampered: Array<[string, ReuseReadinessReport]> = [
+  const tampered: [string, ReuseReadinessReport][] = [
     ["null case entry", tamper((copy) => (copy.cases[1] = null))],
     [
       "rewritten expected outcome",

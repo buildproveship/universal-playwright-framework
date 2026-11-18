@@ -36,7 +36,7 @@ test("still reads the tarball name from older array pack output", () => {
 });
 
 test("rejects malformed, ambiguous or mismatched pack metadata", () => {
-  const malformed: Array<[string, string]> = [
+  const malformed: [string, string][] = [
     ["not JSON", "npm notice\n{}"],
     ["null", "null"],
     ["empty array", "[]"],

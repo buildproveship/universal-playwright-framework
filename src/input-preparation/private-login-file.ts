@@ -22,10 +22,10 @@ export async function withPrivateFileLoginInputs(
   repositoryRoot: string,
   consume: (account: RuntimeLoginAccount) => Promise<void>,
 ): Promise<RuntimeLoginResult> {
-  void descriptor;
-  void request;
-  void filePath;
-  void repositoryRoot;
-  void consume;
+  descriptor;
+  request;
+  filePath;
+  repositoryRoot;
+  consume;
   throw new PrivateFileLoginDeferredError();
 }

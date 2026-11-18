@@ -77,7 +77,7 @@ test("Given a reviewed reference-only scenario, preparation preserves its empty 
       ],
     };
     const { scenarioId: _scenarioId, ...row } = selection.rows[0];
-    void _scenarioId;
+    _scenarioId;
     const fixture = {
       ...input,
       scenarios: [{ ...input.scenarios[0], dataReference: row }],

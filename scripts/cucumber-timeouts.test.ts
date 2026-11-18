@@ -28,7 +28,7 @@ const cucumberBin = path.join(
 const reportPath = path.join(root, "reports/cucumber-results.json");
 const resultsBytes = readFileSync(reportPath);
 const results = JSON.parse(resultsBytes.toString()) as {
-  elements?: Array<{ steps: Array<{ result: { status: string } }> }>;
+  elements?: { steps: { result: { status: string } }[] }[];
 }[];
 
 test("the real Cucumber E2E report contains a passed scenario", () => {
@@ -189,7 +189,10 @@ test("server closes when browser close rejects and the browser error is preserve
   } finally {
     if (server.listening) {
       await new Promise<void>((resolve, reject) => {
-        server.close((error) => (error ? reject(error) : resolve()));
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
       });
     }
   }
@@ -226,7 +229,10 @@ test("server closes within a bound when browser close never settles", async () =
   } finally {
     if (server.listening) {
       await new Promise<void>((resolve, reject) => {
-        server.close((error) => (error ? reject(error) : resolve()));
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
       });
     }
   }

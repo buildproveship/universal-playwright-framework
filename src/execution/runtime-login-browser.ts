@@ -270,8 +270,12 @@ export async function withFreshLoginPage(
     close(context);
     close(browser);
   };
-  const abort = (): void => interrupt("interrupted");
-  const timer = setTimeout(() => interrupt("timed-out"), timeoutMs);
+  const abort = (): void => {
+    interrupt("interrupted");
+  };
+  const timer = setTimeout(() => {
+    interrupt("timed-out");
+  }, timeoutMs);
   options.signal?.addEventListener("abort", abort, { once: true });
   if (options.signal?.aborted) abort();
   const deadline = Date.now() + timeoutMs;
@@ -284,8 +288,9 @@ export async function withFreshLoginPage(
   };
   let rejectInterrupted: (() => void) | undefined;
   const interrupted = new Promise<never>((_, reject) => {
-    rejectInterrupted = () =>
+    rejectInterrupted = () => {
       reject(new Error("Login browser operation interrupted"));
+    };
     controller.signal.addEventListener("abort", rejectInterrupted, {
       once: true,
     });

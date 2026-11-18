@@ -113,11 +113,11 @@ export async function privateFileAndVerifyPartayLogin(
   repositoryRoot: string,
   options: PartayLoginOptions = {},
 ): Promise<PartayLoginResult> {
-  void descriptor;
-  void request;
-  void filePath;
-  void repositoryRoot;
-  void options;
+  descriptor;
+  request;
+  filePath;
+  repositoryRoot;
+  options;
   throw new PrivateFileLoginDeferredError();
 }
 

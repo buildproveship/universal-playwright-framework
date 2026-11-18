@@ -11,7 +11,7 @@ export abstract class BasePage {
   protected page: Page;
   protected url: string;
 
-  constructor(page: Page, url: string = "") {
+  constructor(page: Page, url = "") {
     this.page = page;
     this.url = url;
   }
@@ -25,7 +25,7 @@ export abstract class BasePage {
   }
 
   /** Wait for a caller-selected visible application state. */
-  async waitForReady(locator: Locator, timeout: number = 10000): Promise<void> {
+  async waitForReady(locator: Locator, timeout = 10000): Promise<void> {
     await waitForVisible(locator, timeout);
   }
 }

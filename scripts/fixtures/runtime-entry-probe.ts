@@ -257,7 +257,10 @@ async function main(): Promise<void> {
       await browser?.close();
       server.closeAllConnections();
       await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        }),
       );
     }
   } else {

@@ -172,7 +172,12 @@ async function syntheticTarget(broken = false) {
   return {
     origin: `http://127.0.0.1:${address.port}`,
     requests: () => requests,
-    stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    stop: () =>
+      new Promise<void>((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      ),
   };
 }
 
@@ -453,7 +458,11 @@ test("Given cancellation during a target navigation, only the acquired browser s
     assert.equal(result.lifecycle.attempts.length, 1);
     assert.equal(server.listening, true);
   } finally {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await new Promise<void>((resolve) =>
+      server.close(() => {
+        resolve();
+      }),
+    );
   }
 });
 

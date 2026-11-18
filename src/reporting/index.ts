@@ -22,7 +22,7 @@ const SCENARIO_ID_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
 const UNSAFE_REFERENCE_PATTERN =
   /(?:https?:\/\/|file:|javascript:|(?:^|[\s"'`])(?:\.\.?[\\/]|[a-z]:[\\/]|\/\S))/i;
 
-export type ReportScenario = {
+export interface ReportScenario {
   readonly scenarioId?: string;
   readonly featureName?: string;
   readonly scenarioName?: string;
@@ -36,7 +36,7 @@ export type ReportScenario = {
     readonly status: CucumberStepStatus;
     readonly reason?: string;
   }[];
-};
+}
 
 export interface ExecutionReport {
   readonly schemaVersion: 1;

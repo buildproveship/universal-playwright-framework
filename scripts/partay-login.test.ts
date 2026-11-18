@@ -873,7 +873,9 @@ for (const mode of [
 test("cancellation during login closes browser and disposes provider", async () => {
   const { descriptor, request, provider } = fixture();
   const controller = new AbortController();
-  const owned = ownedBrowser("waiting", () => controller.abort());
+  const owned = ownedBrowser("waiting", () => {
+    controller.abort();
+  });
   await assert.rejects(
     verifyPartayLogin(descriptor, request, provider, {
       ...owned,
@@ -1038,7 +1040,7 @@ async function localTransport(
       response.setHeader("Content-Type", "text/html");
       response.end("<!doctype html><title>Owned login</title>");
     } else {
-      response.statusCode = Number(path.match(/^\/(\d+)/)?.[1] ?? 302);
+      response.statusCode = Number(/^\/(\d+)/.exec(path)?.[1] ?? 302);
       response.setHeader(
         "Location",
         path.includes("chain")
@@ -1068,7 +1070,10 @@ async function localTransport(
       [source, destination].map(async (server) => {
         server.closeAllConnections();
         await new Promise<void>((resolve, reject) =>
-          server.close((error) => (error ? reject(error) : resolve())),
+          server.close((error) => {
+            if (error) reject(error);
+            else resolve();
+          }),
         );
       }),
     );
@@ -1152,8 +1157,12 @@ for (const action of [
                   const socket = new WebSocket(
                     destination.replace("http:", "ws:"),
                   );
-                  socket.onerror = () => resolve();
-                  socket.onclose = () => resolve();
+                  socket.onerror = () => {
+                    resolve();
+                  };
+                  socket.onclose = () => {
+                    resolve();
+                  };
                 }),
               destination,
             );
@@ -1217,7 +1226,11 @@ for (const fault of ["context", "browser", "both"]) {
           : outcome === "success"
             ? "success"
             : "waiting",
-        outcome === "cancel" ? () => controller.abort() : undefined,
+        outcome === "cancel"
+          ? () => {
+              controller.abort();
+            }
+          : undefined,
       );
       let contextAttempts = 0;
       let browserAttempts = 0;
@@ -1774,7 +1787,11 @@ for (const state of [
       await assertDisposed(provider, request);
     } finally {
       server.closeAllConnections();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await new Promise<void>((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      );
     }
   });
 }
@@ -1792,7 +1809,9 @@ test("Given an unknown explicit policy binding, reject before resolving inputs o
           resolutions++;
           return "SYNTHETIC_CANARY";
         },
-        dispose: () => provider.dispose(),
+        dispose: () => {
+          provider.dispose();
+        },
       },
       {
         authenticationOnlyPolicy: {

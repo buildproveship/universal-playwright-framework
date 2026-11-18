@@ -11,10 +11,7 @@ import {
 } from "./agentic-rehearsal";
 
 function change(
-  edit: (value: {
-    version: number;
-    cases: Array<Record<string, unknown>>;
-  }) => void,
+  edit: (value: { version: number; cases: Record<string, unknown>[] }) => void,
 ): string {
   const value = JSON.parse(SYNTHETIC_BASELINE);
   edit(value);

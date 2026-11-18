@@ -274,10 +274,9 @@ async function bounded<T>(work: Promise<T>, ms: number): Promise<T> {
     return await Promise.race([
       work,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error("Admission unavailable")),
-          ms,
-        );
+        timer = setTimeout(() => {
+          reject(new Error("Admission unavailable"));
+        }, ms);
       }),
     ]);
   } finally {
@@ -361,7 +360,9 @@ export async function executeImportedCase(
   let interceptionAttempted = false;
   let outcome: ImportedCaseOutcome | undefined;
   const controller = new AbortController();
-  const cancel = () => controller.abort();
+  const cancel = () => {
+    controller.abort();
+  };
   options.signal?.addEventListener("abort", cancel, { once: true });
   try {
     try {

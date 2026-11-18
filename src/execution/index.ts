@@ -400,7 +400,9 @@ function closeServer(
       if (server.listening) {
         initiateClose(true);
       }
-      finalTimer = setTimeout(() => finish(verifyStopped()), 500);
+      finalTimer = setTimeout(() => {
+        finish(verifyStopped());
+      }, 500);
     }, 1_000);
   });
 }
@@ -484,7 +486,9 @@ export async function terminateWindowsProcessTree(
         executable,
         ["/PID", String(pid), "/T", "/F"],
         { timeout: 3_000, windowsHide: true },
-        (error) => resolve(!error),
+        (error) => {
+          resolve(!error);
+        },
       );
     } catch {
       resolve(false);
@@ -790,8 +794,12 @@ async function executeScenario(
     },
   );
   const spawned = new Promise<boolean>((resolve) => {
-    child.once("spawn", () => resolve(true));
-    child.once("error", () => resolve(false));
+    child.once("spawn", () => {
+      resolve(true);
+    });
+    child.once("error", () => {
+      resolve(false);
+    });
   });
   let resolveTermination: ((terminated: boolean) => void) | undefined;
   const terminationCompleted = new Promise<boolean>((resolve) => {
@@ -812,7 +820,9 @@ async function executeScenario(
       () => resolveTermination?.(false),
     );
   };
-  const timeout = setTimeout(() => requestStop("scenario-timeout"), timeoutMs);
+  const timeout = setTimeout(() => {
+    requestStop("scenario-timeout");
+  }, timeoutMs);
   const onRunAbort = (): void => {
     requestStop(
       runSignal.reason === "run-timeout"
@@ -830,8 +840,12 @@ async function executeScenario(
     readonly code: number | null;
     readonly spawnFailed: boolean;
   }>((resolve) => {
-    child.once("error", () => resolve({ code: null, spawnFailed: true }));
-    child.once("exit", (code) => resolve({ code, spawnFailed: false }));
+    child.once("error", () => {
+      resolve({ code: null, spawnFailed: true });
+    });
+    child.once("exit", (code) => {
+      resolve({ code, spawnFailed: false });
+    });
   });
   const outcome = await Promise.race([
     completionPromise.then((completion) => ({ completion })),
@@ -958,11 +972,10 @@ async function executeReviewedScenarioAttempt(
   );
   const diagnosticReference = randomUUID();
   const runController = new AbortController();
-  const runTimer = setTimeout(
-    () => runController.abort("run-timeout"),
-    runTimeoutMs,
-  );
-  const onAbort = (): void =>
+  const runTimer = setTimeout(() => {
+    runController.abort("run-timeout");
+  }, runTimeoutMs);
+  const onAbort = (): void => {
     runController.abort(
       options.signal?.reason === "run-timeout"
         ? "run-timeout"
@@ -970,6 +983,7 @@ async function executeReviewedScenarioAttempt(
           ? "cleanup-unknown"
           : "cancelled",
     );
+  };
   options.signal?.addEventListener("abort", onAbort);
   if (options.signal?.aborted) {
     onAbort();
@@ -978,9 +992,9 @@ async function executeReviewedScenarioAttempt(
   const results: ScenarioExecutionResult[] = [];
   const cleanupFailures: string[] = [];
   let server: Server | undefined;
-  let serverSockets: Set<Socket> = new Set();
+  let serverSockets = new Set<Socket>();
   let redirectServer: Server | undefined;
-  let redirectSockets: Set<Socket> = new Set();
+  let redirectSockets = new Set<Socket>();
   let blockedTargetRequestCount: (() => number) | undefined;
   let browserServer: BrowserServer | undefined;
   let browserProcessStopped: boolean | null = null;
@@ -1051,9 +1065,7 @@ async function executeReviewedScenarioAttempt(
     redirectSockets = localRuntime.redirectSockets;
     blockedTargetRequestCount = localRuntime.blockedTargetRequestCount;
     resourcesAcquired = !options.ownedLocalTarget;
-    const selectedIds = selection.scenarios.map(
-      (scenario) => scenario.id as string,
-    );
+    const selectedIds = selection.scenarios.map((scenario) => scenario.id!);
     const descriptor = prepareScenarioInputs(
       makeFixtureInput(selectedIds, localRuntime.origin),
       validation,
@@ -1128,7 +1140,7 @@ async function executeReviewedScenarioAttempt(
             redirectTargetUrl: localRuntime.redirectTargetUrl,
           };
           results[index] = await executeScenario(
-            scenario.id as string,
+            scenario.id!,
             payload,
             temporaryDirectory!,
             browserServer!.wsEndpoint(),
@@ -1296,15 +1308,16 @@ export async function executeReviewedScenarios(
   const now = options.testNow ?? (() => performance.now());
   const deadline = now() + runTimeoutMs;
   const runController = new AbortController();
-  const onAbort = (): void => runController.abort("cancelled");
+  const onAbort = (): void => {
+    runController.abort("cancelled");
+  };
   options.signal?.addEventListener("abort", onAbort);
   if (options.signal?.aborted) {
     onAbort();
   }
-  const deadlineTimer = setTimeout(
-    () => runController.abort("run-timeout"),
-    runTimeoutMs,
-  );
+  const deadlineTimer = setTimeout(() => {
+    runController.abort("run-timeout");
+  }, runTimeoutMs);
   const attempts: ExecutionAttemptSummary[] = [];
   let finalStatusOverride: ExecutionStatus | undefined;
 

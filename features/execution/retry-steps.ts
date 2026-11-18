@@ -92,7 +92,9 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["browser-flow"],
       signal: controller.signal,
-      testOnAttemptCleanupStarted: () => controller.abort(),
+      testOnAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     });
   },
 );
@@ -121,7 +123,9 @@ When(
       retryCount: 1,
       signal: controller.signal,
       testAssertionMismatchAttempts: [1],
-      testOnAttemptCleanupStarted: () => controller.abort(),
+      testOnAttemptCleanupStarted: () => {
+        controller.abort();
+      },
       onBrowserProcessStarted: (pid) => this.browserPids.push(pid),
     });
   },
@@ -154,7 +158,9 @@ When(
       retryCount: 1,
       signal: controller.signal,
       testCleanupFailure: "browser-state-unknown",
-      testOnAttemptCleanupStarted: () => controller.abort(),
+      testOnAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     });
   },
 );

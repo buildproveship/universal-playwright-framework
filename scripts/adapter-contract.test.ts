@@ -242,7 +242,9 @@ test("cancellation is isolated between two real runs and late cancellation canno
     (options: engine.ExecutionOptions) =>
       original({
         ...options,
-        testOnAttemptCleanupStarted: () => late.abort(),
+        testOnAttemptCleanupStarted: () => {
+          late.abort();
+        },
       }),
   );
   try {

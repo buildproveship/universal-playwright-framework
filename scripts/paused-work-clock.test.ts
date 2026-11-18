@@ -68,12 +68,17 @@ for (const fault of ["capacity", "refresh"] as const) {
       assert.throws(() => handle.refresh());
     }
     for (const handle of handles) clearTimeout(handle);
-    assert.throws(() => clock.finish(), {
-      code: "ERR_ASSERTION",
-      actual: true,
-      expected: false,
-      operator: "strictEqual",
-    });
+    assert.throws(
+      () => {
+        clock.finish();
+      },
+      {
+        code: "ERR_ASSERTION",
+        actual: true,
+        expected: false,
+        operator: "strictEqual",
+      },
+    );
     assert.equal(globalThis.setTimeout, originalSet);
     assert.equal(globalThis.clearTimeout, originalClear);
     assert.equal(Date.now, originalNow);
