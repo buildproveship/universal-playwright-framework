@@ -1,0 +1,10 @@
+{
+  "extends": "@releaseready/config/tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["eslint.config.mts"]
+}

@@ -3,10 +3,6 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "./dist/cucumber",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
     "noEmitOnError": true
   },
   "include": [

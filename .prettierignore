@@ -1,0 +1,9 @@
+# Build output and test reports
+dist/
+reports/
+test-results/
+playwright-report/
+package-lock.json
+# The private starter templates are the owner-approved v1 bytes (RRDWEB-34).
+# Style-only changes to them need a new approval.
+starter/templates/

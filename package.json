@@ -33,8 +33,11 @@
   "scripts": {
     "build": "npm run build:cucumber",
     "build:cucumber": "tsc --project tsconfig.cucumber.json",
-    "check": "npm run lint && npm run format:check",
-    "test": "npm run check && npm run test:features:regression && npm run test:login-inspection && npm run test:authentication-only && npm run test:owned-local && npm run test:runtime-login-entry && npm run test:browser-isolation && npm run test:agentic-rehearsal && npm run test:private-starter && npm run test:typescript-source-policy && npm run test:readiness",
+    "typecheck": "tsc -p tsconfig.cucumber.json --noEmit && tsc -p tests/readiness/tsconfig.json && tsc -p starter/tsconfig.json && tsc -p tsconfig.tools.json",
+    "check": "npm run build && npm run typecheck && npm run lint && npm run format:check",
+    "test": "npm run check && npm run test:unit && npm run test:browser",
+    "test:unit": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/reference-only-preparation.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/windows-taskkill.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js dist/cucumber/scripts/paused-work-clock.test.js dist/cucumber/scripts/feature-validation.test.js dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js dist/cucumber/scripts/private-starter.test.js && cucumber-js --profile input-preparation && cucumber-js --profile reporting && npm run test:typescript-source-policy",
+    "test:browser": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/execution-adapter.test.js dist/cucumber/scripts/reporting.test.js dist/cucumber/scripts/adapter-contract.test.js dist/cucumber/scripts/cucumber-timeouts.test.js dist/cucumber/scripts/login-inspection.test.js dist/cucumber/scripts/login-inspection-cancellation.test.js dist/cucumber/scripts/authentication-only.test.js dist/cucumber/scripts/owned-local-adapter.test.js dist/cucumber/scripts/runtime-login-entry.test.js dist/cucumber/scripts/runtime-login-package.test.js dist/cucumber/scripts/isolated-product-playwright.test.js dist/cucumber/scripts/runtime-login-cancellation-browser.test.js && cucumber-js --config cucumber.json && cucumber-js --profile adapter && cucumber-js --profile retry-regression && npm run test:readiness",
     "test:input-preparation": "npm run build:cucumber && cucumber-js --profile input-preparation && node --test dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/reference-only-preparation.test.js",
     "test:customer-login": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js",
     "test:customer-login-ui": "npm run build:cucumber && cucumber-js --profile login-ui",
@@ -48,10 +51,10 @@
     "execute:synthetic": "npm run build:cucumber && node dist/cucumber/src/execution/cli.js",
     "test:features:regression": "npm run test:input-preparation && npm run test:customer-login && npm run test:validation && npm run test:features && npm run test:execution && node --test dist/cucumber/scripts/cucumber-timeouts.test.js && npm run test:reporting && npm run test:adapter",
     "clean": "rimraf dist reports/*.json test-results",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.ts\"",
-    "format:check": "prettier --check \"**/*.ts\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepare": "npm run build",
     "check:typescript": "npm run build && node dist/cucumber/scripts/check-typescript-source-policy.js",
     "test:typescript-source-policy": "npm run check:typescript && node --test dist/cucumber/scripts/typescript-source-policy.test.js",
@@ -82,18 +85,14 @@
     "url": "git+https://github.com/releaseready/universal-playwright-framework.git"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@releaseready/config": "1.0.0",
     "@types/node": "^22.20.5",
-    "eslint": "^10.13.0",
-    "eslint-config-prettier": "^10.1.8",
+    "eslint": "10.13.0",
     "eslint-plugin-playwright": "^2.12.2",
-    "globals": "^17.13.0",
     "jiti": "^2.7.0",
-    "prettier": "^3.10.1",
+    "prettier": "3.10.1",
     "rimraf": "^6.1.4",
-    "typescript": "^5.0.0",
-    "typescript-eslint": "^8.72.0"
+    "typescript": "5.8.3"
   },
   "dependencies": {
     "@cucumber/cucumber": "12.9.0",
@@ -127,5 +126,6 @@
       "glob": "14.0.4"
     },
     "minimatch@>=9": "11.0.5"
-  }
+  },
+  "prettier": "@releaseready/config/prettier"
 }
