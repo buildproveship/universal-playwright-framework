@@ -1,63 +1,89 @@
-# Choose organization independently from syntax
+# Authoring styles
 
-RRDWEB-12 owned local starter: all three styles in both runners, not a portal execution feature.
+How to organise browser tests written against this framework. The one starter
+is the [private starter v1](private-starter-v1.md) in `starter/`; it creates a
+project whose demo uses the Page Objects style below.
+
+## Choose organization independently from syntax
 
 Choose the smallest structure that helps the team:
 
-| Organization | Use when | Example |
-| --- | --- | --- |
-| Simple | A short test is easiest to read with locators inline | `examples/authoring/simple.spec.ts` |
-| Page Objects + Components (recommended starting point) | Pages and repeated UI regions benefit from named operations | `examples/authoring/page-objects.spec.ts`, `support/draft-page.ts` |
-| Business Flows | A repeated business operation spans reusable page operations | `examples/authoring/business-flows.spec.ts`, `support/draft-flow.ts` |
+| Organization                                           | Use when                                                     | Shape                                                                                        |
+| ------------------------------------------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Simple                                                 | A short test is easiest to read with locators inline         | Playwright `page` and locators directly in the test or step                                  |
+| Page Objects + Components (recommended starting point) | Pages and repeated UI regions benefit from named operations  | A page class extending `BasePage`, regions extending `BaseComponent` (starter: `pages/demo-page.ts`) |
+| Business Flows                                         | A repeated business operation spans reusable page operations | A plain class composed from page objects, with no further inheritance layer                  |
 
 These are organization choices, not different languages or execution permissions.
 TypeScript Playwright Test specs and Gherkin scenarios with TypeScript Cucumber step
 implementations can each use any of these structures. There is no keyword DSL.
-BasePage and BaseComponent remain optional; flows use composition, not deep inheritance.
+`BasePage` and `BaseComponent` are optional; flows use composition, not deep
+inheritance.
 
-## Runnable capability matrix
+```ts
+import { expect, type Page } from "@playwright/test";
+import { BasePage, BaseComponent } from "@universal/playwright-framework";
 
-| Organization | TypeScript / Playwright Test | Gherkin / Cucumber | Portal integration |
-| --- | --- | --- | --- |
-| Simple | Runnable owned draft example | Runnable owned draft scenario | Future |
-| Page Objects + Components | Runnable owned draft example | Runnable owned draft scenario | Future |
-| Business Flows | Runnable owned draft example | Runnable owned draft scenario | Future |
+class DraftEditor extends BaseComponent {
+  constructor(page: Page) {
+    super(page, 'form[aria-label="Draft editor"]');
+  }
+  async save(title: string): Promise<void> {
+    await this.rootLocator.getByRole("textbox", { name: "Title", exact: true }).fill(title);
+    await this.rootLocator.getByRole("button", { name: "Save draft", exact: true }).click();
+  }
+}
 
-Existing Cucumber synthetic/login examples and runners remain available alongside
-the dedicated three-style draft scenarios under `examples/authoring/cucumber`. `features/steps/login-ui-page.ts` already reuses BasePage.
-This change does not claim arbitrary TypeScript uploads, generated-code execution,
-portal style selection, or new runtime admission support.
+class DraftPage extends BasePage {
+  readonly editor = new DraftEditor(this.page);
+  readonly status = this.page.getByRole("status");
+  async open(): Promise<void> {
+    await this.goto();
+    await this.waitForReady(this.page.getByRole("form", { name: "Draft editor", exact: true }));
+  }
+}
 
-## Run only the owned examples
-
-From a checkout, install locked dependencies with `npm ci`, then install the browser
-matching the pinned Playwright package with `npx playwright install chromium`.
-Do not substitute a system browser.
-
-```sh
-npx tsc -p examples/authoring/tsconfig.json
-npx playwright test --config examples/authoring/playwright.config.ts
-npx cucumber-js --config examples/authoring/cucumber.json
-npx playwright test --config examples/authoring/playwright.config.ts --repeat-each=3 --workers=4
+// Business Flow: composition over the page, asserting the business outcome.
+class DraftFlow {
+  constructor(private readonly drafts: DraftPage) {}
+  async createDraft(title: string): Promise<void> {
+    await this.drafts.open();
+    await this.drafts.editor.save(title);
+    await expect(this.drafts.status).toHaveText(`Saved: ${title}`);
+  }
+}
 ```
 
-The suite lives outside root `tests/` and `features/` discovery. Dedicated configs
-avoid the default auth setup and customer/global configuration.
-All requests from these tests are intercepted: the reserved `authoring.invalid` origin
-serves repository-owned HTML, synthetic telemetry is fulfilled locally, and other
-requests are blocked. No real account, purchase, customer data or service is involved.
+## Gherkin step convention for Page Objects
 
-Playwright creates a fresh browser context/page per test and retry. The shared
-`support/fixtures.ts` composes a page, component, flow and draft data at **test scope**.
-Cucumber creates a fresh World/browser/context per scenario and uses the same
-runner-neutral page, component, flow and builder. Each scenario attaches cleanup
-confirmation after closing its owned resources. The deterministic builder returns
-fresh arrays on every call, supports explicit
-overrides and uses no clock, random state or global counter. Repetition safely reuses
-the same title because storage is context-local. This is not a uniqueness guarantee
-for a shared remote service, nor a TDM lease; RRDSCRUM-21 remains separate and deferred.
+For Page Object steps, use one consistent convention: **action or expected state +
+named field/control + `on the <Page name> Screen`**. Every Page Object step,
+including setup and assertions, ends with the concrete screen name. Parameterize
+entered/expected values; keep control names bound to specific page/component
+methods. For example:
 
-The draft builder is deliberately example-local, without credentials.
+```gherkin
+When I enter "Synthetic rehearsal" in the "Title" field on the Draft Screen
+And I click the "Save draft" button on the Draft Screen
+Then the status message shows "Saved: Synthetic rehearsal" on the Draft Screen
+And the "Drafts" list contains only "Synthetic rehearsal" on the Draft Screen
+```
+
+Reuse these bindings for different values on the same screen. Add screen-specific
+bindings for other pages rather than mapping arbitrary strings to locators. Simple
+and Business Flows keep their own organization; the screen convention applies to
+Page Object scenarios, including any Background steps they inherit.
+
+## Lifecycle and data
+
+Playwright creates a fresh browser context and page per test and retry; compose
+pages, components, flows and test data as **test-scoped** fixtures (the starter's
+`fixtures/demo.ts` is one). In Cucumber, create a fresh World, browser context and
+page per scenario, close them in an `After` hook and reuse the same runner-neutral
+page, component and flow classes. Keep deterministic data builders test-scoped and
+return fresh values on every call. A builder is not a uniqueness guarantee for a
+shared remote service; records in a shared service need a separate authorised
+setup and cleanup design.
 
 ## Readiness and compatibility
 
@@ -75,37 +101,18 @@ actual UI condition. No universal ready selector is inferred. `BasePage` and
 Page and Locator API for actions.
 
 ```ts
-await page.goto(url, { waitUntil: 'domcontentloaded' });
-await waitForVisible(page.getByRole('form', { name: 'Draft editor', exact: true }), 10000);
-await page.getByRole('textbox', { name: 'Title', exact: true }).fill(draft.title);
-await page.getByRole('button', { name: 'Save draft', exact: true }).click();
-await expect(page.getByRole('status')).toHaveText(`Saved: ${draft.title}`);
+await page.goto(url, { waitUntil: "domcontentloaded" });
+await waitForVisible(page.getByRole("form", { name: "Draft editor", exact: true }), 10000);
+await page.getByRole("textbox", { name: "Title", exact: true }).fill(draft.title);
+await page.getByRole("button", { name: "Save draft", exact: true }).click();
+await expect(page.getByRole("status")).toHaveText(`Saved: ${draft.title}`);
 ```
 
-A visible form/status alone is not proof of business success. Each runnable style
-asserts the exact saved title and list content. Regression tests demonstrate delayed
-UI, ongoing traffic, missing/hidden state failures, invalid timeout rejection,
-false-pass prevention and fresh storage/data across repeated parallel tests.
+A visible form or status alone is not proof of business success: assert the exact
+outcome after each action. `tests/readiness/` holds the framework's own tests of
+this behaviour (`npm run test:readiness`): delayed UI, ongoing traffic, missing and
+hidden state failures, invalid timeout rejection, false-pass prevention and fresh
+storage and data per test.
 
-## Starter distribution and migration
-
-The supported starter is a full repository checkout/archive with locked dependencies.
-It reuses existing source imports without adding public exports beyond the readiness
-helper. A separate TypeScript config builds both runner adapters and shared models;
-embedded HTML eliminates compiled asset-path assumptions. See
-[the maintained starter README](../examples/authoring/README.md) for commands and
-how to adapt it.
-
-## Remaining stages
-
-1. Coordinate a separate portal integration with its owners. Review how syntax and
-   organization are represented without implying upload or execution authorization.
-2. Consider standalone starter packaging only if a separate-folder/npm distribution
-   is needed. The current supported distribution is a complete reviewed checkout;
-   copying the examples folder alone is not supported.
-
-Portal selector/redesign, AI generation, leased data and runtime admission remain
-out of scope. No PR46 teardown, evidence or adapter-pin changes are included.
-RRDSCRUM-21 remains separately deferred. Cucumber regression covers context
-interruption and assertion/readiness failures, not graceful cleanup after abrupt OS
-process termination. No signal-control layer is added.
+Portal style selection, arbitrary code upload, AI generation and leased data are
+not provided.

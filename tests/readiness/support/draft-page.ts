@@ -1,7 +1,7 @@
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
-// Scope: Page object and component for the owned synthetic draft app used by the authoring starter; not a customer application.
+// Scope: Page object and component for the owned synthetic draft app used by the readiness tests; not a customer application.
 import type { Page } from "@playwright/test";
 import { BasePage } from "../../../src/pages/base-page";
 import { BaseComponent } from "../../../src/components/base-component";

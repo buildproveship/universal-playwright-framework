@@ -17,5 +17,5 @@ export default defineConfig({
     navigationTimeout: 3000,
   },
   reporter: "list",
-  outputDir: "../../test-results/authoring",
+  outputDir: "../../test-results/readiness",
 });

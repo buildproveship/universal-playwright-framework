@@ -1,4 +1,4 @@
-/** Owned synthetic UI, embedded so compiled starters need no asset-copy step. */
+/** Owned synthetic UI, embedded so the tests need no asset-copy step. */
 export const appHtml = `<!doctype html>
 <html lang="en"><head><title>Owned authoring example</title></head><body>
 <h1>Draft rehearsal</h1>
