@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Page object and component for the owned synthetic draft app used by the authoring starter; not a customer application.
 import type { Page } from "@playwright/test";
 import { BasePage } from "../../../src/pages/base-page";
 import { BaseComponent } from "../../../src/components/base-component";
@@ -44,5 +48,10 @@ export class DraftPage extends BasePage {
     await this.waitForReady(
       this.page.getByRole("form", { name: "Draft editor", exact: true }),
     );
+  }
+
+  /** The title the app stored as the last saved draft, or null. */
+  async lastSavedTitle(): Promise<string | null> {
+    return this.page.evaluate(() => localStorage.getItem("lastDraft"));
   }
 }

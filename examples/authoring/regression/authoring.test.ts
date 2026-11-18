@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Authoring-starter failure propagation, cleanup bounds and Playwright discovery against owned synthetic pages; not a customer application.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { spawnSync } from "node:child_process";
@@ -149,7 +153,7 @@ for (const [name, step, message] of [
 }
 
 test(
-  "root and dedicated Playwright discovery remain separate",
+  "the starter Playwright config discovers exactly its own specs",
   { timeout: 30000 },
   () => {
     function list(config: string) {
@@ -181,13 +185,6 @@ test(
         ...files(suite.suites ?? []),
       ]);
     }
-    const standard = files(list("playwright.config.ts").suites);
-    assert.equal(
-      standard.length,
-      21,
-      "existing root coverage must remain intact",
-    );
-    assert.ok(standard.every((file) => !file.includes("authoring")));
     const dedicated = files(
       list("examples/authoring/playwright.config.ts").suites,
     );

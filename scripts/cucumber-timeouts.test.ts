@@ -1,7 +1,7 @@
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
-// Scope: Cucumber step-timeout defaults, long-step regression and readable assertion failures against an owned local server; it does not run customer journeys.
+// Scope: Cucumber step-timeout defaults, long-step regression, readable assertion failures and the real E2E report assertion against an owned local server; it does not run customer journeys.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createServer } from "node:http";
@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import "./setup-safety.test";
+import "./install-policy.test";
 import {
   DEFAULT_STEP_TIMEOUT_MS,
   MAX_STEP_TIMEOUT_MS,

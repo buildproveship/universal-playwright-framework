@@ -8,7 +8,7 @@ The owner requested the latest stable Playwright everywhere. Registry `dist-tags
 
 Base: `a796280c9e621a48997dc8c8ac33c21fe457712c`. All work, installed dependencies, browser downloads, test temporary directories and evidence are isolated on A010. The parallel ReleaseReady Chrome run and application checkout were not touched.
 
-The upgrade initially failed strict compilation because Playwright's `BrowserContext.route` now returns a disposable registration. Three synthetic test wrappers discarded that return value. They now return the underlying registration and forward options; request guards, assertions, target restrictions and cleanup logic are unchanged. Playwright no longer brings `fsevents`; the setup-safety check now asserts no install-script dependencies, retaining the rule that future lifecycle dependencies require review.
+The upgrade initially failed strict compilation because Playwright's `BrowserContext.route` now returns a disposable registration. Three synthetic test wrappers discarded that return value. They now return the underlying registration and forward options; request guards, assertions, target restrictions and cleanup logic are unchanged. Playwright no longer brings `fsevents`; the install-policy check (`scripts/install-policy.test.ts`) now asserts no install-script dependencies, retaining the rule that future lifecycle dependencies require review.
 
 The installed-package smoke now forwards `TMPDIR` into its deliberately minimal child environment so the selected isolated temporary root is retained. It still clears module hints and never exposes login credentials.
 

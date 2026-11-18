@@ -70,12 +70,10 @@ Regression coverage includes interruption by context closure. Abrupt process/OS
 termination (for example SIGKILL) is not a supported graceful-cleanup guarantee;
 there is no new signal-handling or runtime-admission layer here.
 
-## Migrate from the legacy generic example
+## Adapt the starter
 
-`tests/example-app.spec.ts` remains unchanged with its existing root configuration.
-Root test discovery does not include this starter, and root Cucumber feature discovery
-does not include `examples/authoring/cucumber`. Nothing changes a customer's runtime
-path automatically.
+Root Cucumber feature discovery does not include `examples/authoring/cucumber`.
+Nothing changes a customer's runtime path automatically.
 
 1. Run the owned starter first. Choose one spec/scenario style as the pattern to adapt.
 2. Create an application-owned suite/config in your repository. Keep its browser/auth

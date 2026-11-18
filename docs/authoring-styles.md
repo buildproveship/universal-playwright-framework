@@ -57,9 +57,7 @@ overrides and uses no clock, random state or global counter. Repetition safely r
 the same title because storage is context-local. This is not a uniqueness guarantee
 for a shared remote service, nor a TDM lease; RRDSCRUM-21 remains separate and deferred.
 
-The existing public TestDataFactory remains compatible. Its random/time-based
-user/event data has a different purpose and is not silently changed to deterministic
-data. The new draft builder is deliberately example-local, without credentials.
+The draft builder is deliberately example-local, without credentials.
 
 ## Readiness and compatibility
 
@@ -70,13 +68,11 @@ Select a specific visible app state; timeouts must be finite, positive and at mo
 For enabled state, exact text, counts and other conditions, prefer Playwright's
 web-first assertions with an explicit timeout.
 
-BasePage's existing `waitForPageLoad()` signature remains, but is deprecated: it now
-waits only for `domcontentloaded` (30-second bound). Its navigation methods request
-`domcontentloaded` instead of the full load event. They **do not promise application
-readiness**. This is an intentional behavioral change: code relying on incidental
-network quiescence must add its actual UI condition after navigation, or override its
-page's `open()`/`waitForPageLoad()` to wait for that condition. Existing imports and
-subclass overrides are preserved. No universal ready selector is inferred.
+`BasePage.goto()` requests `domcontentloaded`, not the full load event or network idle.
+It **does not promise application readiness**: follow it with `waitForReady` on the
+actual UI condition. No universal ready selector is inferred. `BasePage` and
+`BaseComponent` only hold the page, URL and root locator; use Playwright's own
+Page and Locator API for actions.
 
 ```ts
 await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -98,7 +94,7 @@ It reuses existing source imports without adding public exports beyond the readi
 helper. A separate TypeScript config builds both runner adapters and shared models;
 embedded HTML eliminates compiled asset-path assumptions. See
 [the maintained starter README](../examples/authoring/README.md) for commands and
-migration from the unchanged legacy `tests/example-app.spec.ts`.
+how to adapt it.
 
 ## Remaining stages
 

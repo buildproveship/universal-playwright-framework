@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: BasePage navigation and waitForVisible readiness against an owned synthetic page; it does not test a customer application.
 import { test, expect } from "./support/fixtures";
 import { waitForVisible } from "../../src/readiness/wait-for-visible";
 import { BasePage } from "../../src/pages/base-page";
@@ -5,13 +9,16 @@ import { buildDraft } from "./support/data";
 
 class DocumentPage extends BasePage {}
 
-test("document compatibility never requests network idle", async ({ page }) => {
-  const states: unknown[] = [];
-  page.waitForLoadState = async (state) => {
-    states.push(state);
+test("page navigation waits for the document, never for network idle", async ({
+  page,
+}) => {
+  const waits: unknown[] = [];
+  page.goto = async (_url, options) => {
+    waits.push(options?.waitUntil);
+    return null;
   };
-  await new DocumentPage(page).waitForPageLoad();
-  expect(states).toEqual(["domcontentloaded"]);
+  await new DocumentPage(page, "/drafts").goto();
+  expect(waits).toEqual(["domcontentloaded"]);
 });
 
 test("visible state succeeds while traffic continues", async ({
@@ -44,7 +51,7 @@ test("visible state succeeds while traffic continues", async ({
 test("document loaded does not mean delayed UI is ready", async ({ page }) => {
   await page.setContent("<button hidden>Ready</button>");
   const ready = page.getByRole("button", { name: "Ready", exact: true });
-  await new DocumentPage(page).waitForPageLoad();
+  await page.waitForLoadState("domcontentloaded");
   await expect(ready).toBeHidden();
   await page.evaluate(() => {
     setTimeout(() => {

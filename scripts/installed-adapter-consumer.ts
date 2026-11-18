@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: An independently installed copy of the package resolves the public adapter, runtime-login and data-reference entry points with synthetic inputs; no customer execution.
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { readFileSync, realpathSync, writeFileSync } from "node:fs";
@@ -106,9 +110,6 @@ async function main(): Promise<void> {
     InMemoryRuntimeSecretProvider: typeof import("../src/input-preparation/runtime-login").InMemoryRuntimeSecretProvider;
     consumeRuntimeLoginInputs: typeof import("../src/input-preparation/runtime-login").consumeRuntimeLoginInputs;
     withOperatorLoginInputs: typeof import("../src/input-preparation/operator-prompt").withOperatorLoginInputs;
-    TestDataFactory: {
-      generateUser: typeof import("../fixtures/test-data-factory").TestDataFactory.generateUser;
-    };
   };
   assert.equal(typeof framework.consumeRuntimeLoginInputs, "function");
   assert.equal(typeof framework.withOperatorLoginInputs, "function");
@@ -147,10 +148,6 @@ async function main(): Promise<void> {
   } finally {
     runtimeProvider.dispose();
   }
-  const user = framework.TestDataFactory.generateUser("band");
-  assert.equal(user.userType, "band");
-  assert.ok(user.bandMembers && user.bandMembers.length > 0);
-  assert.ok(user.firstName && user.lastName && user.email);
   const adapter = requireFromConsumer(
     "@universal/playwright-framework/adapter/v1",
   ) as { executeAdapter: typeof executeAdapter };

@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+  Test classification: integration
+  Review status: Not Reviewed
+  Evidence: synthetic
+  Scope: Owned synthetic login form served locally for the login-ui scenarios; not a customer page.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -17,14 +23,6 @@
         autocomplete="current-password"
         required
       />
-      <label for="credential-select">Credential reference</label>
-      <select id="credential-select">
-        <option value="synthetic-option-secret">Synthetic reference</option>
-      </select>
-      <button id="locator-canary" type="button">
-        synthetic-locator-private-value
-      </button>
-      <button id="dialog-trigger" type="button">Open dialog</button>
       <button
         id="toggle-password"
         type="button"
@@ -60,15 +58,6 @@
           ? "Hide password"
           : "Show password";
       });
-
-      document
-        .querySelector("#dialog-trigger")
-        .addEventListener("click", () => {
-          window.alert(
-            document.querySelector("#dialog-trigger").dataset.message ||
-              "Synthetic dialog",
-          );
-        });
 
       loginForm.addEventListener("submit", (event) => {
         event.preventDefault();

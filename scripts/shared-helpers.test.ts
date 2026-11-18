@@ -1,12 +1,14 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Shared login-command, loopback-server and reviewed-fixture helpers with synthetic inputs; it does not run a browser or customer journey.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TestDataFactory } from "../fixtures/test-data-factory";
 import {
   createOutlineFixtureFields,
   createValidationManifest,
 } from "../fixtures/input-preparation/reviewed-fixtures";
 import { RuntimeLoginFailure } from "../src/input-preparation/runtime-login";
-import { TestUtils } from "../src/utils/test-utils";
 import { withLoopbackServer } from "./fixtures/loopback-server";
 import { runLoginCommand } from "./login-command";
 
@@ -85,32 +87,6 @@ test("owned loopback fixtures close on both successful and failing consumers", a
     else await run;
     await assert.rejects(fetch(url));
   }
-});
-
-test("phone fixture generation reuses the utility with unchanged numeric bounds", (context) => {
-  let random = 0;
-  context.mock.method(Math, "random", () => random);
-  for (const [value, expected] of [
-    [0, "100-100-1000"],
-    [1 - Number.EPSILON, "999-999-9999"],
-  ] as const) {
-    random = value;
-    assert.equal(TestUtils.generateRandomPhoneNumber(), expected);
-    assert.equal(TestDataFactory.generateUser().phone, expected);
-  }
-});
-
-test("email validation preserves domain separator boundaries", () => {
-  for (const email of ["a@b.c", "a.b@c.d.", "a@b..c"])
-    assert.equal(TestUtils.isValidEmail(email), true, email);
-  for (const email of ["a.b@c", "a@.b", "a@b.", "a@b.c d", "a@b.c@d"])
-    assert.equal(TestUtils.isValidEmail(email), false, email);
-  assert.equal(TestUtils.isValidEmail(`a@${"b".repeat(100_000)}.`), false);
-});
-
-test("slug normalization trims collapsed separators at both edges", () => {
-  assert.equal(TestUtils.toSlug(" --Example_ Name-- "), "example-name");
-  assert.equal(TestUtils.toSlug(" -_ "), "");
 });
 
 test("reviewed test fixture factories return independent copies without broadening approval", () => {

@@ -8,8 +8,6 @@ const GENERATED_OR_VENDOR_ROOT_DIRECTORIES = new Set([
   ".nuxt",
   ".turbo",
   "__generated__",
-  "allure-report",
-  "allure-results",
   "build",
   "coverage",
   "dist",
