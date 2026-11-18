@@ -1,38 +1,32 @@
-# 🎯 Universal Playwright E2E Testing Framework
+# universal-playwright-framework
 
-A **production-ready**, **plug-and-play** end-to-end testing framework built with Playwright and TypeScript.
+`@universal/playwright-framework` runs reviewed Cucumber + Playwright scenarios for
+ReleaseReady. It provides:
 
-**� Use this framework for ANY web application** - simply add as a submodule and start testing in minutes!
+- execution adapters: `adapter/v1`, `adapter/v2` (owned local) and `adapter/imported-v1`;
+- runtime login (`runtime-login/v1`) and reviewed input preparation (`data-references/v1`);
+- offline feature validation and readable local reports;
+- optional `BasePage` / `BaseComponent` classes and the `waitForVisible` readiness helper.
 
-## ⚡ 5-Minute Setup for Any Project
+Consumers install it from a pinned git revision (ReleaseReady, releaseready-product-tests,
+test-data-management). It is not a generic template.
+
+## Develop
 
 ```bash
-# 1. Add framework to your project
-git submodule add <framework-repo-url> test-frameworks/playwright-framework
-
-# 2. Install and setup
-cd test-frameworks/playwright-framework
-npm install && npx playwright install
-
-# 3. Configure for your app
-echo 'BASE_URL=http://localhost:3000' > .env  # Your app's URL
-
-# 4. Run example tests
-npm run test
-
-# 5. Create your first test (copy and customize example-app.spec.ts)
+npm ci
+npx playwright install chromium
+npm run build
+npm run test:features:regression
 ```
 
-**That's it! You now have professional E2E testing for your app.** 🎉
+The individual suites are listed under `scripts` in `package.json`.
 
-## Standalone synthetic Cucumber scenario
+## Guides
 
-Run the local, assertion-backed Gherkin + Playwright example without an application account or external target. See the [synthetic Cucumber setup and results guide](docs/synthetic-cucumber.md).
-
-## Reviewed synthetic execution adapter
-
-Run reviewed scenarios with bounded, isolated local browser sessions. See the [synthetic execution guide](docs/synthetic-execution.md).
-
-## Private standalone starter
-
-See [private starter v1](docs/private-starter-v1.md) for the approved version-pinned, private-artifact scaffold and fixed owned-loopback demonstration. It does not configure models or execute customer journeys.
+- [Synthetic Cucumber scenario](docs/synthetic-cucumber.md)
+- [Synthetic execution adapter](docs/synthetic-execution.md)
+- [Local adapter contract](docs/local-adapter-contract.md) and [imported adapter contract](docs/imported-adapter-contract.md)
+- [Input preparation contract](docs/input-preparation-contract.md) and [runtime login entry](docs/runtime-login-entry.md)
+- [Authoring styles](docs/authoring-styles.md) with the [authoring starter](examples/authoring/README.md)
+- [Private starter v1](docs/private-starter-v1.md): the approved version-pinned, private-artifact scaffold and fixed owned-loopback demonstration. It does not configure models or execute customer journeys.

@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber hooks that serve owned synthetic pages and own the browser lifecycle for the synthetic scenarios; no customer targets.
 import {
   After,
   AfterAll,
@@ -19,7 +23,6 @@ class SyntheticWorld extends World {
   browser!: Browser;
   baseUrl!: string;
   page?: Page;
-  interactionLogs?: string[];
 
   constructor(options: IWorldOptions) {
     super(options);

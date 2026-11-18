@@ -12,12 +12,8 @@ build/
 # Test results and reports
 test-results/
 playwright-report/
-allure-results/
-allure-report/
 reports/*
 !reports/.gitkeep
-screenshots/
-videos/
 
 # Coverage
 coverage/
@@ -29,8 +25,6 @@ coverage/
 .env.test.local
 .env.production.local
 
-# Authentication state
-playwright/.auth/
 
 # Temporary files
 *.tmp

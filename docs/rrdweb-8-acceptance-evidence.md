@@ -38,7 +38,7 @@ The original RRDSCRUM-22 requirements explicitly marked historical/deferred in t
 
 ## Reused login-control tests
 
-`features/login-ui.feature` and `features/steps/login-ui.steps.ts` already cover password reveal/hide without submission, keyboard activation and visible focus, required-field validation without submission, exactly one Enter submission, and redaction of interaction logs/dialog/locator text. These are the requested reusable owned-synthetic tests; no duplicate scenarios were added.
+`features/login-ui.feature` and `features/steps/login-ui.steps.ts` already cover password reveal/hide without submission, keyboard activation and visible focus, required-field validation without submission, and exactly one Enter submission. (The interaction-log redaction scenarios were removed on 18 Nov 2026 together with the `BasePage` logging helpers they tested.) These are the requested reusable owned-synthetic tests; no duplicate scenarios were added.
 
 ## Current local-pilot BDD scenarios
 

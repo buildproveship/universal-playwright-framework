@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Authoring-starter Cucumber steps that save drafts in an owned synthetic app in a real browser; not a customer application.
 import {
   After,
   Before,
@@ -55,7 +59,7 @@ Given(
   async function (this: DraftWorld) {
     await this.drafts.open();
     await expect(this.drafts.drafts).toHaveCount(0);
-    expect(await this.drafts.getLocalStorageItem("lastDraft")).toBeNull();
+    expect(await this.drafts.lastSavedTitle()).toBeNull();
     expect(this.draft).toEqual(buildDraft());
     this.draft.tags.push("scenario-only");
     expect(buildDraft().tags).toEqual(["synthetic"]);
@@ -88,7 +92,7 @@ Then(
   'the "Drafts" list contains only {string} on the Draft Screen',
   async function (this: DraftWorld, title: string) {
     await expect(this.drafts.drafts).toHaveText([title]);
-    expect(await this.drafts.getLocalStorageItem("lastDraft")).toBe(title);
+    expect(await this.drafts.lastSavedTitle()).toBe(title);
   },
 );
 

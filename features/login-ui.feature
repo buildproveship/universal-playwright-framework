@@ -1,3 +1,7 @@
+# Test classification: integration
+# Review status: Not Reviewed
+# Evidence: synthetic
+# Scope: Password masking, keyboard reveal, required-field validation and single Enter submission on an owned synthetic login form in a real browser; not a customer login.
 @owned-login-ui
 Feature: Review supported login controls on an owned synthetic form
 
@@ -5,25 +9,10 @@ Feature: Review supported login controls on an owned synthetic form
     Given the locally served synthetic login form is open
     When I enter a synthetic password without submitting
     Then the password is masked
-    When I reveal the password with the shared page interaction helper
+    When I reveal the password with the login page object
     Then the password is visible and its synthetic value is unchanged
-    When I hide the password with the shared page interaction helper
+    When I hide the password with the login page object
     Then the password is masked and the form has not been submitted
-
-  Scenario: Shared page helpers do not expose supplied secrets in interaction logs
-    Given the locally served synthetic login form is open
-    When I use shared page helpers with synthetic credentials
-    Then the emitted interaction logs are redacted
-
-  Scenario: Dialog messages do not expose supplied values in interaction logs
-    Given the locally served synthetic login form is open
-    When I open a synthetic dialog with a private message
-    Then the dialog interaction log is emitted without its message
-
-  Scenario: Locator text is redacted from shared interaction logs
-    Given the locally served synthetic login form is open
-    When I use shared locator helpers with sensitive text
-    Then locator interaction logs are emitted without that text
 
   Scenario: Keyboard users can reveal a password without submitting
     Given the locally served synthetic login form is open
@@ -34,7 +23,7 @@ Feature: Review supported login controls on an owned synthetic form
 
   Scenario: Missing required fields are reported without a form submission
     Given the locally served synthetic login form is open
-    When I submit the empty form with the shared page interaction helper
+    When I submit the empty form with the login page object
     Then both required fields report missing values
     And the form has not been submitted
 

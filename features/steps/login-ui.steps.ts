@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber steps that drive a real Chromium against the owned synthetic login form; they do not touch a customer site.
 import assert from "node:assert/strict";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
@@ -6,50 +10,11 @@ import { SyntheticLoginPage } from "./login-ui-page";
 
 const syntheticPassword = "synthetic-ui-password-8";
 const syntheticAccount = "owned-ui-account";
-const syntheticOption = "synthetic-option-secret";
-const syntheticCookie = "synthetic-cookie-secret";
-const syntheticStorageToken = "synthetic-storage-token";
-const syntheticUrlToken = "synthetic-url-token";
-const syntheticDialogMessage = "synthetic-dialog-private-message";
-const syntheticLocatorText = "synthetic-locator-private-value";
-const syntheticSecrets = [
-  syntheticPassword,
-  syntheticOption,
-  syntheticCookie,
-  syntheticStorageToken,
-  syntheticUrlToken,
-  syntheticDialogMessage,
-];
-
 function loginPage(world: SyntheticWorld): SyntheticLoginPage {
   if (!world.page) {
     throw new Error("Owned synthetic login page is unavailable");
   }
   return new SyntheticLoginPage(world.page);
-}
-
-async function captureInteractionLogs(
-  world: SyntheticWorld,
-  run: () => Promise<void>,
-): Promise<void> {
-  const logs: string[] = [];
-  const originalInfo = console.info;
-  const originalLogLevel = process.env.LOG_LEVEL;
-  console.info = (...args: unknown[]) => {
-    logs.push(args.map(String).join(" "));
-  };
-  process.env.LOG_LEVEL = "INFO";
-  try {
-    await run();
-  } finally {
-    console.info = originalInfo;
-    if (originalLogLevel === undefined) {
-      delete process.env.LOG_LEVEL;
-    } else {
-      process.env.LOG_LEVEL = originalLogLevel;
-    }
-  }
-  world.interactionLogs = logs;
 }
 
 Given(
@@ -63,111 +28,9 @@ Given(
 );
 
 When(
-  "I use shared page helpers with synthetic credentials",
-  async function (this: SyntheticWorld) {
-    await captureInteractionLogs(this, async () => {
-      const target = new URL("login-ui", this.baseUrl);
-      target.searchParams.set("access_token", syntheticUrlToken);
-      const page = loginPage(this);
-      await new SyntheticLoginPage(this.page!, target.href).goto();
-      await page.enterPassword(syntheticPassword);
-      await page.selectCredential(syntheticOption);
-      await page.addSessionCookie(syntheticCookie);
-      await page.setAccessToken(syntheticStorageToken);
-    });
-  },
-);
-
-When(
-  "I open a synthetic dialog with a private message",
-  async function (this: SyntheticWorld) {
-    await captureInteractionLogs(this, async () => {
-      await this.page!.evaluate((message) => {
-        document
-          .querySelector("#dialog-trigger")
-          ?.setAttribute("data-message", message);
-      }, syntheticDialogMessage);
-      await loginPage(this).showSyntheticDialog();
-    });
-  },
-);
-
-When(
-  "I use shared locator helpers with sensitive text",
-  async function (this: SyntheticWorld) {
-    await captureInteractionLogs(this, () =>
-      loginPage(this).interactWithSensitiveTextLocator(syntheticLocatorText),
-    );
-  },
-);
-
-When(
   "I enter a synthetic password without submitting",
   async function (this: SyntheticWorld) {
     await loginPage(this).enterPassword(syntheticPassword);
-  },
-);
-
-Then(
-  "the emitted interaction logs are redacted",
-  function (this: SyntheticWorld) {
-    const logs = this.interactionLogs ?? [];
-    for (const message of [
-      "Navigating to page",
-      "Filled input field",
-      "Selected dropdown option",
-      "Added cookie",
-      "Set localStorage item",
-    ]) {
-      assert.ok(
-        logs.some((entry) => entry.includes(message)),
-        `expected an interaction log containing "${message}"`,
-      );
-    }
-    assert.equal(
-      logs.some((entry) =>
-        syntheticSecrets.some((secret) => entry.includes(secret)),
-      ),
-      false,
-    );
-  },
-);
-
-Then(
-  "the dialog interaction log is emitted without its message",
-  function (this: SyntheticWorld) {
-    const logs = this.interactionLogs ?? [];
-    assert.ok(
-      logs.some((entry) => entry.includes("Dialog appeared")),
-      "expected the dialog interaction to be logged",
-    );
-    assert.equal(
-      logs.some((entry) => entry.includes(syntheticDialogMessage)),
-      false,
-    );
-  },
-);
-
-Then(
-  "locator interaction logs are emitted without that text",
-  function (this: SyntheticWorld) {
-    const logs = this.interactionLogs ?? [];
-    for (const message of [
-      "Clicked element",
-      "Scrolled to element",
-      "Hovered over element",
-      "Double clicked element",
-      "Right clicked element",
-    ]) {
-      assert.ok(
-        logs.some((entry) => entry.includes(message)),
-        `expected an interaction log containing "${message}"`,
-      );
-    }
-    assert.equal(
-      logs.some((entry) => entry.includes(syntheticLocatorText)),
-      false,
-    );
   },
 );
 
@@ -178,14 +41,14 @@ Then("the password is masked", async function (this: SyntheticWorld) {
 });
 
 When(
-  "I reveal the password with the shared page interaction helper",
+  "I reveal the password with the login page object",
   async function (this: SyntheticWorld) {
     await loginPage(this).togglePasswordVisibility();
   },
 );
 
 When(
-  "I hide the password with the shared page interaction helper",
+  "I hide the password with the login page object",
   async function (this: SyntheticWorld) {
     await loginPage(this).togglePasswordVisibility();
   },
@@ -221,9 +84,6 @@ When(
   async function (this: SyntheticWorld) {
     const account = this.page!.getByRole("textbox", { name: "Account name" });
     await account.focus();
-    await this.page!.keyboard.press("Tab");
-    await this.page!.keyboard.press("Tab");
-    await this.page!.keyboard.press("Tab");
     await this.page!.keyboard.press("Tab");
     await this.page!.keyboard.press("Tab");
     await this.page!.keyboard.press("Space");
@@ -266,7 +126,7 @@ Then(
 );
 
 When(
-  "I submit the empty form with the shared page interaction helper",
+  "I submit the empty form with the login page object",
   async function (this: SyntheticWorld) {
     await loginPage(this).submit();
   },

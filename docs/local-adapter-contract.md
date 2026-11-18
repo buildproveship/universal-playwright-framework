@@ -186,8 +186,7 @@ The earlier runtime remediation used official
 Cucumber 12.9.0, Gherkin 38.0.0 and cucumber-expressions 19.0.0, removing the affected nested UUID chain and
 resolving maintained glob/minimatch dependencies through the current root override policy. Cucumber
 12.3.0 was evaluated but retained the UUID advisory through Gherkin utilities.
-Unused `faker` was removed; the installed consumer checks the existing public
-`TestDataFactory` and root adapter export. No public export was removed. Validation and execution resolve the same step
+The installed consumer checks the root adapter export. Validation and execution resolve the same step
 matcher; both the source and independently installed consumer assert this.
 
 The package requires Node 22.12 or later in the Node 22 line, or Node 24 or later;
