@@ -15,8 +15,7 @@ export const test = base.extend<Fixtures>({
   ownedApp: async ({ page }, use) => {
     await use(await installOwnedApp(page.context()));
   },
-  // Playwright requires destructuring even for a fixture with no dependencies.
-  // eslint-disable-next-line no-empty-pattern
+  // eslint-disable-next-line no-empty-pattern -- Playwright requires destructuring even for a fixture with no dependencies
   draft: async ({}, use) => {
     await use(buildDraft());
   },

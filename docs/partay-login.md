@@ -236,7 +236,8 @@ observed Partay controls. Site UI and password-eye behavior remain unverified
 until authorized inspection. These results are local test evidence, not
 customer-login or acceptance evidence.
 `npm run lint` checks every TypeScript file in the repository with ESLint
-(`eslint.config.ts`), and `npm run format:check` runs Prettier over the same files.
+(`eslint.config.mts`, from `@releaseready/config`), and `npm run format:check` runs
+Prettier over every file.
 
 ### Deferred private-account-file input
 

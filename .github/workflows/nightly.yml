@@ -1,0 +1,35 @@
+# Heavy suites. Owner decision of 18 Nov 2026 (docs/decisions.md): the suites that launch a browser or a local server (npm run test:browser: Playwright, Cucumber browser profiles, browser login and isolation tests, the readiness tests) run on demand and nightly,
+# not on every pull request (the light set is in pr.yml).
+name: Browser suites
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *" # 02:00 Hong Kong time
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  suites:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser suites
+        run: npm run test:browser
