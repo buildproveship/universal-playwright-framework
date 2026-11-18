@@ -59,6 +59,88 @@ interface LockMetadata {
   version: string;
   packages: Record<string, unknown>;
 }
+/** Repository tooling that the starter does not use and that lives in an authenticated registry. */
+const REPOSITORY_ONLY_DEV_DEPENDENCIES = new Set(["@releaseready/config"]);
+
+/** Where Node would find `name` when required from the package installed at `from` ("" is the root). */
+function lockLocation(
+  packages: Record<string, unknown>,
+  from: string,
+  name: string,
+): string | undefined {
+  let base = from;
+  for (;;) {
+    const candidate = `${base ? `${base}/` : ""}node_modules/${name}`;
+    if (candidate in packages) return candidate;
+    if (!base) return undefined;
+    const parent = base.lastIndexOf("/node_modules/");
+    base = parent === -1 ? "" : base.slice(0, parent);
+  }
+}
+
+/**
+ * The lock entries reachable from the starter's own dependencies (dependencies, optional and peer
+ * dependencies, resolved the way Node resolves them), so `npm ci` installs nothing the starter does not
+ * need. The root entry is kept; its contents are replaced by the caller.
+ */
+export function starterLockPackages(
+  packages: Record<string, unknown>,
+  rootDependencies: readonly string[],
+): Record<string, unknown> {
+  const reachable = new Set<string>([""]);
+  const queue: [from: string, name: string][] = rootDependencies.map((name) => [
+    "",
+    name,
+  ]);
+  for (let next = queue.shift(); next; next = queue.shift()) {
+    const location = lockLocation(packages, ...next);
+    if (location === undefined || reachable.has(location)) continue;
+    reachable.add(location);
+    const entry = packages[location] as {
+      readonly dependencies?: Record<string, string>;
+      readonly optionalDependencies?: Record<string, string>;
+      readonly peerDependencies?: Record<string, string>;
+    } | null;
+    for (const dependencies of [
+      entry?.dependencies,
+      entry?.optionalDependencies,
+      entry?.peerDependencies,
+    ]) {
+      for (const name of Object.keys(dependencies ?? {})) {
+        queue.push([location, name]);
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(packages).filter(([location]) => reachable.has(location)),
+  );
+}
+
+/**
+ * The starter's dev dependencies and lock entries: the repository's, without its repository-only tooling
+ * and without the lock entries only that tooling needed.
+ */
+export function starterDependencyGraph(
+  original: Pick<PackageMetadata, "dependencies" | "devDependencies">,
+  packages: Record<string, unknown>,
+): {
+  devDependencies: Record<string, string>;
+  packages: Record<string, unknown>;
+} {
+  const devDependencies = Object.fromEntries(
+    Object.entries(original.devDependencies ?? {}).filter(
+      ([dependency]) => !REPOSITORY_ONLY_DEV_DEPENDENCIES.has(dependency),
+    ),
+  );
+  return {
+    devDependencies,
+    packages: starterLockPackages(packages, [
+      ...Object.keys(original.dependencies),
+      ...Object.keys(devDependencies),
+    ]),
+  };
+}
+
 /** The parsed manifest's file inventory must be a plain object of digests; JSON gives no such guarantee. */
 function isFileInventory(value: unknown): boolean {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -169,7 +251,14 @@ export function buildStarter(output: string): {
     mkdirSync(path.join(destination, "common/vendor"));
     cpSync(tarball, path.join(destination, "common/vendor/framework.tgz"));
     // Adopt exact existing locked dependency graph, including dev tools. No resolver or "latest" fetch.
+    // The repository's own lint settings are left out: the starter has no lint script, and the package
+    // comes from GitHub Packages, which a customer machine cannot read without a token.
     const lock = json(path.join(snapshot, "package-lock.json")) as LockMetadata;
+    const { devDependencies, packages } = starterDependencyGraph(
+      original,
+      lock.packages,
+    );
+    lock.packages = packages;
     const name = "releaseready-private-test-assets";
     const dependencies = {
       ...original.dependencies,
@@ -187,7 +276,7 @@ export function buildStarter(output: string): {
         demo: "node scripts/demo.ts",
       },
       dependencies,
-      devDependencies: original.devDependencies,
+      devDependencies,
       overrides: original.overrides,
     };
     lock.name = name;
@@ -196,7 +285,7 @@ export function buildStarter(output: string): {
       name,
       version: "0.0.0",
       dependencies,
-      devDependencies: original.devDependencies,
+      devDependencies,
       engines: manifest.engines,
     };
     lock.packages[`node_modules/${PACKAGE}`] = {

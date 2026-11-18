@@ -17,7 +17,12 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { createStarter, sha256 } from "./private-starter";
+import {
+  createStarter,
+  sha256,
+  starterDependencyGraph,
+  starterLockPackages,
+} from "./private-starter";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -458,3 +463,58 @@ for (const failure of [
     }
   });
 }
+
+test("starter lock keeps exactly the entries its own dependencies reach, resolved as Node resolves them", () => {
+  const packages = {
+    "": { name: "source" },
+    "node_modules/runtime": {
+      dependencies: { shared: "1.0.0", nested: "2.0.0" },
+      optionalDependencies: { "absent-optional": "1.0.0" },
+    },
+    "node_modules/runtime/node_modules/nested": {
+      peerDependencies: { peer: "1.0.0" },
+    },
+    "node_modules/nested": { version: "1.0.0" },
+    "node_modules/shared": {},
+    "node_modules/peer": {},
+    "node_modules/lint-only": { dependencies: { "lint-helper": "1.0.0" } },
+    "node_modules/lint-helper": {},
+  };
+  assert.deepEqual(Object.keys(starterLockPackages(packages, ["runtime"])), [
+    "",
+    "node_modules/runtime",
+    "node_modules/runtime/node_modules/nested",
+    "node_modules/shared",
+    "node_modules/peer",
+  ]);
+});
+
+test("the starter built from this repository's lock needs nothing from GitHub Packages", () => {
+  const root = path.resolve(__dirname, "../../..");
+  const manifest = JSON.parse(
+    readFileSync(path.join(root, "package.json"), "utf8"),
+  ) as {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  };
+  const lock = JSON.parse(
+    readFileSync(path.join(root, "package-lock.json"), "utf8"),
+  ) as { packages: Record<string, { resolved?: string } | undefined> };
+  assert.ok("@releaseready/config" in manifest.devDependencies);
+  const graph = starterDependencyGraph(manifest, lock.packages);
+  assert.equal("@releaseready/config" in graph.devDependencies, false);
+  for (const name of [
+    ...Object.keys(manifest.dependencies),
+    "typescript",
+    "@types/node",
+  ]) {
+    assert.ok(`node_modules/${name}` in graph.packages, name);
+  }
+  const fromGitHubPackages = Object.entries(graph.packages).filter(
+    ([, entry]) =>
+      (entry as { resolved?: string } | undefined)?.resolved?.startsWith(
+        "https://npm.pkg.github.com/",
+      ) === true,
+  );
+  assert.deepEqual(fromGitHubPackages, []);
+});
