@@ -5,9 +5,7 @@
     "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "target": "https://external.invalid",
-  "scenarioIds": [
-    "browser-flow"
-  ],
+  "scenarioIds": ["browser-flow"],
   "approval": {
     "sourceRevision": "rr207-synthetic-source-2",
     "featureRevision": "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f",
