@@ -31,5 +31,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      # cucumber-timeouts.test.js reads reports/cucumber-results.json, which test:browser only writes after it.
+      # The order is fixed here, not in package.json: package.json is part of the reviewed imported-implementation
+      # revision (src/adapter/imported-v1.ts), which only an implementation review may change.
+      - name: Cucumber E2E report
+        run: npm run test:features
       - name: Browser suites
         run: npm run test:browser
