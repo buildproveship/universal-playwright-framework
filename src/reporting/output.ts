@@ -27,6 +27,7 @@ function ownedReportDirectory(): string {
     lstatSync(directory);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      // eslint-disable-next-line preserve-caught-error -- local paths in the raw error must not reach report output
       throw new Error("Local report output is unavailable");
     }
     try {

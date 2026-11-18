@@ -605,9 +605,8 @@ for (const { diagnosticsEnabled, mode } of [
 
 test("formatter refuses identity mismatch, incomplete results and retries; emits once", async () => {
   const { EventEmitter } = await import("node:events");
-  const { default: OwnedEvidenceFormatter } = await import(
-    "../src/execution/owned-evidence-formatter"
-  );
+  const { default: OwnedEvidenceFormatter } =
+    await import("../src/execution/owned-evidence-formatter");
   const base = {
     attempt: 0,
     willBeRetried: false,
@@ -713,9 +712,8 @@ test("isolated package is removed even when a mutation assertion fails", async (
     /synthetic assertion failure/,
   );
   assert.equal(existsSync(owned), false);
-  const { loadReviewedScenarios } = await import(
-    "../src/execution/reviewed-scenarios"
-  );
+  const { loadReviewedScenarios } =
+    await import("../src/execution/reviewed-scenarios");
   await loadReviewedScenarios();
 });
 

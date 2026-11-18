@@ -41,11 +41,7 @@ export interface ReuseReadinessInput {
 }
 
 export type ReadinessOutcome =
-  | "reused"
-  | "missing"
-  | "ambiguous"
-  | "invalidated"
-  | "unapproved";
+  "reused" | "missing" | "ambiguous" | "invalidated" | "unapproved";
 
 const OUTCOME_BY_CODE = {
   "reviewed-implementation-reused": "reused",

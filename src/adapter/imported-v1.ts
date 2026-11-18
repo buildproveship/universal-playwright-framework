@@ -213,8 +213,7 @@ export const importedResultJsonSchema = z.toJSONSchema(
   z.union([rejection, accepted]),
 );
 export type ImportedExecutionResult =
-  | z.infer<typeof rejection>
-  | z.infer<typeof accepted>;
+  z.infer<typeof rejection> | z.infer<typeof accepted>;
 function reject(
   code: z.infer<typeof rejection>["code"],
 ): ImportedExecutionResult {
@@ -228,7 +227,7 @@ function reject(
 
 // Candidate only until independent implementation review explicitly updates it.
 export const IMPORTED_IMPLEMENTATION_REVISION =
-  "9d8782c0dffd5a1f1ebd5c098715e96ab95c6df862b4a4d661f3b187e7948562";
+  "fcd009b4fd1ca6fa57ba7c39b032a9c541ea6dd50023197f58870ac0095ca87c";
 export function calculateImportedImplementationRevision(): string {
   const digest = createHash("sha256");
   for (const file of [

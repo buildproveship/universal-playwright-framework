@@ -344,8 +344,7 @@ export const ownedLocalResultJsonSchema = z.toJSONSchema(
 );
 
 export type OwnedLocalResult =
-  | z.infer<typeof acceptedSchema>
-  | z.infer<typeof rejectedSchema>;
+  z.infer<typeof acceptedSchema> | z.infer<typeof rejectedSchema>;
 
 export async function getOwnedLocalReview(): Promise<{
   approval: OwnedLocalRequest["approval"];

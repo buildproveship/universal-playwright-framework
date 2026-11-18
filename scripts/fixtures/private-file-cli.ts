@@ -1,4 +1,9 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Child-process fixture that runs the partay-login CLI with mocked file and prompt access to prove the deferred private-account-file flag reads nothing; no customer login.
 import fs = require("node:fs");
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { mock } from "node:test";
 import partay = require("../../src/customer-login/partay");
@@ -41,7 +46,8 @@ process.argv = [
   "--private-account-file",
   file,
 ];
-require(join(__dirname, "../verify-partay-login.js"));
+// Load the CLI synchronously after the mocks above are installed.
+createRequire(__filename)(join(__dirname, "../verify-partay-login.js"));
 process.stdout.write(
   JSON.stringify({ referenceReads, promptCalls, fileCalls }),
 );

@@ -4,12 +4,11 @@
 // Scope: Real adapter/browser lifecycle against isolated synthetic registration navigation; no customer case approval.
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import * as adapterV2 from "../src/adapter/v2";
+import * as engine from "../src/execution";
 
 test("Given the installed public API, an owned-local request has a separate v2 entrypoint", () => {
-  const adapter = require("../src/adapter/v2") as {
-    executeOwnedLocalAdapter?: unknown;
-  };
-  assert.equal(typeof adapter.executeOwnedLocalAdapter, "function");
+  assert.equal(typeof adapterV2.executeOwnedLocalAdapter, "function");
 });
 
 import { createServer } from "node:http";
@@ -465,7 +464,6 @@ for (const hasBusinessEvidence of [false, true]) {
       : "Given the worker supplies no business-step evidence, an operational failure stays incomplete with its original cleanup",
     async () => {
       const failure = hasBusinessEvidence ? "context-close" : "worker-start";
-      const engine: typeof import("../src/execution") = require("../src/execution");
       const diagnosticReference = "00000000-0000-4000-8000-000000000000";
       const resourceCleanup = {
         status: "unknown" as const,
@@ -574,12 +572,10 @@ for (const hasBusinessEvidence of [false, true]) {
 }
 
 test("Given the public v2 export, HTTP schemas retain strict bounded request and outcome shapes", () => {
-  const schemas: Record<
-    string,
-    Record<string, unknown>
-  > = require("../src/adapter/v2");
-  const requestSchema = schemas.ownedLocalRequestJsonSchema;
-  const resultSchema = schemas.ownedLocalResultJsonSchema;
+  const requestSchema: Record<string, unknown> =
+    adapterV2.ownedLocalRequestJsonSchema;
+  const resultSchema: Record<string, unknown> =
+    adapterV2.ownedLocalResultJsonSchema;
   assert.ok(requestSchema);
   assert.ok(resultSchema);
   assert.equal(requestSchema.additionalProperties, false);

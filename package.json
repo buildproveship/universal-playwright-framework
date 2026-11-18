@@ -33,6 +33,8 @@
   "scripts": {
     "build": "tsc --outDir dist/cucumber && npm run build:cucumber",
     "build:cucumber": "tsc --project tsconfig.cucumber.json",
+    "check": "npm run lint && npm run format:check",
+    "test": "npm run check && npm run test:features:regression && npm run test:login-inspection && npm run test:authentication-only && npm run test:owned-local && npm run test:runtime-login-entry && npm run test:browser-isolation && npm run test:agentic-rehearsal && npm run test:private-starter && npm run test:typescript-source-policy && npm run test:authoring",
     "test:input-preparation": "npm run build:cucumber && cucumber-js --config cucumber-input-preparation.json && node --test dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/reference-only-preparation.test.js",
     "test:customer-login": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js",
     "test:customer-login-ui": "npm run build:cucumber && cucumber-js --config cucumber-login-ui.json",
@@ -46,10 +48,10 @@
     "execute:synthetic": "npm run build:cucumber && node dist/cucumber/src/execution/cli.js",
     "test:features:regression": "npm run test:input-preparation && npm run test:customer-login && npm run test:validation && npm run test:features && npm run test:execution && node --test dist/cucumber/scripts/cucumber-timeouts.test.js && npm run test:reporting && npm run test:adapter",
     "clean": "rimraf dist reports/*.json test-results",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\"",
     "prepare": "npm run build",
     "check:typescript": "npm run build && node dist/cucumber/scripts/check-typescript-source-policy.js",
     "test:typescript-source-policy": "npm run check:typescript && node --test dist/cucumber/scripts/typescript-source-policy.test.js",
@@ -61,7 +63,9 @@
     "test:agentic-rehearsal": "npm run build:cucumber && node --test dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js",
     "starter": "npm run build:cucumber && node dist/cucumber/scripts/private-starter.js",
     "test:private-starter": "npm run build:cucumber && node --test dist/cucumber/scripts/private-starter.test.js",
-    "verify:private-starter": "npm run build:cucumber && VERIFY_PRIVATE_STARTER=1 node --test dist/cucumber/scripts/private-starter-artifact.test.js"
+    "verify:private-starter": "npm run build:cucumber && VERIFY_PRIVATE_STARTER=1 node --test dist/cucumber/scripts/private-starter-artifact.test.js",
+    "test:browser-isolation": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/isolated-product-playwright.test.js dist/cucumber/scripts/runtime-login-cancellation-browser.test.js",
+    "test:authoring": "npm run build:cucumber && tsc -p examples/authoring/tsconfig.json && playwright test --config examples/authoring/playwright.config.ts && cucumber-js --config examples/authoring/cucumber.json && node --test dist/authoring/examples/authoring/regression/authoring.test.js"
   },
   "keywords": [
     "playwright",
@@ -78,15 +82,17 @@
     "url": "git+https://github.com/releaseready/universal-playwright-framework.git"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-playwright": "^0.18.0",
-    "prettier": "^3.0.0",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.12.2",
+    "globals": "^17.13.0",
+    "jiti": "^2.7.0",
+    "prettier": "^3.10.1",
     "rimraf": "^6.1.4",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.72.0"
   },
   "dependencies": {
     "@cucumber/cucumber": "12.9.0",

@@ -412,9 +412,8 @@ test("Given forbidden activity races an admitted mode check, the pending login P
 });
 
 test("Given the five exact declared resources, abort each before transport and still verify authentication-only", async () => {
-  const { DECLARED_BLOCKED_RESOURCES } = await import(
-    "../src/customer-login/declared-resources"
-  );
+  const { DECLARED_BLOCKED_RESOURCES } =
+    await import("../src/customer-login/declared-resources");
   const evidence = await import("../docs/partay-declared-resources.json");
   assert.deepEqual(DECLARED_BLOCKED_RESOURCES, evidence.resources);
   await fixture(async (url, hits) => {
@@ -479,9 +478,8 @@ for (const variant of [
   "abort-failure",
 ] as const) {
   test(`Given a declared-resource ${variant}, fail closed with zero external transport and no subsequent login POST`, async () => {
-    const { DECLARED_BLOCKED_RESOURCES } = await import(
-      "../src/customer-login/declared-resources"
-    );
+    const { DECLARED_BLOCKED_RESOURCES } =
+      await import("../src/customer-login/declared-resources");
     await fixture(async (url, hits) => {
       let externalTransports = 0;
       let denials = 0;
@@ -548,9 +546,8 @@ for (const variant of [
 }
 
 test("Given a known denial starts after asynchronous admission, do not dispatch a credential POST until denial is confirmed", async () => {
-  const { DECLARED_BLOCKED_RESOURCES } = await import(
-    "../src/customer-login/declared-resources"
-  );
+  const { DECLARED_BLOCKED_RESOURCES } =
+    await import("../src/customer-login/declared-resources");
   await fixture(async (url, hits) => {
     await assert.rejects(
       withFreshLoginPage(async (page) => {

@@ -31,6 +31,7 @@ test("visible state succeeds while traffic continues", async ({
   const before = ownedApp.trafficRequests();
   // Observe longer than Playwright's 500ms idle qualification.
   await expect(
+    // eslint-disable-next-line playwright/no-networkidle -- this test proves network idle never settles while traffic continues
     page.waitForLoadState("networkidle", { timeout: 1200 }),
   ).rejects.toThrow(/Timeout/);
   expect(ownedApp.trafficRequests()).toBeGreaterThan(before);
@@ -45,6 +46,7 @@ test("visible state succeeds while traffic continues", async ({
       throw new Error("Synthetic telemetry timer missing");
     clearInterval(timer);
   });
+  // eslint-disable-next-line playwright/no-networkidle -- confirms idle is reached only after the synthetic traffic stops
   await page.waitForLoadState("networkidle", { timeout: 2000 });
 });
 

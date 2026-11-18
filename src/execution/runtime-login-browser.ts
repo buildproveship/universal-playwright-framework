@@ -252,19 +252,18 @@ export async function withFreshLoginPage(
   };
   let browser: Browser | undefined;
   let timeoutError:
-    | typeof import("@playwright/test").errors.TimeoutError
-    | undefined;
+    typeof import("@playwright/test").errors.TimeoutError | undefined;
   let context: BrowserContext | undefined;
   let pendingAcquisition = false;
   let acquisitionInterrupted = false;
-  let workDeadlineExpired = false;
+  let workDeadlineExpired: boolean;
   let cleanupDeadlineExpired = false;
   let stage: RuntimeLoginFailureStage = "browser-startup";
   let failureStage: RuntimeLoginFailureStage | undefined;
   let policyReason: RuntimeLoginPolicyReason | undefined;
   let failureClassification: RuntimeLoginFailureClassification = "operational";
   let interruption: "interrupted" | "timed-out" | undefined;
-  let cleanupStatus: RuntimeLoginCleanupStatus = "unconfirmed";
+  let cleanupStatus: RuntimeLoginCleanupStatus;
   const interrupt = (reason: "interrupted" | "timed-out"): void => {
     interruption ??= reason;
     controller.abort();
