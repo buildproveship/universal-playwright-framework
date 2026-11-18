@@ -18,7 +18,7 @@ import { resolvePackedTarball } from "./npm-pack-metadata";
 import { resolveGitExecutable } from "./check-typescript-source-policy";
 
 const FORMAT = "releaseready-private-starter/v1";
-const PACKAGE = "@universal/playwright-framework";
+const PACKAGE = "@releaseready/playwright-framework";
 const sourceRoot = path.resolve(__dirname, "../../..");
 interface Manifest {
   format: string;

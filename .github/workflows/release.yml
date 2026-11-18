@@ -1,0 +1,40 @@
+# Publishes @releaseready/playwright-framework to GitHub Packages when a vX.Y.Z tag is pushed.
+# The tag must match package.json "version". `npm publish` builds the package in `prepack`.
+name: Release
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
+      - name: Tag matches package.json version
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check (build, typecheck, lint, format)
+        run: npm run check
+      - name: Unit tests (no browser)
+        run: npm run test:unit
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

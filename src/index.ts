@@ -1,5 +1,5 @@
 /**
- * Root entry point of @universal/playwright-framework.
+ * Root entry point of @releaseready/playwright-framework.
  */
 
 // Optional page-object base classes

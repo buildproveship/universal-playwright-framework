@@ -5,8 +5,8 @@ import path from "node:path";
 import { test } from "node:test";
 import { packedTarballName, resolvePackedTarball } from "./npm-pack-metadata";
 
-const NAME = "@universal/playwright-framework";
-const FILENAME = "universal-playwright-framework-1.0.0.tgz";
+const NAME = "@releaseready/playwright-framework";
+const FILENAME = "releaseready-playwright-framework-1.0.0.tgz";
 
 function entry(overrides: Record<string, unknown> = {}) {
   return {

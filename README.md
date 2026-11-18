@@ -1,6 +1,6 @@
 # universal-playwright-framework
 
-`@universal/playwright-framework` runs reviewed Cucumber + Playwright scenarios for
+`@releaseready/playwright-framework` runs reviewed Cucumber + Playwright scenarios for
 ReleaseReady. It provides:
 
 - execution adapters: `adapter/v1`, `adapter/v2` (owned local) and `adapter/imported-v1`;
@@ -8,8 +8,24 @@ ReleaseReady. It provides:
 - offline feature validation and readable local reports;
 - optional `BasePage` / `BaseComponent` classes and the `waitForVisible` readiness helper.
 
-Consumers install it from a pinned git revision (ReleaseReady, releaseready-product-tests,
-test-data-management). It is not a generic template.
+It is published to GitHub Packages with built output and an `exports` map.
+Consumers (ReleaseReady, releaseready-product-tests, test-data-management) depend on a
+semver range, never a git revision, and never build it:
+
+```bash
+echo "@releaseready:registry=https://npm.pkg.github.com" >> .npmrc
+npm install @releaseready/playwright-framework@^1.0.0
+```
+
+It is not a generic template.
+
+## Release
+
+Bump `version` in `package.json` (semver) in a pull request and merge it, then push a
+matching tag (`git tag v1.0.1 && git push origin v1.0.1`). `release.yml` runs the
+check and unit tests and publishes with `GITHUB_TOKEN`; `npm publish` builds in
+`prepack`. Run `npm run review:revision` and update `REVIEWED_IMPLEMENTATION_REVISION`
+whenever the reviewed runtime files or `package.json` change.
 
 ## Develop
 
