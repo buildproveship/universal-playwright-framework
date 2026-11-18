@@ -18,6 +18,13 @@ export interface ScenarioSelectionFilters {
   readonly tags?: readonly string[];
 }
 
+/** A validated scenario that carries its identifier; only these can be approved and selected. */
+export type SelectedScenario = ValidatedScenario & { readonly id: string };
+
+function hasId(scenario: ValidatedScenario): scenario is SelectedScenario {
+  return scenario.id !== null;
+}
+
 export type ScenarioSelection =
   | {
       readonly runnable: false;
@@ -26,7 +33,7 @@ export type ScenarioSelection =
     }
   | {
       readonly runnable: true;
-      readonly scenarios: readonly ValidatedScenario[];
+      readonly scenarios: readonly SelectedScenario[];
     };
 
 function sameTags(left: readonly string[], right: readonly string[]): boolean {
@@ -69,9 +76,9 @@ export function selectApprovedScenarios(
     approvedIds.add(scenario.id);
   }
 
-  const scenariosById = new Map<string, ValidatedScenario>();
+  const scenariosById = new Map<string, SelectedScenario>();
   for (const scenario of validation.scenarios) {
-    if (scenario.id !== null) {
+    if (hasId(scenario)) {
       scenariosById.set(scenario.id, scenario);
     }
   }
@@ -92,10 +99,10 @@ export function selectApprovedScenarios(
   const selected = approval.scenarios
     .map((approved) => scenariosById.get(approved.id))
     .filter(
-      (scenario): scenario is ValidatedScenario =>
+      (scenario): scenario is SelectedScenario =>
         scenario !== undefined &&
         scenario.runnable &&
-        (!requestedIds || requestedIds.has(scenario.id ?? "")) &&
+        (!requestedIds || requestedIds.has(scenario.id)) &&
         requestedTags.every((tag) => scenario.tags.includes(tag)),
     );
 

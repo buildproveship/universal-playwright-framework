@@ -20,7 +20,6 @@ import { resolveGitExecutable } from "./check-typescript-source-policy";
 const FORMAT = "releaseready-private-starter/v1";
 const PACKAGE = "@universal/playwright-framework";
 const sourceRoot = path.resolve(__dirname, "../../..");
-type Mode = "demo" | "customer";
 interface Manifest {
   format: string;
   sourceRevision: string;
@@ -60,8 +59,13 @@ interface LockMetadata {
   version: string;
   packages: Record<string, unknown>;
 }
-function json<T>(file: string): T {
-  return JSON.parse(readFileSync(file, "utf8")) as T;
+/** The parsed manifest's file inventory must be a plain object of digests; JSON gives no such guarantee. */
+function isFileInventory(value: unknown): boolean {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function json(file: string): unknown {
+  return JSON.parse(readFileSync(file, "utf8"));
 }
 function writeJson(file: string, value: unknown): void {
   writeFileSync(file, JSON.stringify(value, null, 2) + "\n", { flag: "wx" });
@@ -131,7 +135,9 @@ export function buildStarter(output: string): {
       "dir",
     );
     runNpm(["run", "--ignore-scripts", "build"], snapshot);
-    const original = json<PackageMetadata>(path.join(snapshot, "package.json"));
+    const original = json(
+      path.join(snapshot, "package.json"),
+    ) as PackageMetadata;
     const packaged = { ...original, private: true, scripts: {} };
     delete packaged.publishConfig;
     // Replace only our newly archived, owned snapshot manifest. Destination writes remain exclusive.
@@ -163,7 +169,7 @@ export function buildStarter(output: string): {
     mkdirSync(path.join(destination, "common/vendor"));
     cpSync(tarball, path.join(destination, "common/vendor/framework.tgz"));
     // Adopt exact existing locked dependency graph, including dev tools. No resolver or "latest" fetch.
-    const lock = json<LockMetadata>(path.join(snapshot, "package-lock.json"));
+    const lock = json(path.join(snapshot, "package-lock.json")) as LockMetadata;
     const name = "releaseready-private-test-assets";
     const dependencies = {
       ...original.dependencies,
@@ -231,9 +237,10 @@ export function buildStarter(output: string): {
 export function createStarter(
   artifact: string,
   destination: string,
-  mode: Mode,
+  mode: string,
   expectedDigest: string,
 ): void {
+  // The mode comes from the command line, so it is checked here rather than trusted as a Mode.
   if (mode !== "demo" && mode !== "customer")
     throw new Error("Choose demo or customer mode");
   if (!/^[a-f0-9]{64}$/.test(expectedDigest))
@@ -248,9 +255,7 @@ export function createStarter(
   if (
     metadata.format !== FORMAT ||
     !/^[a-f0-9]{40}$/.test(metadata.sourceRevision) ||
-    !metadata.files ||
-    typeof metadata.files !== "object" ||
-    Array.isArray(metadata.files)
+    !isFileInventory(metadata.files)
   )
     throw new Error("Unsupported starter manifest");
   const files = Object.keys(metadata.files).sort();
@@ -278,13 +283,17 @@ export function createStarter(
       selected.set(relative, bytes);
     }
   }
+  const starterManifest = selected.get("package.json");
   if (
-    !selected.has("package.json") ||
+    !starterManifest ||
     !selected.has("package-lock.json") ||
     !selected.has("vendor/framework.tgz")
   )
     throw new Error("Artifact is missing required project files");
-  if (JSON.parse(selected.get("package.json")!.toString()).private !== true)
+  const starterPackage = JSON.parse(starterManifest.toString()) as {
+    readonly private?: unknown;
+  } | null;
+  if (starterPackage?.private !== true)
     throw new Error("Starter project must be private");
   const target = path.resolve(destination);
   requireEmptyDirectory(target);
@@ -312,7 +321,7 @@ if (require.main === module) {
     if (command === "build" && args.length === 1)
       console.log(JSON.stringify(buildStarter(args[0])));
     else if (command === "create" && args.length === 4) {
-      createStarter(args[0], args[1], args[2] as Mode, args[3]);
+      createStarter(args[0], args[1], args[2], args[3]);
       console.log(
         "Created private Not Reviewed project. Dependencies and browser are NOT installed. Run npm run setup in the project. No IDs allocated or cases registered.",
       );

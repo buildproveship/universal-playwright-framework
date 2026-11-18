@@ -22,19 +22,15 @@ export interface OperatorTerminalOutput extends Writable {
  * secure capture surface. Never inspect input, switch terminal mode, or fall back.
  * The independent in-process provider/consumer contract remains available.
  */
-export async function withOperatorLoginInputs(
-  descriptor: PreparedInputDescriptor,
-  request: RuntimeLoginRequest,
-  consume: (account: RuntimeLoginAccount) => Promise<void>,
-  options: {
+export function withOperatorLoginInputs(
+  _descriptor: PreparedInputDescriptor,
+  _request: RuntimeLoginRequest,
+  _consume: (account: RuntimeLoginAccount) => Promise<void>,
+  _options: {
     readonly input?: OperatorTerminalInput;
     readonly output?: OperatorTerminalOutput;
     readonly signal?: AbortSignal;
   } = {},
 ): Promise<RuntimeLoginResult> {
-  descriptor;
-  request;
-  consume;
-  options;
-  throw new RuntimeLoginError("runtime-input-unavailable");
+  return Promise.reject(new RuntimeLoginError("runtime-input-unavailable"));
 }

@@ -9,6 +9,7 @@ import {
   withFreshLoginPage,
 } from "../execution/runtime-login-browser";
 import { RuntimeLoginFailure } from "../input-preparation/runtime-login";
+import { untrusted } from "../validation/untrusted";
 import {
   REPOSITORY_ROOT,
   runtimePackagePath,
@@ -331,13 +332,15 @@ export async function executeImportedCase(
     authority.data.caseReview.id !== request.reviewId ||
     authority.data.runApproval.id !== request.approval.id ||
     authority.data.runApproval.expiresAt !== request.approval.expiresAt ||
-    typeof options?.beforeAcquire !== "function"
+    // Untyped callers can omit the hook or pass something else.
+    typeof untrusted(options)?.beforeAcquire !== "function"
   )
     return reject("INVALID_CONTEXT");
   if (
     running ||
     !artifact ||
-    artifact.policy !== "normal-ui-only" ||
+    // A registry entry is checked again rather than trusted for its declared policy.
+    untrusted(artifact)?.policy !== "normal-ui-only" ||
     !isDeepStrictEqual(artifact.observation, request.observation)
   )
     return reject("UNAVAILABLE");
@@ -357,6 +360,8 @@ export async function executeImportedCase(
   running = true;
   let acquired = false,
     claims = 0;
+  // Set inside the launch callback; read afresh where the type checker cannot see that.
+  const isAcquired = (): boolean => acquired;
   let interceptionAttempted = false;
   let outcome: ImportedCaseOutcome | undefined;
   const controller = new AbortController();
@@ -406,8 +411,10 @@ export async function executeImportedCase(
             request.target.origin,
             request.target.origin + "/",
             {
-              allow: async (request) =>
-                ["GET", "HEAD", "POST"].includes(request.method()),
+              allow: (request) =>
+                Promise.resolve(
+                  ["GET", "HEAD", "POST"].includes(request.method()),
+                ),
               response: () => undefined,
               assertComplete: () => undefined,
             },
@@ -525,7 +532,7 @@ export async function executeImportedCase(
         policyPassed: true,
       };
     } catch (error) {
-      if (!acquired)
+      if (!isAcquired())
         return reject(
           options.signal?.aborted ? "CANCELLED" : "INVALID_CONTEXT",
         );
@@ -557,6 +564,6 @@ export async function executeImportedCase(
   } finally {
     controller.abort();
     options.signal?.removeEventListener("abort", cancel);
-    if (!acquired) running = false;
+    if (!isAcquired()) running = false;
   }
 }

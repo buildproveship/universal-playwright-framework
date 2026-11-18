@@ -174,7 +174,7 @@ test("requires an explicit trusted manifest digest and supported mode", () => {
       createStarter(
         artifact,
         path.join(directory, "project"),
-        "other" as "demo",
+        "other",
         "a".repeat(64),
       );
     }, /Choose/);

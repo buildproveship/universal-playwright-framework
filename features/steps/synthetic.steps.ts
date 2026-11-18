@@ -1,6 +1,10 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber steps that drive the owned synthetic demo page in a local browser; no customer targets.
 import { Given, Then, When } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
-import type { SyntheticWorld } from "../support/world";
+import { openPage, type SyntheticWorld } from "../support/world";
 
 Given("the demo page is open", async function (this: SyntheticWorld) {
   this.page = await this.browser.newPage();
@@ -10,19 +14,19 @@ Given("the demo page is open", async function (this: SyntheticWorld) {
 });
 
 When("I activate the demo action", async function (this: SyntheticWorld) {
-  await this.page!.getByRole("button", { name: "Run demo action" }).click();
+  await openPage(this).getByRole("button", { name: "Run demo action" }).click();
 });
 
 Then(
   "the page title should be {string}",
   async function (this: SyntheticWorld, title: string) {
-    await expect(this.page!).toHaveTitle(title);
+    await expect(openPage(this)).toHaveTitle(title);
   },
 );
 
 Then(
   "I should see {string}",
   async function (this: SyntheticWorld, message: string) {
-    await expect(this.page!.getByRole("status")).toHaveText(message);
+    await expect(openPage(this).getByRole("status")).toHaveText(message);
   },
 );

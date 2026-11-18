@@ -314,7 +314,7 @@ function plainRecord(value: unknown, label: string): object {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     fail(`${label} must be a plain object`);
   }
-  const prototype = Object.getPrototypeOf(value);
+  const prototype: unknown = Object.getPrototypeOf(value);
   if (prototype !== Object.prototype && prototype !== null) {
     fail(`${label} must be a plain object`);
   }

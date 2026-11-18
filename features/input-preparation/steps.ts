@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber steps that validate synthetic reviewed scenarios and prepare their inputs and data references in memory; no browser or customer data.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -7,7 +11,6 @@ import {
   When,
   World,
   setWorldConstructor,
-  type IWorldOptions,
 } from "@cucumber/cucumber";
 import {
   InputPreparationError,
@@ -65,10 +68,6 @@ class InputPreparationWorld extends World {
   dataReferenceInput?: ReviewedDataReferenceInput;
   descriptor?: PreparedInputDescriptor;
   error?: unknown;
-
-  constructor(options: IWorldOptions) {
-    super(options);
-  }
 }
 
 setWorldConstructor(InputPreparationWorld);
@@ -83,9 +82,6 @@ async function loadReviewedScenarios(
     manifest,
   });
   assert.equal(validation.valid, true);
-  if (!validation.valid) {
-    throw new Error("Synthetic reviewed scenarios failed validation");
-  }
 
   const scenarios = approvedScenarioIds.map((id) => {
     const scenario = validation.scenarios.find(

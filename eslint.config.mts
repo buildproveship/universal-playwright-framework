@@ -29,4 +29,25 @@ export default defineConfig(
     files: ["starter/templates/**/*.spec.ts"],
     rules: { "playwright/consistent-spacing-between-blocks": "off" },
   },
+  // The same owner-approved template bytes (RRDWEB-34) predate the strict rule set. Each finding below is
+  // style or typing only, not behaviour, so it waits for the next template approval instead of an edit
+  // here; the list is in the adoption pull request. Scoped to the exact file and rule.
+  {
+    files: ["starter/templates/common/scripts/demo.ts"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
+  },
+  {
+    files: ["starter/templates/demo/fixtures/demo.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off",
+    },
+  },
+  {
+    files: ["starter/templates/demo/pages/demo-page.ts"],
+    rules: { "@typescript-eslint/no-useless-constructor": "off" },
+  },
 );

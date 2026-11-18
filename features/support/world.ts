@@ -9,3 +9,10 @@ export interface SyntheticWorld {
   baseUrl: string;
   page?: Page;
 }
+
+/** The page the Before hook opened; a step that runs without one fails with a clear message. */
+export function openPage(world: SyntheticWorld): Page {
+  if (!world.page)
+    throw new Error("No page is open; the Before hook opens one");
+  return world.page;
+}

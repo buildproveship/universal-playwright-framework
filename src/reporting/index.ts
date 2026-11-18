@@ -14,6 +14,7 @@ import {
   MAX_EXECUTION_SCENARIOS,
 } from "../execution/limits";
 import { REVIEWED_SOURCE_REVISION } from "../execution/reviewed-scenarios";
+import { isList } from "../validation/untrusted";
 
 // Execution references come from crypto.randomUUID(), so only v4 UUIDs are valid.
 const generatedReference = z.uuidv4();
@@ -184,9 +185,10 @@ export function createExecutionReport(
 ): ExecutionReport {
   assertReference(summary.diagnosticReference);
   if (
-    !Array.isArray(summary.scenarios) ||
+    // Untyped callers can pass anything; isList keeps the element type that Array.isArray would lose.
+    !isList(summary.scenarios) ||
     summary.scenarios.length > MAX_EXECUTION_SCENARIOS ||
-    !Array.isArray(summary.attempts) ||
+    !isList(summary.attempts) ||
     summary.attempts.length > MAX_EXECUTION_ATTEMPTS ||
     summary.attemptCount !== summary.attempts.length
   ) {
@@ -265,7 +267,7 @@ function scenarioLines(heading: string, scenario: ReportScenario): string[] {
     }
   }
   if (scenario.evidenceStatus === "unavailable") {
-    lines.push(`  Evidence unavailable: ${scenario.evidenceReason}`);
+    lines.push(`  Evidence unavailable: ${String(scenario.evidenceReason)}`);
   }
   return lines;
 }

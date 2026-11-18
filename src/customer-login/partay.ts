@@ -13,6 +13,7 @@ import {
 } from "../input-preparation/runtime-login";
 import { withOperatorLoginInputs } from "../input-preparation/operator-prompt";
 import { PrivateFileLoginDeferredError } from "../input-preparation/private-login-file";
+import { untrusted } from "../validation/untrusted";
 import {
   withFreshLoginPage,
   guardLoginRequests,
@@ -38,11 +39,14 @@ export interface PartayLoginResult extends RuntimeLoginResult {
 }
 
 function validatePolicy(options: PartayLoginOptions): PartayLoginOptions {
-  const binding = options.authenticationOnlyPolicy;
+  // Untyped JavaScript callers can pass any binding, so its fields are compared as unknown values.
+  const binding:
+    { readonly id?: unknown; readonly revision?: unknown } | undefined =
+    options.authenticationOnlyPolicy;
   if (
     binding !== undefined &&
-    (binding?.id !== PARTAY_AUTHENTICATION_ONLY_POLICY.id ||
-      binding?.revision !== PARTAY_AUTHENTICATION_ONLY_POLICY.revision)
+    (binding.id !== PARTAY_AUTHENTICATION_ONLY_POLICY.id ||
+      binding.revision !== PARTAY_AUTHENTICATION_ONLY_POLICY.revision)
   ) {
     throw new RuntimeLoginError("runtime-scope-mismatch");
   }
@@ -106,19 +110,14 @@ export async function promptAndVerifyPartayLogin(
   });
 }
 
-export async function privateFileAndVerifyPartayLogin(
-  descriptor: PreparedInputDescriptor,
-  request: RuntimeLoginRequest,
-  filePath: string,
-  repositoryRoot: string,
-  options: PartayLoginOptions = {},
+export function privateFileAndVerifyPartayLogin(
+  _descriptor: PreparedInputDescriptor,
+  _request: RuntimeLoginRequest,
+  _filePath: string,
+  _repositoryRoot: string,
+  _options: PartayLoginOptions = {},
 ): Promise<PartayLoginResult> {
-  descriptor;
-  request;
-  filePath;
-  repositoryRoot;
-  options;
-  throw new PrivateFileLoginDeferredError();
+  return Promise.reject(new PrivateFileLoginDeferredError());
 }
 
 async function withSafeFailure(
@@ -156,9 +155,12 @@ export function partayLoginFailureReport(
 }
 
 function validateTarget(
-  descriptor: PreparedInputDescriptor,
-  request: RuntimeLoginRequest,
+  trustedDescriptor: PreparedInputDescriptor,
+  trustedRequest: RuntimeLoginRequest,
 ): void {
+  // Untyped JavaScript callers can pass anything, so every level is checked before it is read.
+  const descriptor = untrusted(trustedDescriptor);
+  const request = untrusted(trustedRequest);
   if (
     descriptor?.environment?.initialTargetUrl !== PARTAY_LOGIN_URL ||
     request?.scope?.environment?.approvedOrigin !==

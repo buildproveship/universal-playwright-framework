@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
-import type { SyntheticWorld } from "../support/world";
+import { openPage, type SyntheticWorld } from "../support/world";
 import { SyntheticLoginPage } from "./login-ui-page";
 
 const syntheticPassword = "synthetic-ui-password-8";
@@ -36,7 +36,7 @@ When(
 
 Then("the password is masked", async function (this: SyntheticWorld) {
   await expect(
-    this.page!.getByRole("textbox", { name: "Password" }),
+    openPage(this).getByRole("textbox", { name: "Password" }),
   ).toHaveAttribute("type", "password");
 });
 
@@ -58,10 +58,10 @@ Then(
   "the password is visible and its synthetic value is unchanged",
   async function (this: SyntheticWorld) {
     await expect(
-      this.page!.getByRole("textbox", { name: "Password" }),
+      openPage(this).getByRole("textbox", { name: "Password" }),
     ).toHaveAttribute("type", "text");
     await expect(
-      this.page!.getByRole("textbox", { name: "Password" }),
+      openPage(this).getByRole("textbox", { name: "Password" }),
     ).toHaveValue(syntheticPassword);
   },
 );
@@ -70,9 +70,9 @@ Then(
   "the password is masked and the form has not been submitted",
   async function (this: SyntheticWorld) {
     await expect(
-      this.page!.getByRole("textbox", { name: "Password" }),
+      openPage(this).getByRole("textbox", { name: "Password" }),
     ).toHaveAttribute("type", "password");
-    await expect(this.page!.locator("#login-form")).toHaveAttribute(
+    await expect(openPage(this).locator("#login-form")).toHaveAttribute(
       "data-submissions",
       "0",
     );
@@ -82,18 +82,20 @@ Then(
 When(
   "I focus and activate the visibility control with the keyboard",
   async function (this: SyntheticWorld) {
-    const account = this.page!.getByRole("textbox", { name: "Account name" });
+    const account = openPage(this).getByRole("textbox", {
+      name: "Account name",
+    });
     await account.focus();
-    await this.page!.keyboard.press("Tab");
-    await this.page!.keyboard.press("Tab");
-    await this.page!.keyboard.press("Space");
+    await openPage(this).keyboard.press("Tab");
+    await openPage(this).keyboard.press("Tab");
+    await openPage(this).keyboard.press("Space");
   },
 );
 
 Then(
   "the visibility control is accessible and visibly focused",
   async function (this: SyntheticWorld) {
-    const toggle = this.page!.locator("#toggle-password");
+    const toggle = openPage(this).locator("#toggle-password");
     await expect(toggle).toHaveAttribute("aria-label", "Hide password");
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
     assert.equal(
@@ -113,12 +115,12 @@ Then(
   "the password is revealed without submitting the form",
   async function (this: SyntheticWorld) {
     await expect(
-      this.page!.getByRole("textbox", { name: "Password" }),
+      openPage(this).getByRole("textbox", { name: "Password" }),
     ).toHaveAttribute("type", "text");
     await expect(
-      this.page!.getByRole("textbox", { name: "Password" }),
+      openPage(this).getByRole("textbox", { name: "Password" }),
     ).toHaveValue(syntheticPassword);
-    await expect(this.page!.locator("#login-form")).toHaveAttribute(
+    await expect(openPage(this).locator("#login-form")).toHaveAttribute(
       "data-submissions",
       "0",
     );
@@ -135,8 +137,10 @@ When(
 Then(
   "both required fields report missing values",
   async function (this: SyntheticWorld) {
-    const account = this.page!.getByRole("textbox", { name: "Account name" });
-    const password = this.page!.getByRole("textbox", { name: "Password" });
+    const account = openPage(this).getByRole("textbox", {
+      name: "Account name",
+    });
+    const password = openPage(this).getByRole("textbox", { name: "Password" });
     await expect(account).toHaveAttribute("required", "");
     await expect(password).toHaveAttribute("required", "");
     assert.equal(
@@ -167,7 +171,7 @@ Then(
 );
 
 Then("the form has not been submitted", async function (this: SyntheticWorld) {
-  await expect(this.page!.locator("#login-form")).toHaveAttribute(
+  await expect(openPage(this).locator("#login-form")).toHaveAttribute(
     "data-submissions",
     "0",
   );
@@ -186,11 +190,11 @@ When(
 Then(
   "the local form records exactly one submission",
   async function (this: SyntheticWorld) {
-    await expect(this.page!.locator("#login-form")).toHaveAttribute(
+    await expect(openPage(this).locator("#login-form")).toHaveAttribute(
       "data-submissions",
       "1",
     );
-    await expect(this.page!.getByRole("status")).toHaveText(
+    await expect(openPage(this).getByRole("status")).toHaveText(
       "Local form submitted",
     );
   },
