@@ -43,14 +43,23 @@ import {
   withFreshLoginPage,
 } from "../src/execution/runtime-login-browser";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import fsPromises = require("node:fs/promises");
-import runtimeLoginModule = require("../src/input-preparation/runtime-login");
+import fsPromises from "node:fs/promises";
+import * as runtimeLoginModule from "../src/input-preparation/runtime-login";
 import { tmpdir } from "node:os";
 import {
   PRIVATE_FILE_LOGIN_DEFERRED_MESSAGE,
   PrivateFileLoginDeferredError,
   withPrivateFileLoginInputs,
 } from "../src/input-preparation/private-login-file";
+
+const noop = (): void => undefined;
+
+/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
+function settle<T>(body: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(body());
+  });
+}
 
 const canary = {
   username: "OWNED_WEB8_USERNAME_CANARY",
@@ -93,8 +102,9 @@ test("private-file entry points reject before touching or consuming synthetic in
           request,
           file,
           repositoryRoot,
-          async () => {
+          () => {
             consumed += 1;
+            return Promise.resolve();
           },
         ),
         assertPrivateFileDeferred,
@@ -106,9 +116,11 @@ test("private-file entry points reject before touching or consuming synthetic in
           file,
           repositoryRoot,
           {
-            launchBrowser: async () => {
+            launchBrowser: () => {
               browserAcquisitions += 1;
-              throw new Error("Unexpected browser acquisition");
+              return Promise.reject(
+                new Error("Unexpected browser acquisition"),
+              );
             },
           },
         ),
@@ -199,7 +211,6 @@ type Mode =
   | "waiting";
 
 function ownedBrowser(mode: Mode, afterSubmit?: () => void) {
-  let browser: Browser | undefined;
   let page: Page | undefined;
   let submissions = 0;
   let contexts = 0;
@@ -228,7 +239,10 @@ function ownedBrowser(mode: Mode, afterSubmit?: () => void) {
     },
     requests,
     async launchBrowser(timeoutMs: number): Promise<Browser> {
-      browser = await chromium.launch({ headless: true, timeout: timeoutMs });
+      const browser = await chromium.launch({
+        headless: true,
+        timeout: timeoutMs,
+      });
       browser.on("disconnected", () => {
         browserClosed = true;
       });
@@ -278,7 +292,7 @@ function ownedBrowser(mode: Mode, afterSubmit?: () => void) {
         const address = server.address();
         assert.ok(address && typeof address !== "string");
         const fixtureUrl = `http://127.0.0.1:${address.port}/`;
-        browser!.on("disconnected", () => {
+        browser.on("disconnected", () => {
           server.closeAllConnections();
           server.close();
         });
@@ -304,9 +318,7 @@ function ownedBrowser(mode: Mode, afterSubmit?: () => void) {
         context.newPage = async () => {
           page = await newPage();
           if (mode === "navigation-failure")
-            page.goto = async () => {
-              throw new Error(canary.password);
-            };
+            page.goto = () => Promise.reject(new Error(canary.password));
           return page;
         };
         return context;
@@ -492,14 +504,13 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
     let disposed = 0;
     let socketClosed = 0;
     const context = {
-      route: async (_pattern: string, handler: typeof handleRequest) => {
+      route: (_pattern: string, handler: typeof handleRequest) => {
         handleRequest = handler;
+        return Promise.resolve();
       },
-      routeWebSocket: async (
-        _pattern: string,
-        handler: typeof handleSocket,
-      ) => {
+      routeWebSocket: (_pattern: string, handler: typeof handleSocket) => {
         handleSocket = handler;
+        return Promise.resolve();
       },
     } as unknown as BrowserContext;
     const login = "http://127.0.0.1:1/";
@@ -518,23 +529,26 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
               : login,
         isNavigationRequest: () => true,
       }),
-      abort: async () => {
+      abort: () => {
         aborted += 1;
+        return Promise.resolve();
       },
-      fetch: async (options: unknown) => {
-        fetched += 1;
-        assert.deepEqual(options, { maxRedirects: 0 });
-        if (reason === "transport-error")
-          throw new Error(canary.password, { cause: canary.username });
-        return {
-          status: () => 302,
-          dispose: async () => {
-            disposed += 1;
-          },
-        };
-      },
-      fulfill: async () =>
-        assert.fail("Blocked response must not be fulfilled"),
+      fetch: (options: unknown) =>
+        settle(() => {
+          fetched += 1;
+          assert.deepEqual(options, { maxRedirects: 0 });
+          if (reason === "transport-error")
+            throw new Error(canary.password, { cause: canary.username });
+          return {
+            status: () => 302,
+            dispose: () => {
+              disposed += 1;
+              return Promise.resolve();
+            },
+          };
+        }),
+      fulfill: () =>
+        settle(() => assert.fail("Blocked response must not be fulfilled")),
     } as unknown as Route;
     if (reason === "websocket")
       handleSocket({
@@ -553,9 +567,7 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
     // A later failure must not replace the first category.
     await handleRequest({
       ...route,
-      fetch: async () => {
-        throw new Error(canary.password);
-      },
+      fetch: () => Promise.reject(new Error(canary.password)),
       request: () => ({ url: () => login, isNavigationRequest: () => false }),
     } as unknown as Route);
     let closes = 0;
@@ -573,28 +585,33 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
         },
         async () =>
           withFreshLoginPage(
-            async (_page, setStage) => {
-              setStage("request-policy");
-              assertAllowed();
-            },
+            (_page, setStage) =>
+              settle(() => {
+                setStage("request-policy");
+                assertAllowed();
+              }),
             {
-              launchBrowser: async () => {
+              launchBrowser: () => {
                 launches += 1;
-                return {
-                  close: async () => {
+                return Promise.resolve({
+                  close: () => {
                     closes += 1;
+                    return Promise.resolve();
                   },
-                  newContext: async () => ({
-                    setOffline: async () => undefined,
-                    close: async () => {
-                      closes += 1;
-                    },
-                    newPage: async () => ({
-                      setDefaultTimeout() {},
-                      setDefaultNavigationTimeout() {},
+                  newContext: () =>
+                    Promise.resolve({
+                      setOffline: () => Promise.resolve(),
+                      close: () => {
+                        closes += 1;
+                        return Promise.resolve();
+                      },
+                      newPage: () =>
+                        Promise.resolve({
+                          setDefaultTimeout: noop,
+                          setDefaultNavigationTimeout: noop,
+                        }),
                     }),
-                  }),
-                } as unknown as Browser;
+                } as unknown as Browser);
               },
             },
           ),
@@ -661,9 +678,9 @@ test("shared boundary reconstructs only safe metadata and disposes even when dis
     },
   };
   await assert.rejects(
-    consumeRuntimeLoginInputs(descriptor, request, wrapped, async () => {
-      throw poisoned;
-    }),
+    consumeRuntimeLoginInputs(descriptor, request, wrapped, () =>
+      Promise.reject(poisoned),
+    ),
     (error) => assertFailure(error, "navigation", "confirmed"),
   );
   assert.equal(disposals, 1);
@@ -685,7 +702,7 @@ test("provider disposal failure after consumer completion cannot produce a recei
           throw new Error(canary.password);
         },
       },
-      async () => undefined,
+      () => Promise.resolve(),
     ),
     (error) => assertFailure(error, "input-disposal", "unconfirmed"),
   );
@@ -741,27 +758,29 @@ for (const fault of ["launch", "context", "page"] as const) {
     let contextCloses = 0;
     await assert.rejects(
       verifyPartayLogin(descriptor, request, provider, {
-        launchBrowser: async () => {
-          launches += 1;
-          if (fault === "launch") throw new Error(canary.password);
-          return {
-            close: async () => {
-              browserCloses += 1;
-            },
-            newContext: async () => {
-              if (fault === "context") throw new Error(canary.password);
-              return {
-                setOffline: async () => undefined,
-                close: async () => {
-                  contextCloses += 1;
-                },
-                newPage: async () => {
-                  throw new Error(canary.password);
-                },
-              };
-            },
-          } as unknown as Browser;
-        },
+        launchBrowser: () =>
+          settle(() => {
+            launches += 1;
+            if (fault === "launch") throw new Error(canary.password);
+            return {
+              close: () => {
+                browserCloses += 1;
+                return Promise.resolve();
+              },
+              newContext: () =>
+                settle(() => {
+                  if (fault === "context") throw new Error(canary.password);
+                  return {
+                    setOffline: () => Promise.resolve(),
+                    close: () => {
+                      contextCloses += 1;
+                      return Promise.resolve();
+                    },
+                    newPage: () => Promise.reject(new Error(canary.password)),
+                  };
+                }),
+            } as unknown as Browser;
+          }),
       }),
       (error) =>
         assertFailure(
@@ -952,7 +971,7 @@ for (const fault of [
       request = { ...request, expiresAt: Date.now() - 1 };
     if (fault === "empty") {
       injected = {
-        resolve: async () => "",
+        resolve: () => Promise.resolve(""),
         dispose: () => {
           disposed = true;
         },
@@ -962,9 +981,9 @@ for (const fault of [
     await assert.rejects(
       verifyPartayLogin(descriptor, request, injected, {
         signal: controller.signal,
-        launchBrowser: async () => {
+        launchBrowser: () => {
           launches += 1;
-          throw new Error(canary.password);
+          return Promise.reject(new Error(canary.password));
         },
       }),
       (error) =>
@@ -1005,9 +1024,7 @@ test("launcher failure is sanitized and disposes input", async () => {
   const { descriptor, request, provider } = fixture();
   await assert.rejects(
     verifyPartayLogin(descriptor, request, provider, {
-      launchBrowser: async () => {
-        throw new Error(canary.password);
-      },
+      launchBrowser: () => Promise.reject(new Error(canary.password)),
     }),
     (error) => assertFailure(error, "browser-startup", "not-acquired"),
   );
@@ -1441,7 +1458,8 @@ for (const outcome of [
 ] as const) {
   test(`Given ${outcome}, when login evidence is finalized, then only a completed comparison is classified as an assertion`, async () => {
     const controller = new AbortController();
-    let requestHandler: (route: Route) => Promise<void> = async () => undefined;
+    let requestHandler: (route: Route) => Promise<void> = () =>
+      Promise.resolve();
     let closes = 0;
     const blockedRequest = (): Promise<void> =>
       requestHandler({
@@ -1449,13 +1467,14 @@ for (const outcome of [
           url: () => "https://blocked.invalid/",
           isNavigationRequest: () => false,
         }),
-        abort: async () => undefined,
+        abort: () => Promise.resolve(),
       } as unknown as Route);
     const context = {
-      setOffline: async () => undefined,
-      routeWebSocket: async () => undefined,
-      route: async (_pattern: string, handler: typeof requestHandler) => {
+      setOffline: () => Promise.resolve(),
+      routeWebSocket: () => Promise.resolve(),
+      route: (_pattern: string, handler: typeof requestHandler) => {
         requestHandler = handler;
+        return Promise.resolve();
       },
       close: async () => {
         closes += 1;
@@ -1465,11 +1484,12 @@ for (const outcome of [
           await blockedRequest();
         if (outcome === "cleanup-failure") throw new Error(canary.password);
       },
-      newPage: async () => ({
-        context: () => context,
-        setDefaultTimeout() {},
-        setDefaultNavigationTimeout() {},
-      }),
+      newPage: () =>
+        Promise.resolve({
+          context: () => context,
+          setDefaultTimeout: noop,
+          setDefaultNavigationTimeout: noop,
+        }),
     } as unknown as BrowserContext;
     await assert.rejects(
       withFreshLoginPage(
@@ -1504,13 +1524,14 @@ for (const outcome of [
         {
           timeoutMs: 50,
           signal: controller.signal,
-          launchBrowser: async () =>
-            ({
-              newContext: async () => context,
-              close: async () => {
+          launchBrowser: () =>
+            Promise.resolve({
+              newContext: () => Promise.resolve(context),
+              close: () => {
                 closes += 1;
+                return Promise.resolve();
               },
-            }) as unknown as Browser,
+            } as unknown as Browser),
         },
       ),
       (error) => {
@@ -1562,14 +1583,15 @@ test("Given failed input disposal after an assertion, then evidence is operation
           throw new Error(canary.password);
         },
       },
-      async () => {
-        throw new RuntimeLoginFailure(
-          "brand-text",
-          "confirmed",
-          undefined,
-          "assertion-failed",
-        );
-      },
+      () =>
+        Promise.reject(
+          new RuntimeLoginFailure(
+            "brand-text",
+            "confirmed",
+            undefined,
+            "assertion-failed",
+          ),
+        ),
     ),
     (error) => {
       assertSafe(error);
@@ -1658,7 +1680,7 @@ for (const state of [
     let contextClosed = false;
     let browserClosed = false;
     const server = createServer((req, res) => {
-      hits.push(`${req.method} ${req.url}`);
+      hits.push(`${String(req.method)} ${String(req.url)}`);
       if (req.url === "/") {
         res.setHeader("Content-Type", "text/html");
         res.end(
@@ -1700,7 +1722,7 @@ for (const state of [
               register(matcher, async (route, req) => {
                 route.fetch = async (opts) => {
                   assert.equal(opts?.maxRedirects, 0);
-                  assert.equal(opts?.maxRetries, 0);
+                  assert.equal(opts.maxRetries, 0);
                   const path = new URL(req.url()).pathname;
                   // Deliberately do not forward or inspect input values/headers.
                   return context.request.fetch(
@@ -1717,7 +1739,12 @@ for (const state of [
               page.goto = async (url, opts) => {
                 const response = await goto(url, opts);
                 await page.evaluate((state) => {
-                  const button = document.getElementById("authGo")!;
+                  const byId = (id: string): HTMLElement => {
+                    const element = document.getElementById(id);
+                    if (!element) throw new Error(`Missing #${id}`);
+                    return element;
+                  };
+                  const button = byId("authGo");
                   if (state === "registration")
                     button.textContent = "Create account";
                   button.onclick = async () => {
@@ -1728,10 +1755,10 @@ for (const state of [
                       },
                     });
                     if (state !== "missing-me") await fetch("/me");
-                    document.getElementById("overlay")!.hidden = true;
+                    byId("overlay").hidden = true;
                     if (state === "onboarding") {
                       await fetch("/agent/characters").catch(() => undefined);
-                      document.getElementById("onboard")!.hidden = false;
+                      byId("onboard").hidden = false;
                     } else if (
                       [
                         "authenticated",
@@ -1741,8 +1768,8 @@ for (const state of [
                       ].includes(state)
                     ) {
                       if (state === "visible-onboarding")
-                        document.getElementById("onboard")!.hidden = false;
-                      document.getElementById("bottomnav")!.hidden = false;
+                        byId("onboard").hidden = false;
+                      byId("bottomnav").hidden = false;
                       await fetch("/agent/greeting").catch(() => undefined);
                     }
                   };
@@ -1759,11 +1786,11 @@ for (const state of [
       if (state === "authenticated" || state === "known-resources") {
         const result = await operation;
         assert.equal(result.authenticationOnly?.scope, "authentication-only");
-        assert.equal(result.authenticationOnly?.downstream, "untested-blocked");
-        assert.equal(result.authenticationOnly?.productDefectEvidence, false);
-        assert.equal(result.authenticationOnly?.excludedBackgroundRequests, 1);
+        assert.equal(result.authenticationOnly.downstream, "untested-blocked");
+        assert.equal(result.authenticationOnly.productDefectEvidence, false);
+        assert.equal(result.authenticationOnly.excludedBackgroundRequests, 1);
         assert.equal(
-          result.authenticationOnly?.knownBlockedResources.total,
+          result.authenticationOnly.knownBlockedResources.total,
           state === "known-resources" ? 5 : 0,
         );
         assert.ok(!JSON.stringify(result).includes("CANARY"));
@@ -1805,9 +1832,9 @@ test("Given an unknown explicit policy binding, reject before resolving inputs o
       descriptor,
       request,
       {
-        resolve: async () => {
+        resolve: () => {
           resolutions++;
-          return "SYNTHETIC_CANARY";
+          return Promise.resolve("SYNTHETIC_CANARY");
         },
         dispose: () => {
           provider.dispose();
@@ -1818,9 +1845,9 @@ test("Given an unknown explicit policy binding, reject before resolving inputs o
           id: "unknown",
           revision: "v1",
         } as unknown as import("../src/customer-login/authentication-only").AuthenticationOnlyBinding,
-        launchBrowser: async () => {
+        launchBrowser: () => {
           launches++;
-          throw new Error("Unexpected launch");
+          return Promise.reject(new Error("Unexpected launch"));
         },
       },
     ),

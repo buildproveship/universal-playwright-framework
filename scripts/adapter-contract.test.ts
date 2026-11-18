@@ -30,7 +30,6 @@ test("validation and execution use the same approved step matcher", () => {
 
 function accepted(result: AdapterResult) {
   assert.equal(result.accepted, true);
-  if (!result.accepted) throw new Error("Expected an accepted execution");
   return JSON.parse(JSON.stringify(result)) as Extract<
     AdapterResult,
     { accepted: true }
@@ -65,7 +64,7 @@ test("invalid, stale, unsupported and unauthorized requests acquire nothing", as
       { ...request, limits: { ...request.limits, scenarioTimeoutMs: 49 } },
       { ...request, limits: { ...request.limits, maxConcurrentScenarios: 3 } },
       { ...request, testCleanupFailure: "context" },
-      { ...request, onBrowserProcessStarted: () => {} },
+      { ...request, onBrowserProcessStarted: () => undefined },
       { ...request, password: "not-an-accepted-field" },
       { ...request, path: "../../arbitrary" },
       null,
@@ -107,7 +106,7 @@ test("invalid, stale, unsupported and unauthorized requests acquire nothing", as
       );
       const result = await executeAdapter(request, context);
       assert.equal(result.accepted, false);
-      if (!result.accepted) assert.equal(result.error.code, "STALE_REVIEW");
+      assert.equal(result.error.code, "STALE_REVIEW");
     } finally {
       writeFileSync(fixture, original);
     }
@@ -265,9 +264,9 @@ test("cancellation is isolated between two real runs and late cancellation canno
 });
 
 test("actual acquisition failure stays incomplete with unknown cleanup, not a raw exception", async () => {
-  const browser = mock.method(chromium, "launchServer", async () => {
-    throw new Error("private diagnostic must not escape");
-  });
+  const browser = mock.method(chromium, "launchServer", () =>
+    Promise.reject(new Error("private diagnostic must not escape")),
+  );
   try {
     const fixture = examples();
     const result = accepted(

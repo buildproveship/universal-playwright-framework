@@ -1,3 +1,7 @@
+// Test classification: unit
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Checks Windows taskkill path resolution and invocation semantics with a mocked execFile and a simulated platform; no real process is spawned or terminated.
 import assert from "node:assert/strict";
 import childProcess from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -71,15 +75,17 @@ describe("Windows taskkill deployment trust boundary", () => {
     "invalid",
   ]) {
     it(`preserves invocation semantics for ${outcome}`, async (context) => {
-      const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+      const platform = Object.getOwnPropertyDescriptor(process, "platform");
+      assert.ok(platform);
       Object.defineProperty(process, "platform", { value: "win32" });
       context.after(() => Object.defineProperty(process, "platform", platform));
       const previous = process.env[variable];
       context.after(() => {
-        if (previous === undefined) delete process.env[variable];
+        if (previous === undefined)
+          Reflect.deleteProperty(process.env, variable);
         else process.env[variable] = previous;
       });
-      if (outcome === "missing") delete process.env[variable];
+      if (outcome === "missing") Reflect.deleteProperty(process.env, variable);
       else
         process.env[variable] =
           outcome === "invalid" ? "taskkill.exe" : trustedPath;
@@ -108,11 +114,12 @@ describe("Windows taskkill deployment trust boundary", () => {
   }
 
   it("never invokes a Windows executable on a non-Windows host", async (context) => {
-    const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const platform = Object.getOwnPropertyDescriptor(process, "platform");
+    assert.ok(platform);
     const previous = process.env[variable];
     context.after(() => {
       Object.defineProperty(process, "platform", platform);
-      if (previous === undefined) delete process.env[variable];
+      if (previous === undefined) Reflect.deleteProperty(process.env, variable);
       else process.env[variable] = previous;
     });
     Object.defineProperty(process, "platform", { value: "linux" });

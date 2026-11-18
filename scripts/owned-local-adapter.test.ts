@@ -26,6 +26,9 @@ import {
 import { executeAdapter } from "../src/adapter/v1";
 import { examples } from "../features/adapter/examples";
 
+/** Acquisition gate double that always admits the run. */
+const resolved = (): Promise<void> => Promise.resolve();
+
 async function requestFor(
   origin = "http://127.0.0.1:34567",
 ): Promise<OwnedLocalRequest> {
@@ -125,7 +128,7 @@ test("Given missing, expired, revoked or cross-scope approval, admission rejects
         request,
         input,
         undefined,
-        async () => {},
+        resolved,
       );
       assert.equal(result.accepted, false);
       assert.equal(validateOwnedLocalEvidence(request, result), true);
@@ -189,10 +192,9 @@ test("Given an approved owned loopback target, the real browser navigates it onc
       request,
       owner(request),
       undefined,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, true);
-    if (!result.accepted) throw new Error("Expected execution");
     assert.equal(result.report.status, "passed");
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
     assert.equal(result.lifecycle.attempts.length, 1);
@@ -272,10 +274,9 @@ test("Given a broken owned target, a genuine assertion failure remains failed wi
       request,
       owner(request),
       undefined,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, true);
-    if (!result.accepted) throw new Error("Expected execution");
     assert.equal(result.report.status, "failed");
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
     assert.equal(validateOwnedLocalEvidence(request, result), true);
@@ -295,9 +296,9 @@ test("Given approval is revoked at the acquisition gate, the adapter rejects bef
       request,
       owner(request),
       undefined,
-      async () => {
+      () => {
         gates++;
-        throw new Error("revoked");
+        return Promise.reject(new Error("revoked"));
       },
     );
     assert.equal(result.accepted, false);
@@ -322,10 +323,9 @@ test("Given cancellation before execution, no target request is sent and cancell
       request,
       owner(request),
       abort.signal,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, true);
-    if (!result.accepted) throw new Error("Expected bounded outcome");
     assert.equal(result.report.status, "cancelled");
     assert.equal(
       validateOwnedLocalEvidence(request, {
@@ -382,10 +382,9 @@ test("Given the packaged implementation changes, approval rejects before acquisi
       request,
       owner(request),
       undefined,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, false);
-    if (result.accepted) throw new Error("Expected rejection");
     assert.equal(result.error.code, "STALE_REVIEW");
     assert.equal(launch.mock.callCount(), 0);
   } finally {
@@ -403,10 +402,9 @@ test("Given the run deadline expires, the owned browser stops and no retry begin
       request,
       owner(request),
       undefined,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, true);
-    if (!result.accepted) throw new Error("Expected bounded outcome");
     assert.equal(result.report.status, "timed_out");
     assert.equal(result.lifecycle.attempts.length, 1);
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
@@ -424,10 +422,9 @@ test("Given the owned target stops after authorization, the real browser failure
     request,
     owner(request),
     undefined,
-    async () => {},
+    resolved,
   );
   assert.equal(result.accepted, true);
-  if (!result.accepted) throw new Error("Expected execution outcome");
   assert.equal(result.report.status, "failed");
   assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
   assert.equal(result.lifecycle.attempts.length, 1);
@@ -449,10 +446,9 @@ test("Given cancellation during a target navigation, only the acquired browser s
       request,
       owner(request),
       abort.signal,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, true);
-    if (!result.accepted) throw new Error("Expected bounded cancellation");
     assert.equal(result.report.status, "cancelled");
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
     assert.equal(result.lifecycle.attempts.length, 1);
@@ -515,24 +511,25 @@ for (const hasBusinessEvidence of [false, true]) {
       const engineFailure = mock.method(
         engine,
         "executeReviewedScenarios",
-        async () => ({
-          diagnosticReference,
-          status: "failed" as const,
-          resourceCleanup,
-          dataRestoration,
-          scenarios,
-          attemptCount: 1,
-          attempts: [
-            {
-              attemptNumber: 1,
-              diagnosticReference,
-              status: "failed" as const,
-              resourceCleanup,
-              dataRestoration,
-              scenarios,
-            },
-          ],
-        }),
+        () =>
+          Promise.resolve({
+            diagnosticReference,
+            status: "failed" as const,
+            resourceCleanup,
+            dataRestoration,
+            scenarios,
+            attemptCount: 1,
+            attempts: [
+              {
+                attemptNumber: 1,
+                diagnosticReference,
+                status: "failed" as const,
+                resourceCleanup,
+                dataRestoration,
+                scenarios,
+              },
+            ],
+          }),
       );
       try {
         const request = await requestFor();
@@ -540,10 +537,9 @@ for (const hasBusinessEvidence of [false, true]) {
           request,
           owner(request),
           undefined,
-          async () => {},
+          resolved,
         );
         assert.equal(result.accepted, true);
-        if (!result.accepted) throw new Error("Expected preserved outcome");
         assert.equal(result.report.status, "incomplete");
         assert.equal(result.report.attempts[0].status, "incomplete");
         assert.equal(result.report.scenarios[0].status, "incomplete");
@@ -622,10 +618,9 @@ test("RR207-OWNED-001 prior demo approval is stale before browser acquisition af
       request,
       owner(request),
       undefined,
-      async () => {},
+      resolved,
     );
     assert.equal(result.accepted, false);
-    if (result.accepted) throw new Error("Expected stale rejection");
     assert.equal(result.error.code, "STALE_REVIEW");
     assert.equal(launch.mock.callCount(), 0);
   } finally {

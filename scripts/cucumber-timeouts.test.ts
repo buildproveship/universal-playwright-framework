@@ -171,9 +171,7 @@ test("server closes when browser close rejects and the browser error is preserve
     server.listen(0, "127.0.0.1", resolve);
   });
   const browser = {
-    close: async () => {
-      throw browserError;
-    },
+    close: () => Promise.reject(browserError),
   } as Pick<Browser, "close">;
 
   try {
@@ -206,7 +204,10 @@ test("server closes within a bound when browser close never settles", async () =
     server.listen(0, "127.0.0.1", resolve);
   });
   const browser = {
-    close: () => new Promise<void>(() => {}),
+    close: () =>
+      new Promise<void>(() => {
+        // Deliberately never settles: models a browser close that hangs.
+      }),
   } as Pick<Browser, "close">;
   const startedAt = Date.now();
 
@@ -243,9 +244,7 @@ test("both cleanup failures are attempted and preserved", async () => {
   const serverError = new Error("server close failed");
   let serverCloseAttempted = false;
   const browser = {
-    close: async () => {
-      throw browserError;
-    },
+    close: () => Promise.reject(browserError),
   } as Pick<Browser, "close">;
   const server = {
     listening: true,

@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Runs login-control observation and request guarding in a real local Chromium against owned loopback fixtures, including hostile handlers, cancellation and cleanup races; no customer site or real credentials are used.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium, type Page } from "@playwright/test";
@@ -20,7 +24,7 @@ async function fixture(
   const hits: string[] = [];
   await withLoopbackServer(
     (request, response) => {
-      hits.push(`${request.method} ${request.url}`);
+      hits.push(`${String(request.method)} ${String(request.url)}`);
       if (request.url === "/") {
         response.setHeader("Content-Type", "text/html");
         response.end(
@@ -179,10 +183,12 @@ test("Given private field values and unexpected labels, observation exposes only
       await page.goto(url);
       await page.locator("#password").fill("SYNTHETIC_PRIVATE");
       await page.evaluate(() => {
-        document.querySelector("#brandLogo")!.textContent = "SYNTHETIC_PRIVATE";
-        document
-          .querySelector(".pw-eye")!
-          .setAttribute("aria-label", "SYNTHETIC_PRIVATE");
+        const brandLogo = document.querySelector("#brandLogo");
+        if (!brandLogo) throw new Error("Fixture #brandLogo missing");
+        brandLogo.textContent = "SYNTHETIC_PRIVATE";
+        const eye = document.querySelector(".pw-eye");
+        if (!eye) throw new Error("Fixture .pw-eye missing");
+        eye.setAttribute("aria-label", "SYNTHETIC_PRIVATE");
       });
       const result = await observeLoginControls(page);
       assert.equal(result.brandLogo.text, "other");
@@ -205,15 +211,15 @@ test("Given cancelled inspection, no browser is acquired and no raw error is exp
   await assert.rejects(
     inspectPartayLogin({
       signal: controller.signal,
-      launchBrowser: async () => {
+      launchBrowser: () => {
         acquired = true;
-        throw new Error("SYNTHETIC_PRIVATE");
+        return Promise.reject(new Error("SYNTHETIC_PRIVATE"));
       },
     }),
     (error) => {
       const failure = RuntimeLoginFailure.fromUnknown(error);
       assert.equal(failure?.cleanupStatus, "not-acquired");
-      assert.equal(failure?.failureClassification, "interrupted");
+      assert.equal(failure.failureClassification, "interrupted");
       assert.ok(!JSON.stringify(error).includes("SYNTHETIC_PRIVATE"));
       return true;
     },
@@ -415,7 +421,7 @@ for (const kind of ["cancel", "timeout"] as const) {
           );
           assert.equal(closeResults.length, 2);
           assert.equal(
-            failure?.cleanupStatus,
+            failure.cleanupStatus,
             closeResults.every(Boolean) ? "confirmed" : "unconfirmed",
           );
           return true;
@@ -434,12 +440,15 @@ test("Given hostile capture handlers, observation never activates any control or
       await page.mouse.move(-10, -10);
       await page.goto(url);
       await page.evaluate(() => {
-        const eye = document.querySelector<HTMLButtonElement>(".pw-eye")!;
+        const eye = document.querySelector<HTMLButtonElement>(".pw-eye");
+        if (!eye) throw new Error("Fixture .pw-eye missing");
         document.addEventListener(
           "click",
           () => {
-            document.querySelector<HTMLInputElement>("#password")!.value =
-              "SYNTHETIC_PRIVATE";
+            const password =
+              document.querySelector<HTMLInputElement>("#password");
+            if (!password) throw new Error("Fixture #password missing");
+            password.value = "SYNTHETIC_PRIVATE";
           },
           true,
         );
@@ -447,9 +456,9 @@ test("Given hostile capture handlers, observation never activates any control or
           "click",
           () => {
             document.body.dataset.activations = "1";
-            document
-              .querySelector<HTMLFormElement>("#overlay")!
-              .requestSubmit();
+            const overlay = document.querySelector<HTMLFormElement>("#overlay");
+            if (!overlay) throw new Error("Fixture #overlay missing");
+            overlay.requestSubmit();
           },
           true,
         );
@@ -548,7 +557,8 @@ test("Given a fetch still settling, stop waits before browser cleanup and preser
       await stop;
       policy.assertComplete();
     });
-    policy!.assertComplete();
+    assert.ok(policy);
+    policy.assertComplete();
     assert.deepEqual(hits, ["GET /", "GET /health"]);
   });
 });
@@ -621,7 +631,7 @@ test("Given deadline during drain, the browser lifecycle still interrupts withou
       (error) => {
         const failure = RuntimeLoginFailure.fromUnknown(error);
         assert.equal(failure?.failureClassification, "timed-out");
-        assert.notEqual(failure?.cleanupStatus, "not-acquired");
+        assert.notEqual(failure.cleanupStatus, "not-acquired");
         return true;
       },
     );
@@ -639,12 +649,9 @@ test("Given denial fails after stop, inspection remains failed rather than hidin
           pattern,
           async (route, request) => {
             if (new URL(request.url()).pathname === "/health") {
-              route.abort = async () => {
-                throw new Error("Owned close race");
-              };
-              route.fetch = async () => {
-                throw new Error("Unexpected transport");
-              };
+              route.abort = () => Promise.reject(new Error("Owned close race"));
+              route.fetch = () =>
+                Promise.reject(new Error("Unexpected transport"));
             }
             await handler(route, request);
             if (new URL(request.url()).pathname === "/health")

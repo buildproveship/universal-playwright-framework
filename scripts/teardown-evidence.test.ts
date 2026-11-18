@@ -43,6 +43,16 @@ import {
   readOwnedEvidence,
 } from "../src/execution/owned-evidence";
 
+/**
+ * Runs `work` synchronously like an async function body: a return resolves
+ * the promise and a synchronous throw rejects it.
+ */
+function settle<T>(work: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(work());
+  });
+}
+
 const root = path.resolve(__dirname, "../../..");
 const formatter = path.join(
   root,
@@ -193,7 +203,10 @@ function runFixture(mode: string) {
 
 test("completed business evidence survives a failing After and AfterAll without raw errors", () => {
   const raw = runFixture("cleanup-failure");
-  const snapshot = JSON.parse(raw);
+  const snapshot: unknown = JSON.parse(raw);
+  assert.ok(
+    typeof snapshot === "object" && snapshot !== null && "steps" in snapshot,
+  );
   assert.deepEqual(
     snapshot.steps,
     names.map(() => "passed"),
@@ -364,7 +377,7 @@ for (const { diagnosticsEnabled, mode } of [
     "unavailable-business",
   ].map((mode) => ({ diagnosticsEnabled: true, mode })),
 ]) {
-  test(`v2 runner retains completed steps and operational failure through actual hooks (${mode}, diagnostics=${diagnosticsEnabled})`, async () => {
+  test(`v2 runner retains completed steps and operational failure through actual hooks (${mode}, diagnostics=${String(diagnosticsEnabled)})`, async () => {
     const directory = mkdtempSync(
       path.join(tmpdir(), "rr139-runner-evidence-"),
     );
@@ -375,27 +388,29 @@ for (const { diagnosticsEnabled, mode } of [
       child: ReturnType<typeof originalSpawn>;
       exited: Promise<unknown>;
     }[] = [];
-    const launch = mock.method(chromium, "launchServer", async () => {
-      const child = originalSpawn(
-        process.execPath,
-        ["-e", "setInterval(()=>{},1000)"],
-        { stdio: "ignore" },
-      );
-      const exited = once(child, "exit");
-      browserChildren.push({ child, exited });
-      return {
-        process: () => child,
-        wsEndpoint: () => "ws://127.0.0.1:3003",
-        close: async () => {
-          child.kill();
-          await exited;
-        },
-        kill: async () => {
-          child.kill("SIGKILL");
-          await exited;
-        },
-      } as never;
-    });
+    const launch = mock.method(chromium, "launchServer", () =>
+      settle(() => {
+        const child = originalSpawn(
+          process.execPath,
+          ["-e", "setInterval(()=>{},1000)"],
+          { stdio: "ignore" },
+        );
+        const exited = once(child, "exit");
+        browserChildren.push({ child, exited });
+        return {
+          process: () => child,
+          wsEndpoint: () => "ws://127.0.0.1:3003",
+          close: async () => {
+            child.kill();
+            await exited;
+          },
+          kill: async () => {
+            child.kill("SIGKILL");
+            await exited;
+          },
+        } as never;
+      }),
+    );
     const worker = mock.method(
       childProcess,
       "spawn",
@@ -456,8 +471,9 @@ for (const { diagnosticsEnabled, mode } of [
               approval: { active: true, expiresAt: Date.now() + 60000 },
             },
             undefined,
-            async () => {
+            () => {
               admissions++;
+              return Promise.resolve();
             },
           ),
         ),
@@ -529,7 +545,6 @@ for (const { diagnosticsEnabled, mode } of [
         assert.equal(launch.mock.callCount(), invocationCount);
         assert.equal(worker.mock.callCount(), invocationCount);
         assert.equal(result.accepted, true);
-        if (!result.accepted) throw new Error("Expected accepted execution");
         assert.equal(validateOwnedLocalEvidence(request, result), true);
         assert.equal(
           result.report.status,
@@ -701,14 +716,16 @@ test("new source and runtime helpers are fingerprinted; changed artifacts reject
 test("isolated package is removed even when a mutation assertion fails", async () => {
   let owned = "";
   await assert.rejects(
-    withIsolatedReviewedPackage(async (isolated) => {
-      owned = isolated;
-      writeFileSync(
-        path.join(isolated, "src/execution/owned-evidence.ts"),
-        "synthetic mutation",
-      );
-      throw new Error("synthetic assertion failure");
-    }),
+    withIsolatedReviewedPackage((isolated) =>
+      settle(() => {
+        owned = isolated;
+        writeFileSync(
+          path.join(isolated, "src/execution/owned-evidence.ts"),
+          "synthetic mutation",
+        );
+        throw new Error("synthetic assertion failure");
+      }),
+    ),
     /synthetic assertion failure/,
   );
   assert.equal(existsSync(owned), false);
@@ -846,8 +863,9 @@ test("opt-in diagnostic invocations have isolated empty envelopes for rejected i
   let admissions = 0;
   const results = await Promise.all(
     Array.from({ length: 3 }, () =>
-      executeOwnedLocalAdapterWithDiagnostics({}, {}, undefined, async () => {
+      executeOwnedLocalAdapterWithDiagnostics({}, {}, undefined, () => {
         admissions++;
+        return Promise.resolve();
       }),
     ),
   );

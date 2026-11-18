@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Validates reviewed synthetic feature files and approved-scenario selection against repository fixtures and temporary workspaces; it does not execute any scenario or browser.
 import assert from "node:assert/strict";
 import {
   copyFileSync,
@@ -40,9 +44,7 @@ function expectInvalid(
   expectedReason: RegExp,
 ): void {
   assert.equal(result.valid, false);
-  if (!result.valid) {
-    assert.match(result.reason, expectedReason);
-  }
+  assert.match(result.reason, expectedReason);
 }
 
 async function validateFixture(
@@ -79,9 +81,6 @@ function approvalFor(
 test("validates synthetic feature metadata, inherited setup, tags, and example rows", async () => {
   const validation = await validateFixture();
   assert.equal(validation.valid, true);
-  if (!validation.valid) {
-    return;
-  }
 
   assert.equal(validation.sourceRevision, "source-revision-a");
   assert.match(validation.featureRevision, /^[a-f0-9]{64}$/);
@@ -248,13 +247,11 @@ ${exampleRows}
       },
     });
     assert.equal(withinLimits.valid, true);
-    if (withinLimits.valid) {
-      assert.equal(withinLimits.scenarios.length, rowCount);
-      assert.ok(withinLimits.scenarios.every((scenario) => scenario.runnable));
-      assert.ok(
-        withinLimits.scenarios.every((scenario) => scenario.steps.length === 2),
-      );
-    }
+    assert.equal(withinLimits.scenarios.length, rowCount);
+    assert.ok(withinLimits.scenarios.every((scenario) => scenario.runnable));
+    assert.ok(
+      withinLimits.scenarios.every((scenario) => scenario.steps.length === 2),
+    );
 
     const tooManyScenarios = await validateFeatureFile({
       ...input,
@@ -336,15 +333,12 @@ ${Array.from({ length: stepCount }, () => "    Given x").join("\n")}
 test("marks missing and ambiguous reviewed step matches not runnable", async () => {
   const unresolvedValidation = await validateFixture();
   assert.equal(unresolvedValidation.valid, true);
-  if (!unresolvedValidation.valid) {
-    return;
-  }
   const unresolved = unresolvedValidation.scenarios.find(
     (scenario) => scenario.id === "undefined-step",
   );
   assert.equal(unresolved?.runnable, false);
   assert.equal(
-    unresolved?.steps.at(-1)?.text,
+    unresolved.steps.at(-1)?.text,
     "this synthetic step is not reviewed",
   );
 
@@ -359,16 +353,13 @@ test("marks missing and ambiguous reviewed step matches not runnable", async () 
     manifest: ambiguousManifest,
   });
   assert.equal(ambiguousValidation.valid, true);
-  if (!ambiguousValidation.valid) {
-    return;
-  }
   const ambiguous = ambiguousValidation.scenarios.find(
     (scenario) => scenario.id === "approved-basic",
   );
   assert.equal(ambiguous?.runnable, false);
-  assert.equal(ambiguous?.steps.at(-1)?.issue, "ambiguous");
+  assert.equal(ambiguous.steps.at(-1)?.issue, "ambiguous");
   assert.match(
-    ambiguous?.issues.join(" ") ?? "",
+    ambiguous.issues.join(" "),
     /ambiguous reviewed implementations/,
   );
 });
@@ -376,9 +367,6 @@ test("marks missing and ambiguous reviewed step matches not runnable", async () 
 test("selects only approved IDs with matching tags and rejects empty or stale approval", async () => {
   const validation = await validateFixture();
   assert.equal(validation.valid, true);
-  if (!validation.valid) {
-    return;
-  }
   const approval = approvalFor(validation, [
     "approved-basic",
     "approved-outline/row-a",
@@ -395,12 +383,10 @@ test("selects only approved IDs with matching tags and rejects empty or stale ap
     tags: ["@rule-review", "@row-review"],
   });
   assert.equal(selected.runnable, true);
-  if (selected.runnable) {
-    assert.deepEqual(
-      selected.scenarios.map((scenario) => scenario.id),
-      ["approved-outline/row-a"],
-    );
-  }
+  assert.deepEqual(
+    selected.scenarios.map((scenario) => scenario.id),
+    ["approved-outline/row-a"],
+  );
 
   const changedTagsApproval: ScenarioApproval = {
     ...approval,
@@ -412,17 +398,13 @@ test("selects only approved IDs with matching tags and rejects empty or stale ap
   };
   const changedTags = selectApprovedScenarios(validation, changedTagsApproval);
   assert.equal(changedTags.runnable, false);
-  if (!changedTags.runnable) {
-    assert.match(changedTags.reason, /scenario or its tags changed/);
-  }
+  assert.match(changedTags.reason, /scenario or its tags changed/);
 
   const noMatches = selectApprovedScenarios(validation, approval, {
     tags: ["@not-approved"],
   });
   assert.equal(noMatches.runnable, false);
-  if (!noMatches.runnable) {
-    assert.match(noMatches.reason, /No approved runnable scenarios match/);
-  }
+  assert.match(noMatches.reason, /No approved runnable scenarios match/);
 
   const changedSource = await validateFixture({
     sourceRevision: "source-revision-b",
@@ -451,9 +433,6 @@ test("selects only approved IDs with matching tags and rejects empty or stale ap
       manifest,
     });
     assert.equal(original.valid, true);
-    if (!original.valid) {
-      return;
-    }
     const originalApproval = approvalFor(original, ["approved-basic"]);
     writeFileSync(
       featureFile,

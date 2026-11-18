@@ -14,17 +14,36 @@ import { runLoginCommand } from "./login-command";
 
 const signalNames = ["SIGINT", "SIGTERM"] as const;
 
+/**
+ * Runs `work` synchronously like an async function body: a return resolves
+ * the promise and a synchronous throw rejects it.
+ */
+function settle<T>(work: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(work());
+  });
+}
+
+/** Parses one line of written failure evidence after checking it is an object. */
+function evidence(text: string): Record<string, unknown> {
+  const parsed: unknown = JSON.parse(text);
+  assert.ok(typeof parsed === "object" && parsed !== null);
+  return parsed as Record<string, unknown>;
+}
+
 test("login commands remove only their own signal listeners after success and cancellation", async () => {
   for (const signalName of [undefined, "SIGINT", "SIGTERM"] as const) {
-    const existing = (): void => {};
+    const existing = (): void => undefined;
     process.on("SIGINT", existing);
     const before = signalNames.map((name) => process.listeners(name));
     try {
-      await runLoginCommand(async (signal) => {
-        assert.equal(signal.aborted, false);
-        if (signalName) process.emit(signalName);
-        assert.equal(signal.aborted, signalName !== undefined);
-      });
+      await runLoginCommand((signal) =>
+        settle(() => {
+          assert.equal(signal.aborted, false);
+          if (signalName) process.emit(signalName);
+          assert.equal(signal.aborted, signalName !== undefined);
+        }),
+      );
       assert.deepEqual(
         signalNames.map((name) => process.listeners(name)),
         before,
@@ -53,9 +72,7 @@ test("login commands preserve safe failure evidence without exposing unknown err
         "request-policy",
       ),
     ]) {
-      await runLoginCommand(async () => {
-        throw error;
-      });
+      await runLoginCommand(() => Promise.reject(error));
       assert.equal(process.exitCode, 1);
       assert.deepEqual(
         signalNames.map((name) => process.listeners(name)),
@@ -63,9 +80,9 @@ test("login commands preserve safe failure evidence without exposing unknown err
       );
     }
     assert.ok(!output.join("").includes("CANARY"));
-    assert.equal(JSON.parse(output[0]).failureStage, "unclassified");
-    assert.equal(JSON.parse(output[1]).policyReason, "off-origin");
-    assert.equal(JSON.parse(output[1]).cleanupStatus, "confirmed");
+    assert.equal(evidence(output[0]).failureStage, "unclassified");
+    assert.equal(evidence(output[1]).policyReason, "off-origin");
+    assert.equal(evidence(output[1]).cleanupStatus, "confirmed");
   } finally {
     process.exitCode = exitCode;
   }

@@ -2,11 +2,14 @@
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Child-process fixture that runs the partay-login CLI with mocked file and prompt access to prove the deferred private-account-file flag reads nothing; no customer login.
-import fs = require("node:fs");
+// Default import binds the live CommonJS module object, so the mock below is
+// visible to the CLI under test (a namespace import would be a copy).
+import fs from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { mock } from "node:test";
-import partay = require("../../src/customer-login/partay");
+// A compiled ES module namespace is the live exports object, so mocks apply.
+import * as partay from "../../src/customer-login/partay";
 
 const file = process.argv[2];
 if (!file) throw new Error("Expected an owned synthetic fixture path");
@@ -29,13 +32,13 @@ mock.method(
 
 let promptCalls = 0;
 let fileCalls = 0;
-mock.method(partay, "promptAndVerifyPartayLogin", async () => {
+mock.method(partay, "promptAndVerifyPartayLogin", () => {
   promptCalls += 1;
-  throw new Error("Unexpected prompt dispatch");
+  return Promise.reject(new Error("Unexpected prompt dispatch"));
 });
-mock.method(partay, "privateFileAndVerifyPartayLogin", async () => {
+mock.method(partay, "privateFileAndVerifyPartayLogin", () => {
   fileCalls += 1;
-  throw new Error("Unexpected file dispatch");
+  return Promise.reject(new Error("Unexpected file dispatch"));
 });
 
 process.argv = [

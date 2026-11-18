@@ -19,6 +19,17 @@ import path from "node:path";
 import { test } from "node:test";
 import { createStarter, sha256 } from "./private-starter";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
+function settle<T>(body: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(body());
+  });
+}
+
 const root = path.resolve(__dirname, "../../..");
 function fixture(
   use: (directory: string, artifact: string, digest: string) => void,
@@ -68,13 +79,15 @@ for (const mode of ["demo", "customer"] as const) {
         existsSync(path.join(target, "placeholder.txt")),
         mode === "customer",
       );
-      const provenance = JSON.parse(
+      const provenance: unknown = JSON.parse(
         readFileSync(path.join(target, "starter-provenance.json"), "utf8"),
       );
+      assert.ok(isRecord(provenance));
       assert.equal(provenance.sourceRevision, "a".repeat(40));
       assert.equal(provenance.manifestSha256, digest);
       assert.equal(provenance.reviewStatus, "Not Reviewed");
       assert.equal(provenance.registered, false);
+      assert.ok(typeof provenance.identityStatus === "string");
       assert.match(provenance.identityStatus, /^unallocated/);
       assert.deepEqual(
         readFileSync(path.join(target, "vendor/framework.tgz")),
@@ -168,17 +181,20 @@ test("requires an explicit trusted manifest digest and supported mode", () => {
   });
 });
 test("templates are reference-only, keep one rulebook and never assign canonical IDs", () => {
-  const inputs = JSON.parse(
+  const inputs: unknown = JSON.parse(
     readFileSync(
       path.join(root, "starter/templates/common/customer-inputs.example.json"),
       "utf8",
     ),
   );
+  assert.ok(isRecord(inputs));
   assert.deepEqual(Object.keys(inputs), [
     "targetUrl",
     "dataReference",
     "execution",
   ]);
+  assert.ok(typeof inputs.targetUrl === "string");
+  assert.ok(typeof inputs.dataReference === "string");
   assert.match(inputs.targetUrl, /^</);
   assert.match(inputs.dataReference, /^</);
   const rules = readFileSync(
@@ -312,9 +328,8 @@ for (const failure of [
     let fixtureFunction: (
       args: unknown,
       use: () => Promise<void>,
-    ) => Promise<void> = async () => {
-      throw new Error("Fixture not registered");
-    };
+    ) => Promise<void> = () =>
+      Promise.reject(new Error("Fixture not registered"));
     const compiled = ts.transpileModule(
       readFileSync(
         path.join(root, "starter/templates/demo/fixtures/demo.ts"),
@@ -351,7 +366,15 @@ for (const failure of [
               },
             }),
           };
-        if (name === "../pages/demo-page.ts") return { DemoPage: class {} };
+        if (name === "../pages/demo-page.ts")
+          return {
+            DemoPage: class {
+              readonly args: unknown[];
+              constructor(...args: unknown[]) {
+                this.args = args;
+              }
+            },
+          };
         throw new Error("Unexpected import");
       },
     });
@@ -366,17 +389,16 @@ for (const failure of [
       continued = 0,
       closed = 0;
     const context = {
-      route: async (_pattern: string, handler: typeof routeHandler) => {
-        if (failure === "route") throw new Error("route failed");
-        routeHandler = handler;
-      },
-      routeWebSocket: async (
-        _pattern: string,
-        handler: typeof socketHandler,
-      ) => {
-        if (failure === "websocket") throw new Error("websocket failed");
-        socketHandler = handler;
-      },
+      route: (_pattern: string, handler: typeof routeHandler) =>
+        settle(() => {
+          if (failure === "route") throw new Error("route failed");
+          routeHandler = handler;
+        }),
+      routeWebSocket: (_pattern: string, handler: typeof socketHandler) =>
+        settle(() => {
+          if (failure === "websocket") throw new Error("websocket failed");
+          socketHandler = handler;
+        }),
     };
     const promise = fixtureFunction({ page: {}, context }, async () => {
       if (failure === "use") throw new Error("use failed");
@@ -391,11 +413,13 @@ for (const failure of [
                 ? "https://not-contacted.invalid/"
                 : `http://127.0.0.1:${address.port}/`,
           }),
-          abort: async () => {
+          abort: () => {
             aborted++;
+            return Promise.resolve();
           },
-          continue: async () => {
+          continue: () => {
             continued++;
+            return Promise.resolve();
           },
         });
       }

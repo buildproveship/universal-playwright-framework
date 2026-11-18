@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Runs the execution adapter against reviewed synthetic scenarios, owned local servers and an isolated reviewed package to check retries, cancellation, deadlines, cleanup evidence and tamper rejection; no customer system or real login is exercised.
 import {
   withIsolatedReviewedPackage,
   assertOriginalReviewUnaffected,
@@ -489,14 +493,10 @@ test("tampered emitted code, runner config, and dependency metadata fail pre-acq
       }
 
       await loadReviewedScenarios();
-      assert.equal(result?.status, "incomplete", relativePath);
-      assert.equal(
-        result?.resourceCleanup.status,
-        "not_required",
-        relativePath,
-      );
-      assert.deepEqual(result?.resourceCleanup.failures, [], relativePath);
-      assert.equal(result?.resourceCleanup.browserProcessStopped, null);
+      assert.equal(result.status, "incomplete", relativePath);
+      assert.equal(result.resourceCleanup.status, "not_required", relativePath);
+      assert.deepEqual(result.resourceCleanup.failures, [], relativePath);
+      assert.equal(result.resourceCleanup.browserProcessStopped, null);
     }
   });
 });

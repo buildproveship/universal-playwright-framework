@@ -174,7 +174,6 @@ async function main(): Promise<void> {
     failedExample.context,
   );
   assert.ok(failed.accepted, JSON.stringify(failed));
-  if (!failed.accepted) throw new Error("Expected an admitted synthetic run");
   assert.equal(failed.report.status, "failed");
   assert.equal(failed.report.attempts.length, 1);
   assert.equal(failed.report.attempts[0].status, "failed");
@@ -196,9 +195,7 @@ async function main(): Promise<void> {
   const executionFailure = mock.method(
     execution,
     "executeReviewedScenarios",
-    async () => {
-      throw new Error("SYNTHETIC_PRIVATE_ENGINE_DIAGNOSTIC");
-    },
+    () => Promise.reject(new Error("SYNTHETIC_PRIVATE_ENGINE_DIAGNOSTIC")),
   );
   try {
     const uncertain = await adapter.executeAdapter(
@@ -206,8 +203,6 @@ async function main(): Promise<void> {
       uncertainExample.context,
     );
     assert.ok(uncertain.accepted, JSON.stringify(uncertain));
-    if (!uncertain.accepted)
-      throw new Error("Expected an admitted synthetic run");
     assert.equal(uncertain.report.status, "incomplete");
     assert.equal(uncertain.report.attempts.length, 0);
     assert.equal(uncertain.lifecycle.resourceCleanup.status, "unknown");
@@ -237,7 +232,7 @@ async function main(): Promise<void> {
     writeFileSync(worker, Buffer.concat([original, Buffer.from("\n")]));
     const stale = await adapter.executeAdapter(request, context);
     assert.equal(stale.accepted, false);
-    if (!stale.accepted) assert.equal(stale.error.code, "STALE_REVIEW");
+    assert.equal(stale.error.code, "STALE_REVIEW");
   } finally {
     writeFileSync(worker, original);
   }

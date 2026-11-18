@@ -1,7 +1,21 @@
+// Test classification: unit
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Exercises settleApprovedRoute against in-memory route and response doubles for fulfil, redirect-block and failure ordering; no real browser or network is involved.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Route } from "playwright-core";
 import { settleApprovedRoute } from "../src/execution/guarded-route";
+
+/**
+ * Runs `work` synchronously like an async function body: a return resolves
+ * the promise and a synchronous throw rejects it.
+ */
+function settle<T>(work: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(work());
+  });
+}
 
 function fixture(
   options: {
@@ -15,32 +29,37 @@ function fixture(
   const response = {
     status: () => options.status ?? 200,
     headers: () => ({ location: "/blocked", "content-type": "text/plain" }),
-    body: async () => {
-      events.push("body");
-      if (options.failure === "body") throw failure;
-      return Buffer.from("synthetic");
-    },
-    dispose: async () => {
-      events.push("dispose");
-      if (options.failure === "dispose") throw failure;
-    },
+    body: () =>
+      settle(() => {
+        events.push("body");
+        if (options.failure === "body") throw failure;
+        return Buffer.from("synthetic");
+      }),
+    dispose: () =>
+      settle(() => {
+        events.push("dispose");
+        if (options.failure === "dispose") throw failure;
+      }),
   };
   const route = {
-    fetch: async (input: Parameters<Route["fetch"]>[0]) => {
-      assert.deepEqual(input, { maxRedirects: 0 });
-      events.push("fetch");
-      if (options.failure === "fetch") throw failure;
-      return response;
-    },
-    abort: async (reason?: string) => {
-      events.push(`abort:${reason}`);
-      if (options.failure === "abort") throw failure;
-    },
-    fulfill: async (input: Parameters<Route["fulfill"]>[0]) => {
-      events.push("fulfill");
-      fulfilled = input;
-      if (options.failure === "fulfill") throw failure;
-    },
+    fetch: (input: Parameters<Route["fetch"]>[0]) =>
+      settle(() => {
+        assert.deepEqual(input, { maxRedirects: 0 });
+        events.push("fetch");
+        if (options.failure === "fetch") throw failure;
+        return response;
+      }),
+    abort: (reason?: string) =>
+      settle(() => {
+        events.push(`abort:${String(reason)}`);
+        if (options.failure === "abort") throw failure;
+      }),
+    fulfill: (input: Parameters<Route["fulfill"]>[0]) =>
+      settle(() => {
+        events.push("fulfill");
+        fulfilled = input;
+        if (options.failure === "fulfill") throw failure;
+      }),
   };
   return { route, events, failure, fulfilled: () => fulfilled };
 }
@@ -56,7 +75,7 @@ test("An allowed response is materialized and released before a single fulfillme
 for (const phase of ["fetch", "body", "dispose"] as const) {
   test(`A ${phase} failure aborts an unconsumed route exactly once`, async () => {
     const f = fixture({ failure: phase });
-    await settleApprovedRoute(f.route, () => {});
+    await settleApprovedRoute(f.route, () => undefined);
     assert.equal(f.events.filter((x) => x.startsWith("abort:")).length, 1);
     assert.equal(f.events.at(-1), "abort:failed");
     assert.equal(f.fulfilled(), undefined);
@@ -71,7 +90,7 @@ test("A redirect disposal racing context shutdown never double-aborts", async ()
 });
 test("Redirects are blocked without following or fulfilling them", async () => {
   const f = fixture({ status: 302 });
-  await settleApprovedRoute(f.route, () => {});
+  await settleApprovedRoute(f.route, () => undefined);
   assert.deepEqual(f.events, ["fetch", "dispose", "abort:blockedbyclient"]);
 });
 for (const terminal of ["fulfill", "abort"] as const) {
@@ -81,7 +100,7 @@ for (const terminal of ["fulfill", "abort"] as const) {
       failure: terminal,
     });
     await assert.rejects(
-      settleApprovedRoute(f.route, () => {}),
+      settleApprovedRoute(f.route, () => undefined),
       (error) => error === f.failure,
     );
     assert.equal(

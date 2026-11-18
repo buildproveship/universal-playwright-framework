@@ -1,3 +1,7 @@
+// Test classification: unit
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Exercises the paused work-clock fixture and the login-page cleanup deadline with mocked timers and an in-memory browser double; no real browser is launched.
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Browser } from "@playwright/test";
@@ -7,6 +11,8 @@ import {
   LOGIN_CLEANUP_TIMEOUT_MS,
 } from "../src/execution/runtime-login-browser";
 import { RuntimeLoginFailure } from "../src/input-preparation/runtime-login";
+
+const noop = (): undefined => undefined;
 
 test("paused clock restores remaining delay, callback receiver and arguments", (t) => {
   t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: 100000 });
@@ -60,10 +66,10 @@ for (const fault of ["capacity", "refresh"] as const) {
     const handles: ReturnType<typeof setTimeout>[] = [];
     if (fault === "capacity") {
       for (let index = 0; index < 128; index++)
-        handles.push(setTimeout(() => {}, 100));
-      assert.throws(() => setTimeout(() => {}, 100));
+        handles.push(setTimeout(noop, 100));
+      assert.throws(() => setTimeout(noop, 100));
     } else {
-      const handle = setTimeout(() => {}, 100);
+      const handle = setTimeout(noop, 100);
       handles.push(handle);
       assert.throws(() => handle.refresh());
     }
@@ -95,21 +101,21 @@ test("early context failure cannot leave the cleanup deadline paused", async (t)
   let entered = false;
   let settled = false;
   const browser = {
-    newContext: async () => {
-      throw new Error("owned context failure");
-    },
+    newContext: () => Promise.reject(new Error("owned context failure")),
     close: async () => {
       closeStarted();
-      await new Promise<void>(() => {});
+      // Never settles: models a browser close that hangs.
+      await new Promise<void>(noop);
     },
   } as unknown as Browser;
   const operation = withFreshLoginPage(
-    async () => {
+    () => {
       entered = true;
+      return Promise.resolve();
     },
     {
       timeoutMs: 1000,
-      launchBrowser: async () => browser,
+      launchBrowser: () => Promise.resolve(browser),
     },
   );
   const checked = assert

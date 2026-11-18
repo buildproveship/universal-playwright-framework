@@ -1,9 +1,7 @@
-/**
- * Test classification: integration
- * Review status: Not Reviewed
- * Evidence: synthetic
- * Scope: Fixed synthetic authority, actual isolated browser/HTTP lifecycle and fail-closed imported adapter; no genuine case approval or product execution.
- */
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Fixed synthetic authority, actual isolated browser/HTTP lifecycle and fail-closed imported adapter; no genuine case approval or product execution.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { execFile } from "node:child_process";
@@ -14,6 +12,40 @@ import {
   IMPORTED_IMPLEMENTATION_REVISION,
 } from "../src/adapter/imported-v1";
 const exec = promisify(execFile);
+
+interface FixtureOutput {
+  readonly acquired: unknown;
+  readonly result: {
+    readonly accepted: unknown;
+    readonly status?: unknown;
+    readonly code?: unknown;
+    readonly cleanup?: unknown;
+  };
+  readonly closeEvents: readonly unknown[];
+  readonly foreignRequests: unknown;
+  readonly valid: unknown;
+  readonly wrongCaseAccepted: unknown;
+  readonly unknownCleanupPassAccepted: unknown;
+  readonly runnerCalls: unknown;
+  readonly second?: { readonly code?: unknown };
+}
+
+function parseFixtureOutput(stdout: string): FixtureOutput {
+  const parsed: unknown = JSON.parse(stdout);
+  assert.ok(typeof parsed === "object" && parsed !== null);
+  assert.ok(
+    "result" in parsed &&
+      typeof parsed.result === "object" &&
+      parsed.result !== null,
+  );
+  assert.ok("closeEvents" in parsed && Array.isArray(parsed.closeEvents));
+  assert.ok(
+    !("second" in parsed) ||
+      parsed.second === undefined ||
+      (typeof parsed.second === "object" && parsed.second !== null),
+  );
+  return parsed as FixtureOutput;
+}
 const cases = [
   ["pass", "passed", 1],
   ["fail", "failed", 1],
@@ -56,7 +88,7 @@ for (const [scenario, expected, count] of cases)
         },
       },
     );
-    const actual = JSON.parse(stdout);
+    const actual = parseFixtureOutput(stdout);
     assert.equal(actual.acquired, count);
     assert.equal(
       actual.result.accepted ? actual.result.status : actual.result.code,
@@ -76,7 +108,7 @@ for (const [scenario, expected, count] of cases)
             : "confirmed",
         );
       } else assert.equal(actual.result.cleanup, "confirmed");
-      assert.equal(actual.second.code, "UNAVAILABLE");
+      assert.equal(actual.second?.code, "UNAVAILABLE");
     } else assert.equal(actual.runnerCalls, 0);
     if (scenario === "tamper-before-load") assert.equal(actual.runnerCalls, 0);
   });

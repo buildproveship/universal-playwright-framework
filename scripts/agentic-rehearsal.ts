@@ -206,7 +206,7 @@ if (!isMainThread) {
   if (input.fault === "crash") throw new Error("Synthetic fixture crash");
   if (input.fault === "hang") {
     parentPort?.postMessage("fixture-started");
-    setInterval(() => {}, 1000);
+    setInterval(() => undefined, 1000);
   } else {
     // Reference-only fixture client. No pool payloads or credentials are accepted.
     const readOwnedFixture = (): { user: string } => ({ user: "owned-user" });

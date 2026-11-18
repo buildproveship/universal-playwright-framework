@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Exercises runtime login input validation, secret-provider and operator-prompt handling with synthetic canaries and in-memory doubles; no real customer login or external traffic.
 import assert from "node:assert/strict";
 import { inspect } from "node:util";
 import { PassThrough } from "node:stream";
@@ -23,6 +27,13 @@ const canary = {
   username: "SYNTHETIC_ACCOUNT_CANARY_2026",
   password: "SYNTHETIC_PASSWORD_CANARY_2026",
 };
+
+/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
+function settle<T>(body: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(body());
+  });
+}
 
 function fixture() {
   const reviewed = reviewDataReferences(
@@ -256,8 +267,9 @@ test("missing, empty, whitespace-only and expired inputs reject before the consu
     const provider = new InMemoryRuntimeSecretProvider(request, canary);
     try {
       await assert.rejects(
-        consumeRuntimeLoginInputs(descriptor, changed, provider, async () => {
+        consumeRuntimeLoginInputs(descriptor, changed, provider, () => {
           browserStarts += 1;
+          return Promise.resolve();
         }),
         RuntimeLoginError,
       );
@@ -266,10 +278,13 @@ test("missing, empty, whitespace-only and expired inputs reject before the consu
     }
   }
   assert.equal(browserStarts, 0);
-  const emptyProvider: RuntimeSecretProvider = { resolve: async () => "" };
+  const emptyProvider: RuntimeSecretProvider = {
+    resolve: () => Promise.resolve(""),
+  };
   await assert.rejects(
-    consumeRuntimeLoginInputs(descriptor, request, emptyProvider, async () => {
+    consumeRuntimeLoginInputs(descriptor, request, emptyProvider, () => {
       browserStarts += 1;
+      return Promise.resolve();
     }),
     { code: "invalid-runtime-input" },
   );
@@ -338,9 +353,10 @@ test("consumer completion, failure and invalid scope all dispose the injected ru
         ? { ...request, scope: { ...request.scope, runId: "another-run" } }
         : request,
       provider,
-      async () => {
-        if (outcome === "throw") throw new Error(canary.password);
-      },
+      () =>
+        settle(() => {
+          if (outcome === "throw") throw new Error(canary.password);
+        }),
     );
     if (outcome === "complete") {
       assertNoCanaries(await execution);
@@ -366,19 +382,18 @@ test("provider exceptions and expiry during async resolution cannot leak or star
   let browserStarts = 0;
   for (const provider of [
     {
-      resolve: async () => {
-        throw new Error(canary.password);
-      },
+      resolve: () => Promise.reject(new Error(canary.password)),
     },
     {
-      resolve: async () => {
-        throw { value: canary.username };
-      },
+      resolve: () =>
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- deliberately rejects a non-Error to prove non-Error provider failures cannot leak
+        Promise.reject({ value: canary.username }),
     },
   ]) {
     await assert.rejects(
-      consumeRuntimeLoginInputs(descriptor, request, provider, async () => {
+      consumeRuntimeLoginInputs(descriptor, request, provider, () => {
         browserStarts += 1;
+        return Promise.resolve();
       }),
       (error: unknown) => {
         assert.ok(error instanceof RuntimeLoginError);
@@ -398,8 +413,9 @@ test("provider exceptions and expiry during async resolution cannot leak or star
           return canary.password;
         },
       },
-      async () => {
+      () => {
         browserStarts += 1;
+        return Promise.resolve();
       },
     ),
     { code: "expired-runtime-input" },
@@ -441,13 +457,14 @@ test("runtime login errors never log canaries or mutate the ordinary worker payl
         descriptor,
         request,
         new InMemoryRuntimeSecretProvider(request, canary),
-        async (account) => {
-          assert.equal(account.username, canary.username);
-          assert.equal(account.password, canary.password);
-          assert.equal(process.env.WEB_EXECUTION_PAYLOAD, ordinaryPayload);
-          assert.deepEqual(process.argv, previousArguments);
-          throw new Error(`${canary.username}:${canary.password}`);
-        },
+        (account) =>
+          settle(() => {
+            assert.equal(account.username, canary.username);
+            assert.equal(account.password, canary.password);
+            assert.equal(process.env.WEB_EXECUTION_PAYLOAD, ordinaryPayload);
+            assert.deepEqual(process.argv, previousArguments);
+            throw new Error(`${canary.username}:${canary.password}`);
+          }),
       ),
       (error: unknown) => {
         assert.ok(error instanceof RuntimeLoginError);
@@ -545,8 +562,9 @@ test("RRDPLAT-39 inherited-terminal entry is disabled before prompting or consum
       withOperatorLoginInputs(
         descriptor,
         request,
-        async () => {
+        () => {
           consumed = true;
+          return Promise.resolve();
         },
         { input, output },
       ),
@@ -593,11 +611,12 @@ for (const environment of [
         const pending = withOperatorLoginInputs(
           descriptor,
           state === "expired" ? { ...request, expiresAt: 1 } : request,
-          async () => {
-            assert.fail(
-              "Blocked entry must never acquire a consumer or browser",
-            );
-          },
+          () =>
+            settle(() => {
+              assert.fail(
+                "Blocked entry must never acquire a consumer or browser",
+              );
+            }),
           { input, output, signal: controller.signal },
         );
         controller.abort();
@@ -624,17 +643,20 @@ for (const environment of [
         withOperatorLoginInputs(
           descriptor,
           request,
-          async () => {
-            assert.fail("Consumer acquired");
-          },
+          () =>
+            settle(() => {
+              assert.fail("Consumer acquired");
+            }),
           unavailable,
         ),
         { code: "runtime-input-unavailable" },
       );
       await assert.rejects(
-        withOperatorLoginInputs(descriptor, request, async () => {
-          assert.fail("Default stdin fallback acquired");
-        }),
+        withOperatorLoginInputs(descriptor, request, () =>
+          settle(() => {
+            assert.fail("Default stdin fallback acquired");
+          }),
+        ),
         { code: "runtime-input-unavailable" },
       );
     } finally {
@@ -665,37 +687,39 @@ test("lint repair preserves disposal precedence and exactly-once disposal across
         descriptor,
         stage === "validation" ? { ...request, expiresAt: 0 } : request,
         {
-          resolve: async (reference) => {
-            resolutions += 1;
-            if (stage === "resolve") throw new Error(canary.password);
-            return reference.field === "username"
-              ? canary.username
-              : canary.password;
-          },
+          resolve: (reference) =>
+            settle(() => {
+              resolutions += 1;
+              if (stage === "resolve") throw new Error(canary.password);
+              return reference.field === "username"
+                ? canary.username
+                : canary.password;
+            }),
           dispose: () => {
             disposals += 1;
             if (disposalThrows) throw new Error(canary.password);
           },
         },
-        async (account) => {
-          consumptions += 1;
-          captured = account;
-          if (stage === "unknown-consumer") throw new Error(canary.password);
-          if (stage === "policy-consumer")
-            throw new RuntimeLoginFailure(
-              "request-policy",
-              "confirmed",
-              "off-origin",
-              "request-policy",
-            );
-          if (stage === "assertion-consumer")
-            throw new RuntimeLoginFailure(
-              "brand-text",
-              "confirmed",
-              undefined,
-              "assertion-failed",
-            );
-        },
+        (account) =>
+          settle(() => {
+            consumptions += 1;
+            captured = account;
+            if (stage === "unknown-consumer") throw new Error(canary.password);
+            if (stage === "policy-consumer")
+              throw new RuntimeLoginFailure(
+                "request-policy",
+                "confirmed",
+                "off-origin",
+                "request-policy",
+              );
+            if (stage === "assertion-consumer")
+              throw new RuntimeLoginFailure(
+                "brand-text",
+                "confirmed",
+                undefined,
+                "assertion-failed",
+              );
+          }),
       );
       if (stage === "success" && !disposalThrows) {
         assert.equal((await result).status, "completed");
@@ -744,7 +768,9 @@ test("lint repair preserves disposal precedence and exactly-once disposal across
         consumptions,
         stage === "validation" || stage === "resolve" ? 0 : 1,
       );
-      if (captured) assert.throws(() => captured!.username, RuntimeLoginError);
+      const capturedAccount = captured;
+      if (capturedAccount)
+        assert.throws(() => capturedAccount.username, RuntimeLoginError);
     }
   }
 });

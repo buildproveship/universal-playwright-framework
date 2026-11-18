@@ -37,12 +37,12 @@ export function pauseWorkClock() {
     const handle = {
       ref() {
         timer.referenced = true;
-        timer.native?.ref?.();
+        timer.native?.ref();
         return this;
       },
       unref() {
         timer.referenced = false;
-        timer.native?.unref?.();
+        timer.native?.unref();
         return this;
       },
       hasRef() {
@@ -83,7 +83,7 @@ export function pauseWorkClock() {
           },
           Math.max(0, timer.due - nativeNow()),
         );
-        if (!timer.referenced) timer.native.unref?.();
+        if (!timer.referenced) timer.native.unref();
       }
     }
   };

@@ -525,9 +525,7 @@ test("rejects malformed, empty and duplicate selections and snapshots", async ()
   for (const [label, malformed, reason] of cases) {
     const result = assessReuseReadiness(malformed as ReuseReadinessInput);
     assert.equal(result.valid, false, label);
-    if (!result.valid) {
-      assert.match(result.reason, reason, label);
-    }
+    assert.match(result.reason, reason, label);
   }
 });
 
@@ -586,7 +584,6 @@ test("marks a fully evidenced candidate only as ready for human review", async (
     readyCandidate(report),
   );
   assert.equal(readiness.valid, true);
-  if (!readiness.valid) return;
   assert.equal(readiness.status, "ready-for-human-review");
   assert.deepEqual(readiness.blockers, []);
   assert.equal(readiness.acceptance, "not-accepted");
@@ -675,7 +672,6 @@ test("blocks candidates with failed, missing or stale validation and outcome or 
       readyCandidate(report, overrides),
     );
     assert.equal(readiness.valid, true, label);
-    if (!readiness.valid) continue;
     assert.equal(readiness.status, "blocked", label);
     assert.equal(readiness.acceptance, "not-accepted", label);
     assert.equal(readiness.executionAuthorized, false, label);
@@ -709,14 +705,12 @@ test("blocks candidates for unapproved outcomes and rejects malformed candidate 
     readyCandidate(unapproved),
   );
   assert.equal(blocked.valid, true);
-  if (blocked.valid) {
-    assert.equal(blocked.status, "blocked");
-    assert.ok(
-      blocked.blockers.some(
-        (blocker) => blocker.code === "case-not-awaiting-step-implementation",
-      ),
-    );
-  }
+  assert.equal(blocked.status, "blocked");
+  assert.ok(
+    blocked.blockers.some(
+      (blocker) => blocker.code === "case-not-awaiting-step-implementation",
+    ),
+  );
 
   const report = expectReport(assessReuseReadiness(input));
   const malformed: [string, unknown][] = [
@@ -917,7 +911,7 @@ test("enforces snapshot size limits", async () => {
   for (const [label, value] of oversized) {
     const result = assessReuseReadiness(value as ReuseReadinessInput);
     assert.equal(result.valid, false, label);
-    if (!result.valid) assert.match(result.reason, /limit|exceed/i, label);
+    assert.match(result.reason, /limit|exceed/i, label);
   }
 });
 
@@ -1041,13 +1035,11 @@ test("covers absent cases, uncovered missing steps and wrong feature paths", asy
     readyCandidate(twoGaps, { targetStepIndexes: [2] }),
   );
   assert.equal(partial.valid, true);
-  if (partial.valid) {
-    assert.equal(partial.status, "blocked");
-    assert.deepEqual(
-      partial.blockers.map((blocker) => blocker.code),
-      ["missing-step-not-targeted"],
-    );
-  }
+  assert.equal(partial.status, "blocked");
+  assert.deepEqual(
+    partial.blockers.map((blocker) => blocker.code),
+    ["missing-step-not-targeted"],
+  );
 });
 
 test("rejects malformed or internally inconsistent reports before candidate review", async () => {
@@ -1059,36 +1051,73 @@ test("rejects malformed or internally inconsistent reports before candidate revi
   );
   assert.equal(accepted.valid && accepted.status, "ready-for-human-review");
 
-  // Tampering deliberately bypasses the report's readonly types.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type MutableJson = any;
+  // Tampering deliberately bypasses the report's readonly types: the copy is
+  // plain JSON, and each edited container is checked to be an object first.
+  type MutableJson = Record<PropertyKey, unknown>;
+  const json = (value: unknown): MutableJson => {
+    assert.ok(typeof value === "object" && value !== null);
+    return value as MutableJson;
+  };
   const tamper = (edit: (copy: MutableJson) => void) => {
-    const copy: MutableJson = JSON.parse(JSON.stringify(report));
+    const copy = json(JSON.parse(JSON.stringify(report)));
     edit(copy);
     return copy as unknown as ReuseReadinessReport;
   };
   const tampered: [string, ReuseReadinessReport][] = [
-    ["null case entry", tamper((copy) => (copy.cases[1] = null))],
+    [
+      "null case entry",
+      tamper((copy) => {
+        json(copy.cases)[1] = null;
+      }),
+    ],
     [
       "rewritten expected outcome",
-      tamper((copy) => (copy.cases[1].expectedOutcomeDigest = "outcome-x")),
+      tamper((copy) => {
+        json(json(copy.cases)[1]).expectedOutcomeDigest = "outcome-x";
+      }),
     ],
     [
       "extra candidate step",
-      tamper((copy) => (copy.cases[1].candidateStepIndexes = [0, 2])),
+      tamper((copy) => {
+        json(json(copy.cases)[1]).candidateStepIndexes = [0, 2];
+      }),
     ],
     [
       "execution authority",
-      tamper((copy) => (copy.executionAuthorized = true)),
+      tamper((copy) => {
+        copy.executionAuthorized = true;
+      }),
     ],
     [
       "case execution authority",
-      tamper((copy) => (copy.cases[0].executionAuthorized = true)),
+      tamper((copy) => {
+        json(json(copy.cases)[0]).executionAuthorized = true;
+      }),
     ],
-    ["authority", tamper((copy) => (copy.authority = "execution"))],
-    ["summary", tamper((copy) => (copy.summary.reused = 3))],
-    ["cases not a list", tamper((copy) => (copy.cases = {}))],
-    ["outcome and code", tamper((copy) => (copy.cases[0].outcome = "missing"))],
+    [
+      "authority",
+      tamper((copy) => {
+        copy.authority = "execution";
+      }),
+    ],
+    [
+      "summary",
+      tamper((copy) => {
+        json(copy.summary).reused = 3;
+      }),
+    ],
+    [
+      "cases not a list",
+      tamper((copy) => {
+        copy.cases = {};
+      }),
+    ],
+    [
+      "outcome and code",
+      tamper((copy) => {
+        json(json(copy.cases)[0]).outcome = "missing";
+      }),
+    ],
   ];
   for (const [label, value] of tampered) {
     const result = assessCandidateReviewReadiness(

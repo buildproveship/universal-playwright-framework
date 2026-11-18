@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Forks cold Node processes running the runtime-entry probe to check the public runtime-login entry's lazy browser loading, guards, load timeout and IPC cancellation; no customer site is signed in to.
 import assert from "node:assert/strict";
 import { fork, spawnSync } from "node:child_process";
 import path from "node:path";
@@ -10,8 +14,8 @@ test(
   { timeout: 15000 },
   async () => {
     const child = fork(probe, ["pending"], { silent: true });
-    let pending = false;
-    let completed = false;
+    // Set from IPC callbacks, so held in an object that flow analysis does not narrow.
+    const seen = { pending: false, completed: false };
     let output = "";
     child.stdout?.on("data", (data) => {
       output += String(data);
@@ -26,24 +30,28 @@ test(
           "message",
           (message: { stage: string; browserLoads: number }) => {
             if (message.stage === "pending") {
-              pending = true;
+              seen.pending = true;
               if (message.browserLoads !== 0) {
                 reject(new Error("pending provider loaded browser"));
                 return;
               }
               child.send("cancel");
             }
-            if (message.stage === "completed") completed = true;
+            if (message.stage === "completed") seen.completed = true;
           },
         );
         child.once("error", reject);
         child.once("exit", (code, signal) => {
           if (code !== 0 || signal)
-            reject(new Error(output || `probe exited ${code}/${signal}`));
+            reject(
+              new Error(
+                output || `probe exited ${String(code)}/${String(signal)}`,
+              ),
+            );
           else resolve();
         });
       });
-      assert.ok(pending && completed, output);
+      assert.ok(seen.pending && seen.completed, output);
     } finally {
       clearTimeout(timer);
       if (child.exitCode === null) child.kill();
