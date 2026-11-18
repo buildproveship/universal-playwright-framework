@@ -41,15 +41,9 @@ export type ExecutionStatus =
   | "timed_out"
   | "cancelled";
 export type ResourceCleanupStatus =
-  | "not_required"
-  | "confirmed"
-  | "failed"
-  | "unknown";
+  "not_required" | "confirmed" | "failed" | "unknown";
 type WorkerStopReason =
-  | "scenario-timeout"
-  | "run-timeout"
-  | "cancelled"
-  | "cleanup-unknown";
+  "scenario-timeout" | "run-timeout" | "cancelled" | "cleanup-unknown";
 
 export interface ScenarioExecutionResult {
   readonly scenarioId: string;
@@ -117,10 +111,7 @@ export interface ExecutionOptions {
   readonly retryCount?: number;
   readonly signal?: AbortSignal;
   readonly testCleanupFailure?:
-    | "context"
-    | "server-pending"
-    | "worker-stall"
-    | "browser-state-unknown";
+    "context" | "server-pending" | "worker-stall" | "browser-state-unknown";
   readonly testAssertionMismatchAttempts?: readonly number[];
   readonly testNow?: () => number;
   readonly testOnAttemptCleanupStarted?: () => void;
@@ -991,7 +982,7 @@ async function executeReviewedScenarioAttempt(
   let serverPendingCloseInjected = false;
   let resourcesAcquired = false;
   let temporaryDirectory: string | undefined;
-  let status: ExecutionStatus = "incomplete";
+  let status: ExecutionStatus;
   try {
     if (runController.signal.aborted) {
       status =

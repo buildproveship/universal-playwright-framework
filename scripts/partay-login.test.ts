@@ -1629,12 +1629,10 @@ for (const state of [
 ] as const) {
   test(`Authentication-only public login with ${state} retains truthful scope and disposes inputs`, async () => {
     const { descriptor, request, provider } = fixture();
-    const { PARTAY_AUTHENTICATION_ONLY_POLICY } = await import(
-      "../src/customer-login/authentication-only"
-    );
-    const { DECLARED_BLOCKED_RESOURCES } = await import(
-      "../src/customer-login/declared-resources"
-    );
+    const { PARTAY_AUTHENTICATION_ONLY_POLICY } =
+      await import("../src/customer-login/authentication-only");
+    const { DECLARED_BLOCKED_RESOURCES } =
+      await import("../src/customer-login/declared-resources");
     const assets =
       state === "known-resources"
         ? DECLARED_BLOCKED_RESOURCES.map((resource) =>

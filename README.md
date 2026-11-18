@@ -16,11 +16,12 @@ test-data-management). It is not a generic template.
 ```bash
 npm ci
 npx playwright install chromium
-npm run build
-npm run test:features:regression
+npm test
 ```
 
-The individual suites are listed under `scripts` in `package.json`.
+`npm test` runs ESLint and Prettier over every TypeScript file, then every suite
+(including the browser suites and the authoring starter). The individual suites are
+listed under `scripts` in `package.json`.
 
 ## Guides
 

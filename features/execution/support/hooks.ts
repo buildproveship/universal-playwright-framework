@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber hooks that own the browser context lifecycle and cleanup diagnostics for the reviewed synthetic execution scenarios; no customer targets.
 import {
   After,
   AfterAll,
@@ -178,6 +182,7 @@ After(async function (this: CucumberExecutionWorld) {
   } catch (error) {
     failures.push("context-close");
     diagnostics.push(classifyCleanupError("context-close", error));
+    // eslint-disable-next-line preserve-caught-error -- the raw error is withheld from evidence; its class is kept in diagnostics
     throw new Error("Scenario context cleanup failed");
   }
   if (process.env.WEB_EXECUTION_TEST_CLEANUP_FAILURE === "context") {

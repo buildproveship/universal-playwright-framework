@@ -90,6 +90,7 @@ BeforeAll(async function () {
       throw new AggregateError(
         [error, cleanupError],
         "Synthetic server setup and cleanup both failed",
+        { cause: cleanupError },
       );
     }
     throw error;
