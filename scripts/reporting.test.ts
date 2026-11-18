@@ -1,3 +1,7 @@
+// Test classification: unit
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Local execution report rendering, bounds and raw-error withholding with synthetic summaries; it does not run a browser.
 import assert from "node:assert/strict";
 import {
   lstatSync,
@@ -59,7 +63,7 @@ test("the typed report retains Cucumber evidence from real retried execution", a
   assert.equal(report.artifacts.status, "withheld");
   assert.doesNotMatch(
     `${renderExecutionReport(report)}${renderExecutionReportJson(report)}`,
-    /Expected string|Received string|Call log/,
+    /Expected:|Received:|Expected string|Received string|Call log/,
   );
 });
 

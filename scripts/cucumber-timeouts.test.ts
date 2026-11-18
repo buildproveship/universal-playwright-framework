@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber step-timeout defaults, long-step regression and readable assertion failures against an owned local server; it does not run customer journeys.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createServer } from "node:http";
@@ -136,8 +140,8 @@ Feature: failed synthetic assertion
 
   assert.equal(result.error, undefined, result.error?.message);
   assert.equal(result.status, 1, result.output);
-  assert.match(result.output, /Expected string: "Incorrect title"/);
-  assert.match(result.output, /Received string: "Synthetic demo"/);
+  assert.match(result.output, /Expected: "Incorrect title"/);
+  assert.match(result.output, /Received: "Synthetic demo"/);
   assert.doesNotMatch(result.output, /function timed out/);
   assert.ok(
     result.elapsedMs < 12_000,
