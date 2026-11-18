@@ -4,7 +4,9 @@ export async function runLoginCommand(
   run: (signal: AbortSignal) => Promise<void>,
 ): Promise<void> {
   const controller = new AbortController();
-  const cancel = (): void => controller.abort();
+  const cancel = (): void => {
+    controller.abort();
+  };
   process.once("SIGINT", cancel);
   process.once("SIGTERM", cancel);
   try {

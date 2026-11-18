@@ -22,13 +22,13 @@ provider, contact a target, or grant run permission.
 The module returns one entry per selected case. Each entry has a stable `outcome`
 and `code`:
 
-| Outcome | Codes |
-| --- | --- |
-| `reused` | `reviewed-implementation-reused`: exactly one current approved mapping; every step matches one reviewed definition; `selectApprovedScenarios` selects the scenario. |
-| `missing` | `case-snapshot-missing`, `mapping-missing`, `step-implementation-missing` (with `candidateStepIndexes`). |
-| `ambiguous` | `mapping-ambiguous`, `scenario-identity-ambiguous`, `step-ambiguous`. |
+| Outcome       | Codes                                                                                                                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reused`      | `reviewed-implementation-reused`: exactly one current approved mapping; every step matches one reviewed definition; `selectApprovedScenarios` selects the scenario.                                   |
+| `missing`     | `case-snapshot-missing`, `mapping-missing`, `step-implementation-missing` (with `candidateStepIndexes`).                                                                                              |
+| `ambiguous`   | `mapping-ambiguous`, `scenario-identity-ambiguous`, `step-ambiguous`.                                                                                                                                 |
 | `invalidated` | `case-revision-drift`, `mapping-case-revision-drift`, `mapping-revision-drift`, `approval-stale`, `approval-mismatch`, `scenario-missing`, `scenario-validation-issues`, `feature-validation-failed`. |
-| `unapproved` | `expected-outcome-not-approved`, `mapping-not-approved`, `scenario-not-approved`. |
+| `unapproved`  | `expected-outcome-not-approved`, `mapping-not-approved`, `scenario-not-approved`.                                                                                                                     |
 
 Checks run in this order. A case is reported against the first one it fails:
 
@@ -126,10 +126,22 @@ import {
   assessReuseReadiness,
 } from "../src/validation/reuse-readiness";
 
-const validation = await validateFeatureFile({ workspaceRoot, featurePath, sourceRevision, manifest });
-const report = assessReuseReadiness({ selection, cases, mappings, validation, approval });
+const validation = await validateFeatureFile({
+  workspaceRoot,
+  featurePath,
+  sourceRevision,
+  manifest,
+});
+const report = assessReuseReadiness({
+  selection,
+  cases,
+  mappings,
+  validation,
+  approval,
+});
 if (report.valid) {
-  for (const entry of report.cases) console.log(entry.caseId, entry.outcome, entry.code);
+  for (const entry of report.cases)
+    console.log(entry.caseId, entry.outcome, entry.code);
 }
 const review = assessCandidateReviewReadiness(report, candidateEvidence);
 // review.status === "ready-for-human-review" only means a person may now review it.

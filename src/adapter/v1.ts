@@ -107,13 +107,13 @@ export interface AdapterError {
   readonly message: (typeof messages)[keyof typeof messages];
 }
 
-type Lifecycle = {
+interface Lifecycle {
   readonly resourceCleanup: Omit<
     ExecutionSummary["resourceCleanup"],
     "injectedPendingCleanup"
   >;
   readonly dataRestoration: ExecutionSummary["dataRestoration"];
-};
+}
 export type AdapterResult =
   | {
       readonly version: 1;

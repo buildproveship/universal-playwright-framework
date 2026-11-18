@@ -48,7 +48,7 @@ async function validate(
     manifest,
   });
   assert.equal(validation.valid, true);
-  return validation as ValidFeature;
+  return validation;
 }
 
 function approvalFor(
@@ -136,7 +136,7 @@ async function baseInput(): Promise<ReuseReadinessInput> {
 
 function expectReport(report: ReuseReadinessReport): ValidReport {
   assert.equal(report.valid, true, report.valid ? "" : report.reason);
-  return report as ValidReport;
+  return report;
 }
 
 function caseOf(report: ValidReport, caseId: string): CaseReadiness {
@@ -460,7 +460,7 @@ test("does not reuse anything when feature validation failed", async () => {
 test("rejects malformed, empty and duplicate selections and snapshots", async () => {
   const input = await baseInput();
   const validation = input.validation as ValidFeature;
-  const cases: Array<[string, unknown, RegExp]> = [
+  const cases: [string, unknown, RegExp][] = [
     ["non-object", null, /input/i],
     ["empty selection", { ...input, selection: [] }, /at least one/i],
     [
@@ -525,9 +525,7 @@ test("rejects malformed, empty and duplicate selections and snapshots", async ()
   for (const [label, malformed, reason] of cases) {
     const result = assessReuseReadiness(malformed as ReuseReadinessInput);
     assert.equal(result.valid, false, label);
-    if (!result.valid) {
-      assert.match(result.reason, reason, label);
-    }
+    assert.match(result.reason, reason, label);
   }
 });
 
@@ -586,7 +584,6 @@ test("marks a fully evidenced candidate only as ready for human review", async (
     readyCandidate(report),
   );
   assert.equal(readiness.valid, true);
-  if (!readiness.valid) return;
   assert.equal(readiness.status, "ready-for-human-review");
   assert.deepEqual(readiness.blockers, []);
   assert.equal(readiness.acceptance, "not-accepted");
@@ -610,9 +607,7 @@ test("blocks candidates with failed, missing or stale validation and outcome or 
   const stale = { status: "passed" as const, candidateRevision: "cand-rev-0" };
   const baseChecks = readyCandidate(report).checks;
 
-  const scenarios: Array<
-    [string, Partial<AuthoringCandidateEvidence>, string]
-  > = [
+  const scenarios: [string, Partial<AuthoringCandidateEvidence>, string][] = [
     [
       "failed lint",
       { checks: { ...baseChecks, lint: failed } },
@@ -677,7 +672,6 @@ test("blocks candidates with failed, missing or stale validation and outcome or 
       readyCandidate(report, overrides),
     );
     assert.equal(readiness.valid, true, label);
-    if (!readiness.valid) continue;
     assert.equal(readiness.status, "blocked", label);
     assert.equal(readiness.acceptance, "not-accepted", label);
     assert.equal(readiness.executionAuthorized, false, label);
@@ -711,17 +705,15 @@ test("blocks candidates for unapproved outcomes and rejects malformed candidate 
     readyCandidate(unapproved),
   );
   assert.equal(blocked.valid, true);
-  if (blocked.valid) {
-    assert.equal(blocked.status, "blocked");
-    assert.ok(
-      blocked.blockers.some(
-        (blocker) => blocker.code === "case-not-awaiting-step-implementation",
-      ),
-    );
-  }
+  assert.equal(blocked.status, "blocked");
+  assert.ok(
+    blocked.blockers.some(
+      (blocker) => blocker.code === "case-not-awaiting-step-implementation",
+    ),
+  );
 
   const report = expectReport(assessReuseReadiness(input));
-  const malformed: Array<[string, unknown]> = [
+  const malformed: [string, unknown][] = [
     ["empty targets", readyCandidate(report, { targetStepIndexes: [] })],
     [
       "duplicate targets",
@@ -773,7 +765,7 @@ test("applies approval manifest integrity before reuse or candidate eligibility"
     approved.map((entry) =>
       entry.id === id ? { id, tags: [...entry.tags, "@drifted"] } : entry,
     );
-  const variants: Array<[string, ScenarioApproval["scenarios"]]> = [
+  const variants: [string, ScenarioApproval["scenarios"]][] = [
     ["changed tag on missing-step scenario", retag("undefined-step")],
     ["unrelated approved scenario tag drift", retag("approved-outline/row-b")],
     ["duplicate approval identifiers", [...approved, approved[0]]],
@@ -821,7 +813,7 @@ test("rejects malformed consumed fields as invalid without throwing", async () =
     "caseRevision",
     { enumerable: true, get: () => "case-rev-1" },
   );
-  const malformed: Array<[string, unknown]> = [
+  const malformed: [string, unknown][] = [
     ["null step", withScenario({ steps: [null] })],
     ["missing tags", withScenario({ tags: undefined })],
     ["non-string tag", withScenario({ tags: [42] })],
@@ -881,7 +873,7 @@ test("enforces snapshot size limits", async () => {
   const input = await baseInput();
   const many = (count: number) =>
     Array.from({ length: count }, (_, index) => index);
-  const oversized: Array<[string, unknown]> = [
+  const oversized: [string, unknown][] = [
     [
       "selection",
       {
@@ -919,7 +911,7 @@ test("enforces snapshot size limits", async () => {
   for (const [label, value] of oversized) {
     const result = assessReuseReadiness(value as ReuseReadinessInput);
     assert.equal(result.valid, false, label);
-    if (!result.valid) assert.match(result.reason, /limit|exceed/i, label);
+    assert.match(result.reason, /limit|exceed/i, label);
   }
 });
 
@@ -933,7 +925,7 @@ test("keeps reports reference-only without feature text, values or validator rea
     cases: input.cases.map((entry) => ({
       ...entry,
       notes: LEAK_PROBE,
-    })) as ReuseReadinessInput["cases"],
+    })),
     validation: {
       ...validation,
       scenarios: validation.scenarios.map((scenario) => ({
@@ -1043,13 +1035,11 @@ test("covers absent cases, uncovered missing steps and wrong feature paths", asy
     readyCandidate(twoGaps, { targetStepIndexes: [2] }),
   );
   assert.equal(partial.valid, true);
-  if (partial.valid) {
-    assert.equal(partial.status, "blocked");
-    assert.deepEqual(
-      partial.blockers.map((blocker) => blocker.code),
-      ["missing-step-not-targeted"],
-    );
-  }
+  assert.equal(partial.status, "blocked");
+  assert.deepEqual(
+    partial.blockers.map((blocker) => blocker.code),
+    ["missing-step-not-targeted"],
+  );
 });
 
 test("rejects malformed or internally inconsistent reports before candidate review", async () => {
@@ -1061,36 +1051,73 @@ test("rejects malformed or internally inconsistent reports before candidate revi
   );
   assert.equal(accepted.valid && accepted.status, "ready-for-human-review");
 
-  // Tampering deliberately bypasses the report's readonly types.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type MutableJson = any;
+  // Tampering deliberately bypasses the report's readonly types: the copy is
+  // plain JSON, and each edited container is checked to be an object first.
+  type MutableJson = Record<PropertyKey, unknown>;
+  const json = (value: unknown): MutableJson => {
+    assert.ok(typeof value === "object" && value !== null);
+    return value as MutableJson;
+  };
   const tamper = (edit: (copy: MutableJson) => void) => {
-    const copy: MutableJson = JSON.parse(JSON.stringify(report));
+    const copy = json(JSON.parse(JSON.stringify(report)));
     edit(copy);
     return copy as unknown as ReuseReadinessReport;
   };
-  const tampered: Array<[string, ReuseReadinessReport]> = [
-    ["null case entry", tamper((copy) => (copy.cases[1] = null))],
+  const tampered: [string, ReuseReadinessReport][] = [
+    [
+      "null case entry",
+      tamper((copy) => {
+        json(copy.cases)[1] = null;
+      }),
+    ],
     [
       "rewritten expected outcome",
-      tamper((copy) => (copy.cases[1].expectedOutcomeDigest = "outcome-x")),
+      tamper((copy) => {
+        json(json(copy.cases)[1]).expectedOutcomeDigest = "outcome-x";
+      }),
     ],
     [
       "extra candidate step",
-      tamper((copy) => (copy.cases[1].candidateStepIndexes = [0, 2])),
+      tamper((copy) => {
+        json(json(copy.cases)[1]).candidateStepIndexes = [0, 2];
+      }),
     ],
     [
       "execution authority",
-      tamper((copy) => (copy.executionAuthorized = true)),
+      tamper((copy) => {
+        copy.executionAuthorized = true;
+      }),
     ],
     [
       "case execution authority",
-      tamper((copy) => (copy.cases[0].executionAuthorized = true)),
+      tamper((copy) => {
+        json(json(copy.cases)[0]).executionAuthorized = true;
+      }),
     ],
-    ["authority", tamper((copy) => (copy.authority = "execution"))],
-    ["summary", tamper((copy) => (copy.summary.reused = 3))],
-    ["cases not a list", tamper((copy) => (copy.cases = {}))],
-    ["outcome and code", tamper((copy) => (copy.cases[0].outcome = "missing"))],
+    [
+      "authority",
+      tamper((copy) => {
+        copy.authority = "execution";
+      }),
+    ],
+    [
+      "summary",
+      tamper((copy) => {
+        json(copy.summary).reused = 3;
+      }),
+    ],
+    [
+      "cases not a list",
+      tamper((copy) => {
+        copy.cases = {};
+      }),
+    ],
+    [
+      "outcome and code",
+      tamper((copy) => {
+        json(json(copy.cases)[0]).outcome = "missing";
+      }),
+    ],
   ];
   for (const [label, value] of tampered) {
     const result = assessCandidateReviewReadiness(

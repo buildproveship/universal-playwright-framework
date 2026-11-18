@@ -10,7 +10,6 @@ import {
   setDefaultTimeout,
   setWorldConstructor,
   World,
-  type IWorldOptions,
 } from "@cucumber/cucumber";
 import { chromium, type Browser, type Page } from "@playwright/test";
 import { createServer, type Server } from "node:http";
@@ -23,10 +22,6 @@ class SyntheticWorld extends World {
   browser!: Browser;
   baseUrl!: string;
   page?: Page;
-
-  constructor(options: IWorldOptions) {
-    super(options);
-  }
 }
 
 setDefaultTimeout(getStepTimeoutMs(process.env.CUCUMBER_STEP_TIMEOUT_MS));
@@ -73,10 +68,11 @@ BeforeAll(async function () {
       </html>`);
   });
 
+  const listening = server;
   try {
     await new Promise<void>((resolve, reject) => {
-      server!.once("error", reject);
-      server!.listen(0, "127.0.0.1", resolve);
+      listening.once("error", reject);
+      listening.listen(0, "127.0.0.1", resolve);
     });
     const address = server.address();
     if (!address || typeof address === "string") {

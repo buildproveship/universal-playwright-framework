@@ -45,7 +45,8 @@ export async function guardInspectionRequests(
   let stopPromise: Promise<void> | undefined;
   await context.routeWebSocket("**/*", (socket) => {
     blockedRequests++;
-    socket.close();
+    // Blocked sockets are only closed; the block is already counted.
+    void socket.close();
   });
   await context.route("**/*", async (route) => {
     pending++;

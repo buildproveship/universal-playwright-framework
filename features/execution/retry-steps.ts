@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber steps that run the reviewed retry scenario through the owned execution adapter with a local browser; no customer targets.
 import assert from "node:assert/strict";
 import {
   Then,
@@ -5,7 +9,6 @@ import {
   World,
   setDefaultTimeout,
   setWorldConstructor,
-  type IWorldOptions,
 } from "@cucumber/cucumber";
 import {
   executeReviewedScenarios,
@@ -16,10 +19,6 @@ class RetryWorld extends World {
   result?: ExecutionSummary;
   browserStarts = 0;
   browserPids: number[] = [];
-
-  constructor(options: IWorldOptions) {
-    super(options);
-  }
 }
 
 setDefaultTimeout(30_000);
@@ -92,7 +91,9 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["browser-flow"],
       signal: controller.signal,
-      testOnAttemptCleanupStarted: () => controller.abort(),
+      testOnAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     });
   },
 );
@@ -121,7 +122,9 @@ When(
       retryCount: 1,
       signal: controller.signal,
       testAssertionMismatchAttempts: [1],
-      testOnAttemptCleanupStarted: () => controller.abort(),
+      testOnAttemptCleanupStarted: () => {
+        controller.abort();
+      },
       onBrowserProcessStarted: (pid) => this.browserPids.push(pid),
     });
   },
@@ -154,7 +157,9 @@ When(
       retryCount: 1,
       signal: controller.signal,
       testCleanupFailure: "browser-state-unknown",
-      testOnAttemptCleanupStarted: () => controller.abort(),
+      testOnAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     });
   },
 );

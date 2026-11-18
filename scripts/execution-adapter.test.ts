@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Runs the execution adapter against reviewed synthetic scenarios, owned local servers and an isolated reviewed package to check retries, cancellation, deadlines, cleanup evidence and tamper rejection; no customer system or real login is exercised.
 import {
   withIsolatedReviewedPackage,
   assertOriginalReviewUnaffected,
@@ -155,7 +159,9 @@ test("cancellation during teardown preserves a completed successful attempt", as
   const controller = new AbortController();
   const result = await run("browser-flow", {
     signal: controller.signal,
-    testOnAttemptCleanupStarted: () => controller.abort(),
+    testOnAttemptCleanupStarted: () => {
+      controller.abort();
+    },
   });
 
   assert.equal(result.status, "passed");
@@ -187,7 +193,9 @@ test("cancellation between attempts preserves failure and prevents another launc
     retryCount: 1,
     signal: controller.signal,
     testAssertionMismatchAttempts: [1],
-    testOnAttemptCleanupStarted: () => controller.abort(),
+    testOnAttemptCleanupStarted: () => {
+      controller.abort();
+    },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
 
@@ -230,7 +238,9 @@ test("unknown browser cleanup during late cancellation remains unknown and non-r
     retryCount: 1,
     signal: controller.signal,
     testCleanupFailure: "browser-state-unknown",
-    testOnAttemptCleanupStarted: () => controller.abort(),
+    testOnAttemptCleanupStarted: () => {
+      controller.abort();
+    },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
 
@@ -483,14 +493,10 @@ test("tampered emitted code, runner config, and dependency metadata fail pre-acq
       }
 
       await loadReviewedScenarios();
-      assert.equal(result?.status, "incomplete", relativePath);
-      assert.equal(
-        result?.resourceCleanup.status,
-        "not_required",
-        relativePath,
-      );
-      assert.deepEqual(result?.resourceCleanup.failures, [], relativePath);
-      assert.equal(result?.resourceCleanup.browserProcessStopped, null);
+      assert.equal(result.status, "incomplete", relativePath);
+      assert.equal(result.resourceCleanup.status, "not_required", relativePath);
+      assert.deepEqual(result.resourceCleanup.failures, [], relativePath);
+      assert.equal(result.resourceCleanup.browserProcessStopped, null);
     }
   });
 });

@@ -22,19 +22,19 @@ feature discovery.
 
 ## Final local checks
 
-| Check | Result |
-| --- | --- |
-| `npm run test:typescript-source-policy` (includes full build/typecheck) | Pass; 4 tests and source-policy pass |
-| `npx tsc -p examples/authoring/tsconfig.json` | Pass; both runner adapters, shared models and regression tests compile |
-| `npx eslint src/readiness/wait-for-visible.ts src/pages/base-page.ts src/index.ts examples/authoring --ext .ts` | Pass |
-| `npx playwright test --config examples/authoring/playwright.config.ts --repeat-each=3 --workers=4` | Pass; 30 tests, zero retries |
-| `npx cucumber-js --config examples/authoring/cucumber.json` | Pass; 3 scenarios / 11 steps with 3 workers |
-| `node --test dist/authoring/examples/authoring/regression/authoring.test.js` | Pass; 7 regression tests |
-| `npm run test:features` | Pass; existing owned Cucumber suite, 12 scenarios / 52 steps |
-| `npm run lint` | Fail; 33 errors, normalized output identical to pristine baseline in a separate worktree |
-| `git diff --check` | Pass |
-| Full execution/customer aggregate; Firefox/WebKit | Not run; outside scoped Chromium authoring validation |
-| Hosted CI dispatch, customer actions, merge/deploy | Not performed |
+| Check                                                                                                           | Result                                                                                   |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `npm run test:typescript-source-policy` (includes full build/typecheck)                                         | Pass; 4 tests and source-policy pass                                                     |
+| `npx tsc -p examples/authoring/tsconfig.json`                                                                   | Pass; both runner adapters, shared models and regression tests compile                   |
+| `npx eslint src/readiness/wait-for-visible.ts src/pages/base-page.ts src/index.ts examples/authoring --ext .ts` | Pass                                                                                     |
+| `npx playwright test --config examples/authoring/playwright.config.ts --repeat-each=3 --workers=4`              | Pass; 30 tests, zero retries                                                             |
+| `npx cucumber-js --config examples/authoring/cucumber.json`                                                     | Pass; 3 scenarios / 11 steps with 3 workers                                              |
+| `node --test dist/authoring/examples/authoring/regression/authoring.test.js`                                    | Pass; 7 regression tests                                                                 |
+| `npm run test:features`                                                                                         | Pass; existing owned Cucumber suite, 12 scenarios / 52 steps                             |
+| `npm run lint`                                                                                                  | Fail; 33 errors, normalized output identical to pristine baseline in a separate worktree |
+| `git diff --check`                                                                                              | Pass                                                                                     |
+| Full execution/customer aggregate; Firefox/WebKit                                                               | Not run; outside scoped Chromium authoring validation                                    |
+| Hosted CI dispatch, customer actions, merge/deploy                                                              | Not performed                                                                            |
 
 The seven regression tests include three repeated parallel Cucumber runs (nine
 successful scenarios), four deliberate child-process failures (missing readiness,

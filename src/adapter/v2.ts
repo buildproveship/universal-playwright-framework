@@ -450,11 +450,8 @@ export function validateOwnedLocalEvidence(
   for (let index = 0; index < report.scenarios.length; index++) {
     const scenario = report.scenarios[index];
     const owned = cleanup.scenarios[index];
-    if (
-      scenario.cleanupStatus !== owned.cleanupStatus ||
-      scenario.scenarioId !== owned.scenarioId
-    )
-      return false;
+    // Both schemas fix scenarioId to the one reviewed scenario, so only the cleanup status can differ.
+    if (scenario.cleanupStatus !== owned.cleanupStatus) return false;
     if (
       scenario.status === "failed" &&
       (scenario.executionState !== "executed" ||
@@ -493,8 +490,8 @@ export function validateOwnedLocalEvidence(
   )
     return false;
   if (report.status === "passed") {
-    const scenario = report.scenarios[0];
-    const owned = cleanup.scenarios[0];
+    const scenario = report.scenarios.at(0);
+    const owned = cleanup.scenarios.at(0);
     if (
       !scenario ||
       !owned ||
@@ -552,6 +549,8 @@ async function executeOwnedLocalAdapterInternal(
     return reject("INVALID_CONTEXT");
   let summary: ExecutionSummary;
   let authorizationDenied = false;
+  // Set by the authorization callback; read afresh where the type checker cannot see that.
+  const isAuthorizationDenied = (): boolean => authorizationDenied;
   try {
     summary = await executeReviewedScenarios({
       ...request.limits,
@@ -586,7 +585,7 @@ async function executeOwnedLocalAdapterInternal(
       attemptCount: 0,
     };
   }
-  if (authorizationDenied) return reject("INVALID_CONTEXT");
+  if (isAuthorizationDenied()) return reject("INVALID_CONTEXT");
   // A failure without a failed business step is operationally incomplete at
   // every reporting level. Retain actual step evidence and cleanup unchanged.
   const classifyScenario = (scenario: ExecutionSummary["scenarios"][number]) =>
@@ -699,15 +698,10 @@ export function validateOwnedLocalDiagnosticEnvelope(
   const { result, cleanupDiagnostics } = parsed.data;
   if (!result.accepted) return cleanupDiagnostics.length === 0;
   return cleanupDiagnostics.every((item) => {
-    const attempt = result.lifecycle.attempts.find(
-      (attempt) => attempt.attemptNumber === item.attemptNumber,
-    );
-    const scenario = attempt?.scenarios.find(
-      (scenario) => scenario.scenarioId === item.scenarioId,
-    );
-    const business = result.report.attempts
-      .find((attempt) => attempt.attemptNumber === item.attemptNumber)
-      ?.scenarios.find((scenario) => scenario.scenarioId === item.scenarioId);
+    // The schemas fix attemptNumber to 1 and scenarioId to the one reviewed scenario, so the first entry of
+    // each list is the one this diagnostic names.
+    const scenario = result.lifecycle.attempts.at(0)?.scenarios.at(0);
+    const business = result.report.attempts.at(0)?.scenarios.at(0);
     return (
       business?.evidenceStatus === "available" &&
       scenario?.cleanupFailures.includes(item.phase) === true

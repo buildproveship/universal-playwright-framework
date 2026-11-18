@@ -27,11 +27,11 @@ test(
           maxBuffer: 1024 * 1024,
         },
       );
-      const metadata = JSON.parse(packed.stdout) as Array<{
+      const metadata = JSON.parse(packed.stdout) as {
         filename: string;
         integrity: string;
         shasum: string;
-      }>;
+      }[];
       assert.equal(metadata.length, 1);
       const tarball = path.join(directory, metadata[0].filename);
       const sha256 = createHash("sha256")

@@ -5,13 +5,11 @@
     "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "target": "owned-synthetic",
-  "scenarioIds": [
-    "browser-flow"
-  ],
+  "scenarioIds": ["browser-flow"],
   "approval": {
     "sourceRevision": "rr207-synthetic-source-2",
     "featureRevision": "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f",
-    "implementationRevision": "436fd775da2d4bdc4bc89165d36dedda6bcdc4651e30dd9063beae52e8ca1c94"
+    "implementationRevision": "6de95493570d2975423ecdc1dfccb526bab3329ba3b7e58dd3545ecdb981c881"
   },
   "inputs": {
     "fixtureRevision": "synthetic-execution-fixtures-1",

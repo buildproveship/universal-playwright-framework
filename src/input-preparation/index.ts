@@ -29,7 +29,8 @@ const scenarioIdSchema = z
   .regex(/^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
 const fixtureValueContentSchema = z.union([
   z.string().max(512),
-  z.number().finite(),
+  // Zod 4 numbers already reject Infinity and NaN.
+  z.number(),
   z.boolean(),
   z.array(z.string().max(512)).max(25),
 ]);
@@ -491,8 +492,7 @@ export function prepareScenarioInputs(
         environmentResult.data.id ||
       dataReferenceResult.data.approvedEnvironment.revision !==
         environmentResult.data.revision ||
-      !reviewedOrigin ||
-      reviewedOrigin.origin !== origin.origin
+      reviewedOrigin?.origin !== origin.origin
     ) {
       return fail(
         "invalid-environment",
@@ -561,14 +561,9 @@ export function prepareScenarioInputs(
     );
   }
 
+  // The selector only returns scenarios that carry an identifier.
   const selectedIds = selection.scenarios.map((scenario) => scenario.id);
-  if (selectedIds.some((id) => id === null)) {
-    return fail(
-      "invalid-selection",
-      "Approved scenarios require stable identifiers",
-    );
-  }
-  const selectedIdSet = new Set(selectedIds as string[]);
+  const selectedIdSet = new Set(selectedIds);
   if (
     reviewedDataReferences &&
     (reviewedDataReferences.rows.length !== selectedIds.length ||
@@ -592,14 +587,12 @@ export function prepareScenarioInputs(
     );
   }
   if (
-    reviewedDataReferences &&
-    reviewedDataReferences.rows.some((reference) => {
+    reviewedDataReferences?.rows.some((reference) => {
       const fixture = scenarioInputs.find(
         (scenario) => scenario.id === reference.scenarioId,
       );
       return (
-        !fixture?.dataReference ||
-        fixture.dataReference.rowId !== reference.rowId ||
+        fixture?.dataReference?.rowId !== reference.rowId ||
         fixture.dataReference.dataset.id !== reference.dataset.id ||
         fixture.dataReference.dataset.revision !== reference.dataset.revision ||
         fixture.dataReference.secret?.id !== reference.secret?.id ||
@@ -629,7 +622,7 @@ export function prepareScenarioInputs(
       const scenario = scenarioInputs.find((candidate) => candidate.id === id);
       return (
         !scenario ||
-        !fixtureFieldsMatchPolicy(scenario.values, fixturePolicy, id ?? "")
+        !fixtureFieldsMatchPolicy(scenario.values, fixturePolicy, id)
       );
     })
   ) {
@@ -691,7 +684,7 @@ export function prepareScenarioInputs(
     }
     usedAccountReferences.add(fixture.accountReference);
     return {
-      id: scenario.id as string,
+      id: scenario.id,
       tags: [...scenario.tags],
       ...(dataReference ? { dataReference } : {}),
       values: copyValues(fixture.values),

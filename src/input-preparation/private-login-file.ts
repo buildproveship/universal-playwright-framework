@@ -15,17 +15,12 @@ export class PrivateFileLoginDeferredError extends Error {
   }
 }
 
-export async function withPrivateFileLoginInputs(
-  descriptor: PreparedInputDescriptor,
-  request: RuntimeLoginRequest,
-  filePath: string,
-  repositoryRoot: string,
-  consume: (account: RuntimeLoginAccount) => Promise<void>,
+export function withPrivateFileLoginInputs(
+  _descriptor: PreparedInputDescriptor,
+  _request: RuntimeLoginRequest,
+  _filePath: string,
+  _repositoryRoot: string,
+  _consume: (account: RuntimeLoginAccount) => Promise<void>,
 ): Promise<RuntimeLoginResult> {
-  void descriptor;
-  void request;
-  void filePath;
-  void repositoryRoot;
-  void consume;
-  throw new PrivateFileLoginDeferredError();
+  return Promise.reject(new PrivateFileLoginDeferredError());
 }

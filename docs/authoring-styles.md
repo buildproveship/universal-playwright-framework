@@ -8,11 +8,11 @@ project whose demo uses the Page Objects style below.
 
 Choose the smallest structure that helps the team:
 
-| Organization                                           | Use when                                                     | Shape                                                                                        |
-| ------------------------------------------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| Simple                                                 | A short test is easiest to read with locators inline         | Playwright `page` and locators directly in the test or step                                  |
+| Organization                                           | Use when                                                     | Shape                                                                                                |
+| ------------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Simple                                                 | A short test is easiest to read with locators inline         | Playwright `page` and locators directly in the test or step                                          |
 | Page Objects + Components (recommended starting point) | Pages and repeated UI regions benefit from named operations  | A page class extending `BasePage`, regions extending `BaseComponent` (starter: `pages/demo-page.ts`) |
-| Business Flows                                         | A repeated business operation spans reusable page operations | A plain class composed from page objects, with no further inheritance layer                  |
+| Business Flows                                         | A repeated business operation spans reusable page operations | A plain class composed from page objects, with no further inheritance layer                          |
 
 These are organization choices, not different languages or execution permissions.
 TypeScript Playwright Test specs and Gherkin scenarios with TypeScript Cucumber step
@@ -29,8 +29,12 @@ class DraftEditor extends BaseComponent {
     super(page, 'form[aria-label="Draft editor"]');
   }
   async save(title: string): Promise<void> {
-    await this.rootLocator.getByRole("textbox", { name: "Title", exact: true }).fill(title);
-    await this.rootLocator.getByRole("button", { name: "Save draft", exact: true }).click();
+    await this.rootLocator
+      .getByRole("textbox", { name: "Title", exact: true })
+      .fill(title);
+    await this.rootLocator
+      .getByRole("button", { name: "Save draft", exact: true })
+      .click();
   }
 }
 
@@ -39,7 +43,9 @@ class DraftPage extends BasePage {
   readonly status = this.page.getByRole("status");
   async open(): Promise<void> {
     await this.goto();
-    await this.waitForReady(this.page.getByRole("form", { name: "Draft editor", exact: true }));
+    await this.waitForReady(
+      this.page.getByRole("form", { name: "Draft editor", exact: true }),
+    );
   }
 }
 
@@ -102,8 +108,13 @@ Page and Locator API for actions.
 
 ```ts
 await page.goto(url, { waitUntil: "domcontentloaded" });
-await waitForVisible(page.getByRole("form", { name: "Draft editor", exact: true }), 10000);
-await page.getByRole("textbox", { name: "Title", exact: true }).fill(draft.title);
+await waitForVisible(
+  page.getByRole("form", { name: "Draft editor", exact: true }),
+  10000,
+);
+await page
+  .getByRole("textbox", { name: "Title", exact: true })
+  .fill(draft.title);
 await page.getByRole("button", { name: "Save draft", exact: true }).click();
 await expect(page.getByRole("status")).toHaveText(`Saved: ${draft.title}`);
 ```

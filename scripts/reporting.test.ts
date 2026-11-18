@@ -57,7 +57,7 @@ test("the typed report retains Cucumber evidence from real retried execution", a
     failedStep?.name,
     "the synthetic status matches its retry attempt",
   );
-  assert.match(failedStep?.reason ?? "", /raw error details are withheld/);
+  assert.match(failedStep.reason ?? "", /raw error details are withheld/);
   assert.equal(report.totals.scenarioCount, 1);
   assert.equal(report.totals.attemptCount, 2);
   assert.equal(report.totals.countedUnit, "scenarios");
@@ -90,13 +90,14 @@ test("human text escapes terminal controls while JSON preserves names as data", 
   const fixture = createReportFixtures()[0];
   const attempt = fixture.attempts[0];
   const scenario = attempt.scenarios[0];
+  assert.ok(scenario.cucumber);
   const unsafe = {
     ...fixture,
     scenarios: [
       {
         ...fixture.scenarios[0],
         cucumber: {
-          ...scenario.cucumber!,
+          ...scenario.cucumber,
           featureName: "\u001b[31m<script>\nFeature",
         },
       },
@@ -232,6 +233,8 @@ test("missing Cucumber evidence remains unavailable without changing its outcome
 test("lint repair preserves every control-code replacement and surrounding Unicode", () => {
   const fixture = createReportFixtures()[0];
   const original = fixture.attempts[0].scenarios[0];
+  const originalCucumber = original.cucumber;
+  assert.ok(originalCucumber);
   for (let code = 0; code <= 0xff; code += 1) {
     const character = String.fromCharCode(code);
     const name = `prefix${character}suffix😀𝄞\ud800`;
@@ -250,7 +253,7 @@ test("lint repair preserves every control-code replacement and surrounding Unico
       scenarios: [
         {
           ...fixture.scenarios[0],
-          cucumber: { ...original.cucumber!, featureName: name },
+          cucumber: { ...originalCucumber, featureName: name },
         },
       ],
     });
@@ -261,7 +264,8 @@ test("lint repair preserves every control-code replacement and surrounding Unico
       `code ${code}`,
     );
     assert.equal(
-      JSON.parse(renderExecutionReportJson(report)).scenarios[0].featureName,
+      (JSON.parse(renderExecutionReportJson(report)) as typeof report)
+        .scenarios[0].featureName,
       name,
     );
   }

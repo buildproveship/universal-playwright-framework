@@ -1,3 +1,7 @@
+// Test classification: unit
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber steps that render readable execution reports from synthetic summaries and check their bounds; no execution or browser.
 import assert from "node:assert/strict";
 import {
   Given,
@@ -5,7 +9,6 @@ import {
   When,
   World,
   setWorldConstructor,
-  type IWorldOptions,
 } from "@cucumber/cucumber";
 import {
   createExecutionReport,
@@ -17,10 +20,6 @@ import { createReportFixtures } from "./report-fixture";
 
 class ReportingWorld extends World {
   reports: readonly ExecutionReport[] = [];
-
-  constructor(options: IWorldOptions) {
-    super(options);
-  }
 }
 
 setWorldConstructor(ReportingWorld);
@@ -136,6 +135,8 @@ Then(
         error.message ===
           "Report references must be generated execution identifiers",
     );
+    const originalCucumber = fixture.scenarios[0].cucumber;
+    assert.ok(originalCucumber);
     const unsafeScenario = {
       ...fixture,
       scenarios: [
@@ -143,7 +144,7 @@ Then(
           ...fixture.scenarios[0],
           scenarioId: "../../outside/customer.log",
           cucumber: {
-            ...fixture.scenarios[0].cucumber!,
+            ...originalCucumber,
             scenarioName: "https://example.invalid/private",
           },
         },

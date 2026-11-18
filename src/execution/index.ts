@@ -400,7 +400,9 @@ function closeServer(
       if (server.listening) {
         initiateClose(true);
       }
-      finalTimer = setTimeout(() => finish(verifyStopped()), 500);
+      finalTimer = setTimeout(() => {
+        finish(verifyStopped());
+      }, 500);
     }, 1_000);
   });
 }
@@ -437,6 +439,13 @@ const TASKKILL_VARIABLE = "PLAYWRIGHT_FRAMEWORK_TASKKILL_EXECUTABLE";
  * Syntax validation does NOT validate ACLs, provenance, or reparse points.
  * Never derive this executable from PATH, SystemRoot, or the working directory.
  */
+function hasControlCharacter(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    if (value.charCodeAt(index) < 32) return true;
+  }
+  return false;
+}
+
 export function resolveWindowsTaskkill(
   environment: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
@@ -445,7 +454,7 @@ export function resolveWindowsTaskkill(
     !executable ||
     !/^[a-z]:\\/i.test(executable) ||
     /["<>|?*]/.test(executable) ||
-    [...executable].some((character) => character.charCodeAt(0) < 32) ||
+    hasControlCharacter(executable) ||
     executable.slice(2).includes(":") ||
     executable.includes("/") ||
     executable
@@ -484,7 +493,9 @@ export async function terminateWindowsProcessTree(
         executable,
         ["/PID", String(pid), "/T", "/F"],
         { timeout: 3_000, windowsHide: true },
-        (error) => resolve(!error),
+        (error) => {
+          resolve(!error);
+        },
       );
     } catch {
       resolve(false);
@@ -554,9 +565,9 @@ async function stopBrowserServer(
 ): Promise<BrowserStopResult> {
   const browserProcess = browserServer.process();
   const close = testPendingClose
-    ? new Promise<void>(() => {})
+    ? new Promise<void>(() => undefined)
     : browserServer.close();
-  void close.catch(() => {});
+  void close.catch(() => undefined);
   if (await waitForChildExit(browserProcess, testPendingClose ? 200 : 1_500)) {
     return {
       stopped: !testUnknownState,
@@ -565,7 +576,7 @@ async function stopBrowserServer(
   }
 
   const kill = browserServer.kill();
-  void kill.catch(() => {});
+  void kill.catch(() => undefined);
   if (await waitForChildExit(browserProcess, 1_000)) {
     return {
       stopped: !testUnknownState,
@@ -661,7 +672,10 @@ function cucumberScenarioEvidence(
       return undefined;
     }
     const businessSteps =
-      scenario.steps?.filter((step) => typeof step.name === "string") ?? [];
+      scenario.steps?.filter(
+        (step): step is typeof step & { name: string } =>
+          typeof step.name === "string",
+      ) ?? [];
     if (
       typeof feature.name !== "string" ||
       feature.name.length > 300 ||
@@ -669,7 +683,7 @@ function cucumberScenarioEvidence(
       scenario.name.length > 300 ||
       businessSteps.length === 0 ||
       businessSteps.length > MAX_CUCUMBER_REPORT_STEPS ||
-      businessSteps.some((step) => step.name!.length > 300)
+      businessSteps.some((step) => step.name.length > 300)
     ) {
       return undefined;
     }
@@ -685,7 +699,7 @@ function cucumberScenarioEvidence(
       featureName: feature.name,
       scenarioName: scenario.name,
       steps: businessSteps.map((step) => ({
-        name: step.name!,
+        name: step.name,
         status: statuses.includes(step.result?.status as CucumberStepStatus)
           ? (step.result?.status as CucumberStepStatus)
           : "unknown",
@@ -790,8 +804,12 @@ async function executeScenario(
     },
   );
   const spawned = new Promise<boolean>((resolve) => {
-    child.once("spawn", () => resolve(true));
-    child.once("error", () => resolve(false));
+    child.once("spawn", () => {
+      resolve(true);
+    });
+    child.once("error", () => {
+      resolve(false);
+    });
   });
   let resolveTermination: ((terminated: boolean) => void) | undefined;
   const terminationCompleted = new Promise<boolean>((resolve) => {
@@ -812,7 +830,9 @@ async function executeScenario(
       () => resolveTermination?.(false),
     );
   };
-  const timeout = setTimeout(() => requestStop("scenario-timeout"), timeoutMs);
+  const timeout = setTimeout(() => {
+    requestStop("scenario-timeout");
+  }, timeoutMs);
   const onRunAbort = (): void => {
     requestStop(
       runSignal.reason === "run-timeout"
@@ -830,8 +850,12 @@ async function executeScenario(
     readonly code: number | null;
     readonly spawnFailed: boolean;
   }>((resolve) => {
-    child.once("error", () => resolve({ code: null, spawnFailed: true }));
-    child.once("exit", (code) => resolve({ code, spawnFailed: false }));
+    child.once("error", () => {
+      resolve({ code: null, spawnFailed: true });
+    });
+    child.once("exit", (code) => {
+      resolve({ code, spawnFailed: false });
+    });
   });
   const outcome = await Promise.race([
     completionPromise.then((completion) => ({ completion })),
@@ -958,11 +982,10 @@ async function executeReviewedScenarioAttempt(
   );
   const diagnosticReference = randomUUID();
   const runController = new AbortController();
-  const runTimer = setTimeout(
-    () => runController.abort("run-timeout"),
-    runTimeoutMs,
-  );
-  const onAbort = (): void =>
+  const runTimer = setTimeout(() => {
+    runController.abort("run-timeout");
+  }, runTimeoutMs);
+  const onAbort = (): void => {
     runController.abort(
       options.signal?.reason === "run-timeout"
         ? "run-timeout"
@@ -970,6 +993,7 @@ async function executeReviewedScenarioAttempt(
           ? "cleanup-unknown"
           : "cancelled",
     );
+  };
   options.signal?.addEventListener("abort", onAbort);
   if (options.signal?.aborted) {
     onAbort();
@@ -978,13 +1002,16 @@ async function executeReviewedScenarioAttempt(
   const results: ScenarioExecutionResult[] = [];
   const cleanupFailures: string[] = [];
   let server: Server | undefined;
-  let serverSockets: Set<Socket> = new Set();
+  let serverSockets = new Set<Socket>();
   let redirectServer: Server | undefined;
-  let redirectSockets: Set<Socket> = new Set();
+  let redirectSockets = new Set<Socket>();
   let blockedTargetRequestCount: (() => number) | undefined;
   let browserServer: BrowserServer | undefined;
   let browserProcessStopped: boolean | null = null;
   let browserLaunchUncertain = false;
+  // Flags set in callbacks and catch blocks; read afresh where the type checker cannot see that.
+  const runAborted = (): boolean => runController.signal.aborted;
+  const isBrowserLaunchUncertain = (): boolean => browserLaunchUncertain;
   let serverPendingCloseInjected = false;
   let resourcesAcquired = false;
   let temporaryDirectory: string | undefined;
@@ -1018,7 +1045,7 @@ async function executeReviewedScenarioAttempt(
         "not_required",
       );
     }
-    if (runController.signal.aborted) {
+    if (runAborted()) {
       return summary(
         diagnosticReference,
         runController.signal.reason === "run-timeout"
@@ -1051,9 +1078,7 @@ async function executeReviewedScenarioAttempt(
     redirectSockets = localRuntime.redirectSockets;
     blockedTargetRequestCount = localRuntime.blockedTargetRequestCount;
     resourcesAcquired = !options.ownedLocalTarget;
-    const selectedIds = selection.scenarios.map(
-      (scenario) => scenario.id as string,
-    );
+    const selectedIds = selection.scenarios.map((scenario) => scenario.id);
     const descriptor = prepareScenarioInputs(
       makeFixtureInput(selectedIds, localRuntime.origin),
       validation,
@@ -1071,7 +1096,7 @@ async function executeReviewedScenarioAttempt(
     );
     await options.beforeBrowserAcquire?.();
     if (
-      runController.signal.aborted ||
+      runAborted() ||
       (options.authorizationExpiresAt !== undefined &&
         options.authorizationExpiresAt <= Date.now())
     )
@@ -1094,14 +1119,14 @@ async function executeReviewedScenarioAttempt(
       browserLaunchUncertain = true;
       throw error;
     }
+    // Both are set above; the workers below are closures, which lose that narrowing.
+    const scenarioDirectory = temporaryDirectory;
+    const browserEndpoint = browserServer.wsEndpoint();
     let nextScenario = 0;
     const workers = Array.from(
       { length: Math.min(concurrency, selection.scenarios.length) },
       async () => {
-        while (
-          nextScenario < selection.scenarios.length &&
-          !runController.signal.aborted
-        ) {
+        while (nextScenario < selection.scenarios.length && !runAborted()) {
           const index = nextScenario++;
           const scenario = selection.scenarios[index];
           const prepared = descriptor.scenarios.find(
@@ -1109,7 +1134,7 @@ async function executeReviewedScenarioAttempt(
           );
           if (!prepared) {
             results[index] = {
-              scenarioId: scenario.id ?? "unidentified",
+              scenarioId: scenario.id,
               status: "incomplete",
               cleanupStatus: "unknown",
               cleanupFailures: ["prepared-input-missing"],
@@ -1128,10 +1153,10 @@ async function executeReviewedScenarioAttempt(
             redirectTargetUrl: localRuntime.redirectTargetUrl,
           };
           results[index] = await executeScenario(
-            scenario.id as string,
+            scenario.id,
             payload,
-            temporaryDirectory!,
-            browserServer!.wsEndpoint(),
+            scenarioDirectory,
+            browserEndpoint,
             scenarioTimeoutMs,
             runController.signal,
             options.testCleanupFailure,
@@ -1139,7 +1164,7 @@ async function executeReviewedScenarioAttempt(
               attemptNumber,
             ),
           );
-          if (!runController.signal.aborted) {
+          if (!runAborted()) {
             if (results[index].status === "timed_out") {
               runController.abort("run-timeout");
             } else if (results[index].cleanupStatus !== "confirmed") {
@@ -1152,9 +1177,9 @@ async function executeReviewedScenarioAttempt(
     await Promise.all(workers);
     for (let index = 0; index < selection.scenarios.length; index += 1) {
       if (!results[index]) {
-        const stopReason = runController.signal.reason;
+        const stopReason: unknown = runController.signal.reason;
         results[index] = {
-          scenarioId: selection.scenarios[index].id ?? "unidentified",
+          scenarioId: selection.scenarios[index].id,
           status:
             stopReason === "run-timeout"
               ? "timed_out"
@@ -1169,7 +1194,7 @@ async function executeReviewedScenarioAttempt(
         };
       }
     }
-    status = runController.signal.aborted
+    status = runAborted()
       ? runController.signal.reason === "run-timeout"
         ? "timed_out"
         : runController.signal.reason === "cancelled"
@@ -1213,7 +1238,7 @@ async function executeReviewedScenarioAttempt(
         browserProcessStopped = false;
         cleanupFailures.push("browser-process-state-unknown");
       }
-    } else if (browserLaunchUncertain) {
+    } else if (isBrowserLaunchUncertain()) {
       cleanupFailures.push("browser-launch-state-unknown");
     }
     try {
@@ -1248,7 +1273,7 @@ async function executeReviewedScenarioAttempt(
   if (
     browserProcessStopped === true &&
     cleanupFailures.length === 0 &&
-    !browserLaunchUncertain
+    !isBrowserLaunchUncertain()
   ) {
     for (const result of results) {
       if (result.workerStopped && result.cleanupStatus === "unknown") {
@@ -1259,7 +1284,7 @@ async function executeReviewedScenarioAttempt(
   }
   const cleanupStatus = !resourcesAcquired
     ? "not_required"
-    : browserLaunchUncertain || browserProcessStopped === false
+    : isBrowserLaunchUncertain() || browserProcessStopped === false
       ? "unknown"
       : aggregateCleanup(results, cleanupFailures);
   for (const result of results) {
@@ -1296,15 +1321,16 @@ export async function executeReviewedScenarios(
   const now = options.testNow ?? (() => performance.now());
   const deadline = now() + runTimeoutMs;
   const runController = new AbortController();
-  const onAbort = (): void => runController.abort("cancelled");
+  const onAbort = (): void => {
+    runController.abort("cancelled");
+  };
   options.signal?.addEventListener("abort", onAbort);
   if (options.signal?.aborted) {
     onAbort();
   }
-  const deadlineTimer = setTimeout(
-    () => runController.abort("run-timeout"),
-    runTimeoutMs,
-  );
+  const deadlineTimer = setTimeout(() => {
+    runController.abort("run-timeout");
+  }, runTimeoutMs);
   const attempts: ExecutionAttemptSummary[] = [];
   let finalStatusOverride: ExecutionStatus | undefined;
 

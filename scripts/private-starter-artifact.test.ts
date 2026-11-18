@@ -15,7 +15,12 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import type { JSONReport } from "@playwright/test/reporter";
 import { buildStarter, createStarter } from "./private-starter";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 test(
   "private source-pinned artifact installs, demonstrates, and fails truthfully without a browser",
@@ -36,7 +41,7 @@ test(
         timeout: 200_000,
       });
       assert.equal(setup.status, 0, setup.stdout + setup.stderr);
-      const manifest = JSON.parse(
+      const manifest: unknown = JSON.parse(
         readFileSync(
           path.join(
             demo,
@@ -45,6 +50,7 @@ test(
           "utf8",
         ),
       );
+      assert.ok(isRecord(manifest));
       assert.equal(manifest.private, true);
       assert.equal(manifest.publishConfig, undefined);
       assert.deepEqual(manifest.scripts, {});
@@ -55,15 +61,21 @@ test(
         timeout: 60_000,
       });
       assert.equal(result.status, 0, result.stdout + result.stderr);
-      const report = JSON.parse(
+      const parsedReport: unknown = JSON.parse(
         readFileSync(path.join(demo, "reports/demo-results.json"), "utf8"),
       );
+      assert.ok(
+        isRecord(parsedReport) &&
+          Array.isArray(parsedReport.suites) &&
+          isRecord(parsedReport.stats),
+      );
+      const report = parsedReport as unknown as JSONReport;
       const attachment =
         report.suites[0].specs[0].tests[0].results[0].attachments.find(
           (item: { name: string }) => item.name === "owned-demo",
         );
       assert.ok(
-        attachment && existsSync(attachment.path),
+        attachment?.path !== undefined && existsSync(attachment.path),
         "actual screenshot evidence must exist",
       );
       assert.equal(report.stats.expected, 1);

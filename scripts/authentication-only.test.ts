@@ -20,7 +20,7 @@ async function fixture(
   const hits: string[] = [];
   await withLoopbackServer(
     (req, res) => {
-      hits.push(`${req.method} ${req.url}`);
+      hits.push(`${String(req.method)} ${String(req.url)}`);
       if (req.url === "/") {
         res.setHeader("Content-Type", "text/html");
         res.end(
@@ -112,26 +112,42 @@ for (const activity of [
                   "Content-Type": "application/x-www-form-urlencoded",
                 },
               }).catch(() => undefined);
-            if (activity === "wrong-content-type")
-              return void (await fetch("/auth/login", {
+            if (activity === "wrong-content-type") {
+              await fetch("/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: "{}",
-              }).catch(() => undefined));
-            if (activity === "concurrent-retry")
-              return void (await Promise.all([
+              }).catch(() => undefined);
+              return;
+            }
+            if (activity === "concurrent-retry") {
+              await Promise.all([
                 send("/auth/login", "POST"),
                 send("/auth/login", "POST"),
-              ]));
-            if (activity === "pre-auth-background")
-              return void (await send("/groups"));
-            if (activity === "me-before-login") return void (await send("/me"));
-            if (activity === "registration")
-              document.getElementById("authGo")!.textContent = "Create account";
-            if (activity === "wrong-method")
-              return void (await send("/auth/login"));
-            if (activity === "query")
-              return void (await send("/auth/login?x=1", "POST"));
+              ]);
+              return;
+            }
+            if (activity === "pre-auth-background") {
+              await send("/groups");
+              return;
+            }
+            if (activity === "me-before-login") {
+              await send("/me");
+              return;
+            }
+            if (activity === "registration") {
+              const authGo = document.getElementById("authGo");
+              if (!authGo) throw new Error("Fixture is missing #authGo");
+              authGo.textContent = "Create account";
+            }
+            if (activity === "wrong-method") {
+              await send("/auth/login");
+              return;
+            }
+            if (activity === "query") {
+              await send("/auth/login?x=1", "POST");
+              return;
+            }
             await send("/auth/login", "POST");
             await send("/me");
             if (activity === "retry") await send("/auth/login", "POST");
@@ -217,13 +233,17 @@ for (const destination of [
                     const socket = new WebSocket(
                       external.replace("http:", "ws:"),
                     );
-                    socket.onclose = socket.onerror = () => resolve();
+                    socket.onclose = socket.onerror = () => {
+                      resolve();
+                    };
                   });
                 if (destination === "document") location.href = "/forbidden";
                 if (destination === "wrong-resource")
                   await new Promise<void>((resolve) => {
                     const image = new Image();
-                    image.onload = image.onerror = () => resolve();
+                    image.onload = image.onerror = () => {
+                      resolve();
+                    };
                     image.src = "/health";
                   });
               },
@@ -424,9 +444,11 @@ test("Given the five exact declared resources, abort each before transport and s
       context.route = async (matcher, handler) =>
         register(matcher, async (route, request) => {
           if (new URL(request.url()).origin !== new URL(url).origin)
-            route.fetch = async () => {
+            route.fetch = () => {
               externalTransports++;
-              throw new Error("No external transport permitted in fixture");
+              return Promise.reject(
+                new Error("No external transport permitted in fixture"),
+              );
             };
           await handler(route, request);
         });
@@ -439,13 +461,17 @@ test("Given the five exact declared resources, abort each before transport and s
             if (resource.resourceType === "script") {
               const script = document.createElement("script");
               script.type = "module";
-              script.onload = script.onerror = () => resolve();
+              script.onload = script.onerror = () => {
+                resolve();
+              };
               script.src = resource.url;
               document.head.append(script);
             } else {
               const link = document.createElement("link");
               link.rel = "stylesheet";
-              link.onload = link.onerror = () => resolve();
+              link.onload = link.onerror = () => {
+                resolve();
+              };
               link.href = resource.url;
               document.head.append(link);
             }
@@ -508,14 +534,15 @@ for (const variant of [
           } as unknown as import("@playwright/test").Request;
           const route = {
             request: () => request,
-            abort: async () => {
+            abort: () => {
               denials++;
-              if (variant === "abort-failure")
-                throw new Error("SYNTHETIC_DENIAL_CANARY");
+              return variant === "abort-failure"
+                ? Promise.reject(new Error("SYNTHETIC_DENIAL_CANARY"))
+                : Promise.resolve();
             },
-            fetch: async () => {
+            fetch: () => {
               externalTransports++;
-              throw new Error("Unexpected external transport");
+              return Promise.reject(new Error("Unexpected external transport"));
             },
           } as unknown as import("@playwright/test").Route;
           await handle(route, request);
@@ -586,9 +613,7 @@ test("Given a known denial starts after asynchronous admission, do not dispatch 
                 entered();
                 await blocked;
               },
-              fetch: async () => {
-                throw new Error("Forbidden transport");
-              },
+              fetch: () => Promise.reject(new Error("Forbidden transport")),
             } as unknown as import("@playwright/test").Route;
             denial = Promise.resolve(handle(deniedRoute, deniedRequest));
             await denialEntered;

@@ -41,22 +41,25 @@ export function parseOwnedEvidence(
   )
     return undefined;
   try {
-    const value = JSON.parse(raw);
+    const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object" || Array.isArray(value))
       return undefined;
-    const keys = Object.keys(value);
+    // A plain object, checked above.
+    const record = value as Record<string, unknown>;
+    const keys = Object.keys(record);
+    const steps = record.steps;
     if (
       keys.length !== 3 ||
       !keys.every(
         (key) =>
           key === "scenarioId" || key === "schemaVersion" || key === "steps",
       ) ||
-      value.schemaVersion !== 1 ||
-      value.scenarioId !== OWNED_EVIDENCE_ID ||
-      !Array.isArray(value.steps) ||
-      value.steps.length !== OWNED_EVIDENCE_STEPS.length ||
-      !value.steps.every(
-        (status: unknown) =>
+      record.schemaVersion !== 1 ||
+      record.scenarioId !== OWNED_EVIDENCE_ID ||
+      !Array.isArray(steps) ||
+      steps.length !== OWNED_EVIDENCE_STEPS.length ||
+      !steps.every(
+        (status: unknown): status is CucumberStepStatus =>
           typeof status === "string" &&
           OWNED_EVIDENCE_STATUSES.includes(status as CucumberStepStatus),
       )
@@ -67,7 +70,7 @@ export function parseOwnedEvidence(
       scenarioName: OWNED_EVIDENCE_SCENARIO,
       steps: OWNED_EVIDENCE_STEPS.map((name, index) => ({
         name,
-        status: value.steps[index],
+        status: steps[index],
       })),
     };
   } catch {

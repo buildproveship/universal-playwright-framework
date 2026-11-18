@@ -66,6 +66,8 @@ export function createAuthenticationOnlyPolicy(page: Page, targetUrl: string) {
   let authenticated = false;
   let identityConfirmed = false;
   let failed = false;
+  // Reads the flag afresh after an await, where a concurrent request may have set it.
+  const hasFailed = (): boolean => failed;
   const fail = (): never => {
     failed = true;
     throw new RuntimeLoginFailure(
@@ -154,7 +156,7 @@ export function createAuthenticationOnlyPolicy(page: Page, targetUrl: string) {
         } catch {
           return fail();
         }
-        if (failed || pendingDenials) return fail();
+        if (hasFailed() || pendingDenials) return fail();
         return true;
       }
       if (path === "/me" && request.method() === "GET") {

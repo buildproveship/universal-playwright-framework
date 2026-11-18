@@ -98,7 +98,8 @@ export async function guardLoginRequests(
   });
   await context.routeWebSocket("**/*", (socket) => {
     record("websocket");
-    socket.close();
+    // Blocked sockets are only closed; the block is already counted.
+    void socket.close();
   });
   await context.route("**/*", async (route) => {
     pendingRequests += 1;
@@ -229,7 +230,8 @@ export async function withFreshLoginPage(
               let timer: NodeJS.Timeout | undefined;
               try {
                 await Promise.race([
-                  closures.get(context!)!,
+                  // The context's close was registered when isolation started; a missing entry waits for nothing.
+                  context ? closures.get(context) : undefined,
                   new Promise<void>((resolve) => {
                     timer = setTimeout(
                       resolve,
@@ -256,6 +258,9 @@ export async function withFreshLoginPage(
   let context: BrowserContext | undefined;
   let pendingAcquisition = false;
   let acquisitionInterrupted = false;
+  // Set in callbacks; read afresh where the type checker cannot see that.
+  const isPendingAcquisition = (): boolean => pendingAcquisition;
+  const isAcquisitionInterrupted = (): boolean => acquisitionInterrupted;
   let workDeadlineExpired: boolean;
   let cleanupDeadlineExpired = false;
   let stage: RuntimeLoginFailureStage = "browser-startup";
@@ -270,8 +275,12 @@ export async function withFreshLoginPage(
     close(context);
     close(browser);
   };
-  const abort = (): void => interrupt("interrupted");
-  const timer = setTimeout(() => interrupt("timed-out"), timeoutMs);
+  const abort = (): void => {
+    interrupt("interrupted");
+  };
+  const timer = setTimeout(() => {
+    interrupt("timed-out");
+  }, timeoutMs);
   options.signal?.addEventListener("abort", abort, { once: true });
   if (options.signal?.aborted) abort();
   const deadline = Date.now() + timeoutMs;
@@ -284,8 +293,9 @@ export async function withFreshLoginPage(
   };
   let rejectInterrupted: (() => void) | undefined;
   const interrupted = new Promise<never>((_, reject) => {
-    rejectInterrupted = () =>
+    rejectInterrupted = () => {
       reject(new Error("Login browser operation interrupted"));
+    };
     controller.signal.addEventListener("abort", rejectInterrupted, {
       once: true,
     });
@@ -390,8 +400,8 @@ export async function withFreshLoginPage(
       cleanupStatus =
         !confirmed ||
         cleanupDeadlineExpired ||
-        pendingAcquisition ||
-        acquisitionInterrupted
+        isPendingAcquisition() ||
+        isAcquisitionInterrupted()
           ? "unconfirmed"
           : browser || context
             ? "confirmed"

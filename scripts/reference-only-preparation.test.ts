@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Validates an owned temporary feature and prepares a reference-only scenario through the real preparation API; no browser, login or external data source is used.
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,10 +27,12 @@ test("Given a reviewed reference-only scenario, preparation preserves its empty 
       },
     });
     assert.equal(validation.valid, true);
-    if (!validation.valid) throw new Error("Owned feature invalid");
     const approval = {
       ...validation,
-      scenarios: validation.scenarios.map((s) => ({ id: s.id!, tags: s.tags })),
+      scenarios: validation.scenarios.map((s) => {
+        assert.ok(s.id !== null);
+        return { id: s.id, tags: s.tags };
+      }),
     };
     const catalogue = {
       datasets: [{ id: "owned-data", revision: "v1", rows: ["owned-row"] }],
@@ -77,7 +83,6 @@ test("Given a reviewed reference-only scenario, preparation preserves its empty 
       ],
     };
     const { scenarioId: _scenarioId, ...row } = selection.rows[0];
-    void _scenarioId;
     const fixture = {
       ...input,
       scenarios: [{ ...input.scenarios[0], dataReference: row }],

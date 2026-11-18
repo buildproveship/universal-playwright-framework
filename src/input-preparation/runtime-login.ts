@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isList, untrusted } from "../validation/untrusted";
 import type {
   PreparedInputDescriptor,
   RuntimeSecretProvider,
@@ -263,15 +264,17 @@ function sameScope(
 
 /** Call before prompting and again before the consumer can acquire a browser. */
 export function validateRuntimeLoginRequest(
-  descriptor: PreparedInputDescriptor,
+  trustedDescriptor: PreparedInputDescriptor,
   candidate: RuntimeLoginRequest,
 ): RuntimeLoginRequest {
   const request = validateRequest(candidate);
+  // Untyped JavaScript callers can pass anything, so every level is checked before it is read.
+  const descriptor = untrusted(trustedDescriptor);
   if (
     !descriptor ||
-    !Array.isArray(descriptor.scenarios) ||
+    !isList(descriptor.scenarios) ||
     descriptor.scenarios.length !== 1 ||
-    !Array.isArray(descriptor.dataReferences?.rows) ||
+    !isList(descriptor.dataReferences?.rows) ||
     descriptor.dataReferences.rows.length !== 1 ||
     !descriptor.environment
   ) {
@@ -280,7 +283,7 @@ export function validateRuntimeLoginRequest(
   const scenario = descriptor.scenarios.find(
     (item) => item?.id === request.scope.scenarioId,
   );
-  const reference = descriptor.dataReferences?.rows.find(
+  const reference = descriptor.dataReferences.rows.find(
     (item) => item?.scenarioId === request.scope.scenarioId,
   );
   if (
@@ -291,8 +294,8 @@ export function validateRuntimeLoginRequest(
     !scenario.dataReference?.dataset ||
     reference.secret.id !== request.account.id ||
     reference.secret.revision !== request.account.revision ||
-    scenario.dataReference?.dataset?.id !== reference.dataset?.id ||
-    scenario.dataReference?.dataset?.revision !== reference.dataset?.revision ||
+    scenario.dataReference.dataset.id !== reference.dataset.id ||
+    scenario.dataReference.dataset.revision !== reference.dataset.revision ||
     scenario.dataReference.rowId !== reference.rowId ||
     scenario.dataReference.secret?.id !== reference.secret.id ||
     scenario.dataReference.secret.revision !== reference.secret.revision ||
@@ -318,17 +321,23 @@ export class InMemoryRuntimeSecretProvider implements RuntimeSecretProvider {
   constructor(request: RuntimeLoginRequest, account: unknown) {
     this.#request = validateRequest(request);
     this.#account = validateAccount(account);
-    this.#expiry = setTimeout(
-      () => this.dispose(),
-      this.#request.expiresAt - Date.now(),
-    );
+    this.#expiry = setTimeout(() => {
+      this.dispose();
+    }, this.#request.expiresAt - Date.now());
     this.#expiry.unref();
   }
 
-  async resolve(
+  resolve(
     reference: SecretReference,
     scope?: RuntimeSecretScope,
   ): Promise<string> {
+    // Runs now, as an async body would; a thrown check becomes a rejection.
+    return new Promise((settle) => {
+      settle(this.#resolveNow(reference, scope));
+    });
+  }
+
+  #resolveNow(reference: SecretReference, scope?: RuntimeSecretScope): string {
     validateRequest(this.#request);
     if (!this.#account) return fail("runtime-input-unavailable");
     const parsedScope = scopeSchema.safeParse(scope);
@@ -441,7 +450,7 @@ export async function consumeRuntimeLoginInputs(
         return fail("runtime-login-failed");
       }
     } finally {
-      account?.dispose();
+      account.dispose();
       account = undefined;
     }
     outcome = {

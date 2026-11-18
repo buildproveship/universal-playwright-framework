@@ -17,7 +17,23 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { createStarter, sha256 } from "./private-starter";
+import {
+  createStarter,
+  sha256,
+  starterDependencyGraph,
+  starterLockPackages,
+} from "./private-starter";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
+function settle<T>(body: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(body());
+  });
+}
 
 const root = path.resolve(__dirname, "../../..");
 function fixture(
@@ -56,7 +72,7 @@ function fixture(
   }
 }
 for (const mode of ["demo", "customer"] as const) {
-  test(`creates only the ${mode} slice with exact private provenance and no allocated identities`, () =>
+  test(`creates only the ${mode} slice with exact private provenance and no allocated identities`, () => {
     fixture((directory, artifact, digest) => {
       const target = path.join(directory, "project");
       createStarter(artifact, target, mode, digest);
@@ -68,54 +84,57 @@ for (const mode of ["demo", "customer"] as const) {
         existsSync(path.join(target, "placeholder.txt")),
         mode === "customer",
       );
-      const provenance = JSON.parse(
+      const provenance: unknown = JSON.parse(
         readFileSync(path.join(target, "starter-provenance.json"), "utf8"),
       );
+      assert.ok(isRecord(provenance));
       assert.equal(provenance.sourceRevision, "a".repeat(40));
       assert.equal(provenance.manifestSha256, digest);
       assert.equal(provenance.reviewStatus, "Not Reviewed");
       assert.equal(provenance.registered, false);
+      assert.ok(typeof provenance.identityStatus === "string");
       assert.match(provenance.identityStatus, /^unallocated/);
       assert.deepEqual(
         readFileSync(path.join(target, "vendor/framework.tgz")),
         readFileSync(path.join(artifact, "common/vendor/framework.tgz")),
       );
-    }));
+    });
+  });
 }
-test("accepts an existing empty destination but refuses repeat invocation without changing bytes", () =>
+test("accepts an existing empty destination but refuses repeat invocation without changing bytes", () => {
   fixture((directory, artifact, digest) => {
     const target = path.join(directory, "project");
     mkdirSync(target);
     createStarter(artifact, target, "demo", digest);
     const before = readFileSync(path.join(target, "starter-provenance.json"));
-    assert.throws(
-      () => createStarter(artifact, target, "demo", digest),
-      /empty directory/,
-    );
+    assert.throws(() => {
+      createStarter(artifact, target, "demo", digest);
+    }, /empty directory/);
     assert.deepEqual(
       readFileSync(path.join(target, "starter-provenance.json")),
       before,
     );
-  }));
-test("refuses nonempty destinations and preserves existing canonical IDs", () =>
+  });
+});
+test("refuses nonempty destinations and preserves existing canonical IDs", () => {
   fixture((directory, artifact, digest) => {
     const target = path.join(directory, "project");
     mkdirSync(target);
     const baseline =
       '{"caseId":"existing-canonical-id","review":"owner-owned"}';
     writeFileSync(path.join(target, "identity.json"), baseline);
-    assert.throws(
-      () => createStarter(artifact, target, "demo", digest),
-      /empty directory/,
-    );
+    assert.throws(() => {
+      createStarter(artifact, target, "demo", digest);
+    }, /empty directory/);
     assert.deepEqual(readdirSync(target), ["identity.json"]);
     assert.equal(
       readFileSync(path.join(target, "identity.json"), "utf8"),
       baseline,
     );
-  }));
+  });
+});
 for (const kind of ["file", "manifest", "extra", "symlink"] as const) {
-  test(`rejects ${kind} artifact tampering before writing destination`, () =>
+  test(`rejects ${kind} artifact tampering before writing destination`, () => {
     fixture((directory, artifact, digest) => {
       if (kind === "file")
         writeFileSync(
@@ -132,49 +151,55 @@ for (const kind of ["file", "manifest", "extra", "symlink"] as const) {
           path.join(artifact, "link"),
         );
       const target = path.join(directory, "project");
-      assert.throws(() => createStarter(artifact, target, "demo", digest));
+      assert.throws(() => {
+        createStarter(artifact, target, "demo", digest);
+      });
       assert.equal(existsSync(target), false);
-    }));
+    });
+  });
 }
-test("rejects destination symlinks rather than writing into another directory", () =>
+test("rejects destination symlinks rather than writing into another directory", () => {
   fixture((directory, artifact, digest) => {
     const actual = path.join(directory, "actual");
     const target = path.join(directory, "target");
     mkdirSync(actual);
     symlinkSync(actual, target, "dir");
-    assert.throws(() => createStarter(artifact, target, "demo", digest));
+    assert.throws(() => {
+      createStarter(artifact, target, "demo", digest);
+    });
     assert.deepEqual(readdirSync(actual), []);
-  }));
-test("requires an explicit trusted manifest digest and supported mode", () =>
+  });
+});
+test("requires an explicit trusted manifest digest and supported mode", () => {
   fixture((directory, artifact) => {
-    assert.throws(
-      () =>
-        createStarter(artifact, path.join(directory, "project"), "demo", ""),
-      /SHA-256/,
-    );
-    assert.throws(
-      () =>
-        createStarter(
-          artifact,
-          path.join(directory, "project"),
-          "other" as "demo",
-          "a".repeat(64),
-        ),
-      /Choose/,
-    );
-  }));
+    assert.throws(() => {
+      createStarter(artifact, path.join(directory, "project"), "demo", "");
+    }, /SHA-256/);
+    assert.throws(() => {
+      createStarter(
+        artifact,
+        path.join(directory, "project"),
+        "other",
+        "a".repeat(64),
+      );
+    }, /Choose/);
+  });
+});
 test("templates are reference-only, keep one rulebook and never assign canonical IDs", () => {
-  const inputs = JSON.parse(
+  const inputs: unknown = JSON.parse(
     readFileSync(
       path.join(root, "starter/templates/common/customer-inputs.example.json"),
       "utf8",
     ),
   );
+  assert.ok(isRecord(inputs));
   assert.deepEqual(Object.keys(inputs), [
     "targetUrl",
     "dataReference",
     "execution",
   ]);
+  assert.ok(typeof inputs.targetUrl === "string");
+  assert.ok(typeof inputs.dataReference === "string");
   assert.match(inputs.targetUrl, /^</);
   assert.match(inputs.dataReference, /^</);
   const rules = readFileSync(
@@ -308,9 +333,8 @@ for (const failure of [
     let fixtureFunction: (
       args: unknown,
       use: () => Promise<void>,
-    ) => Promise<void> = async () => {
-      throw new Error("Fixture not registered");
-    };
+    ) => Promise<void> = () =>
+      Promise.reject(new Error("Fixture not registered"));
     const compiled = ts.transpileModule(
       readFileSync(
         path.join(root, "starter/templates/demo/fixtures/demo.ts"),
@@ -342,35 +366,44 @@ for (const failure of [
               },
             },
             expect: (actual: unknown) => ({
-              toBe: (expected: unknown) => assert.equal(actual, expected),
+              toBe: (expected: unknown) => {
+                assert.equal(actual, expected);
+              },
             }),
           };
-        if (name === "../pages/demo-page.ts") return { DemoPage: class {} };
+        if (name === "../pages/demo-page.ts")
+          return {
+            DemoPage: class {
+              readonly args: unknown[];
+              constructor(...args: unknown[]) {
+                this.args = args;
+              }
+            },
+          };
         throw new Error("Unexpected import");
       },
     });
-    type Route = {
+    interface Route {
       request: () => { url: () => string };
       abort: () => Promise<void>;
       continue: () => Promise<void>;
-    };
+    }
     let routeHandler: ((route: Route) => Promise<void>) | undefined;
     let socketHandler: ((socket: { close: () => void }) => void) | undefined;
     let aborted = 0,
       continued = 0,
       closed = 0;
     const context = {
-      route: async (_pattern: string, handler: typeof routeHandler) => {
-        if (failure === "route") throw new Error("route failed");
-        routeHandler = handler;
-      },
-      routeWebSocket: async (
-        _pattern: string,
-        handler: typeof socketHandler,
-      ) => {
-        if (failure === "websocket") throw new Error("websocket failed");
-        socketHandler = handler;
-      },
+      route: (_pattern: string, handler: typeof routeHandler) =>
+        settle(() => {
+          if (failure === "route") throw new Error("route failed");
+          routeHandler = handler;
+        }),
+      routeWebSocket: (_pattern: string, handler: typeof socketHandler) =>
+        settle(() => {
+          if (failure === "websocket") throw new Error("websocket failed");
+          socketHandler = handler;
+        }),
     };
     const promise = fixtureFunction({ page: {}, context }, async () => {
       if (failure === "use") throw new Error("use failed");
@@ -385,11 +418,13 @@ for (const failure of [
                 ? "https://not-contacted.invalid/"
                 : `http://127.0.0.1:${address.port}/`,
           }),
-          abort: async () => {
+          abort: () => {
             aborted++;
+            return Promise.resolve();
           },
-          continue: async () => {
+          continue: () => {
             continued++;
+            return Promise.resolve();
           },
         });
       }
@@ -428,3 +463,58 @@ for (const failure of [
     }
   });
 }
+
+test("starter lock keeps exactly the entries its own dependencies reach, resolved as Node resolves them", () => {
+  const packages = {
+    "": { name: "source" },
+    "node_modules/runtime": {
+      dependencies: { shared: "1.0.0", nested: "2.0.0" },
+      optionalDependencies: { "absent-optional": "1.0.0" },
+    },
+    "node_modules/runtime/node_modules/nested": {
+      peerDependencies: { peer: "1.0.0" },
+    },
+    "node_modules/nested": { version: "1.0.0" },
+    "node_modules/shared": {},
+    "node_modules/peer": {},
+    "node_modules/lint-only": { dependencies: { "lint-helper": "1.0.0" } },
+    "node_modules/lint-helper": {},
+  };
+  assert.deepEqual(Object.keys(starterLockPackages(packages, ["runtime"])), [
+    "",
+    "node_modules/runtime",
+    "node_modules/runtime/node_modules/nested",
+    "node_modules/shared",
+    "node_modules/peer",
+  ]);
+});
+
+test("the starter built from this repository's lock needs nothing from GitHub Packages", () => {
+  const root = path.resolve(__dirname, "../../..");
+  const manifest = JSON.parse(
+    readFileSync(path.join(root, "package.json"), "utf8"),
+  ) as {
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  };
+  const lock = JSON.parse(
+    readFileSync(path.join(root, "package-lock.json"), "utf8"),
+  ) as { packages: Record<string, { resolved?: string } | undefined> };
+  assert.ok("@releaseready/config" in manifest.devDependencies);
+  const graph = starterDependencyGraph(manifest, lock.packages);
+  assert.equal("@releaseready/config" in graph.devDependencies, false);
+  for (const name of [
+    ...Object.keys(manifest.dependencies),
+    "typescript",
+    "@types/node",
+  ]) {
+    assert.ok(`node_modules/${name}` in graph.packages, name);
+  }
+  const fromGitHubPackages = Object.entries(graph.packages).filter(
+    ([, entry]) =>
+      (entry as { resolved?: string } | undefined)?.resolved?.startsWith(
+        "https://npm.pkg.github.com/",
+      ) === true,
+  );
+  assert.deepEqual(fromGitHubPackages, []);
+});

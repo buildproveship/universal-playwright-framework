@@ -50,7 +50,8 @@ export async function withIsolatedReviewedPackage<T>(
   } finally {
     // Remove only this invocation's owned files and module-cache entries.
     for (const name of Object.keys(require.cache)) {
-      if (name.startsWith(isolated + path.sep)) delete require.cache[name];
+      if (name.startsWith(isolated + path.sep))
+        Reflect.deleteProperty(require.cache, name);
     }
     rmSync(isolated, { recursive: true, force: true });
   }

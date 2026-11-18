@@ -14,7 +14,12 @@ let delayed = false;
 
 // Each probe starts a cold Node process. No browser modules are preloaded by tests.
 const loader = Module as unknown as {
-  _load(request: string, parent: unknown, isMain: boolean): unknown;
+  _load: (
+    this: unknown,
+    request: string,
+    parent: unknown,
+    isMain: boolean,
+  ) => unknown;
 };
 const originalLoad = loader._load;
 let browserLoads = 0;
@@ -87,9 +92,9 @@ async function main(): Promise<void> {
     await assert.rejects(
       api.verifyPartayLogin(descriptor, request, provider, {
         signal: controller.signal,
-        launchBrowser: async () => {
+        launchBrowser: () => {
           launched += 1;
-          throw new Error("must not launch");
+          return Promise.reject(new Error("must not launch"));
         },
       }),
       (error) => {
@@ -106,8 +111,9 @@ async function main(): Promise<void> {
   } else if (mode === "guards") {
     let consumed = false;
     await assert.rejects(
-      api.withOperatorLoginInputs(descriptor, request, async () => {
+      api.withOperatorLoginInputs(descriptor, request, () => {
         consumed = true;
+        return Promise.resolve();
       }),
       (error) =>
         error instanceof api.RuntimeLoginError &&
@@ -157,9 +163,11 @@ async function main(): Promise<void> {
         new api.InMemoryRuntimeSecretProvider(request, values),
         {
           timeoutMs: 50,
-          launchBrowser: async () => {
+          launchBrowser: () => {
             launches += 1;
-            throw new Error("must not launch after import expiry");
+            return Promise.reject(
+              new Error("must not launch after import expiry"),
+            );
           },
         },
       ),
@@ -257,7 +265,10 @@ async function main(): Promise<void> {
       await browser?.close();
       server.closeAllConnections();
       await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        }),
       );
     }
   } else {
@@ -269,7 +280,7 @@ async function main(): Promise<void> {
   if (process.connected) process.disconnect();
 }
 
-void main().catch((error) => {
+void main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
   if (process.connected) process.disconnect();

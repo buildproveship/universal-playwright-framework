@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cucumber steps for the RRDWEB-8 local login pilot against an owned offline page in a local browser; no customer login or live traffic.
 import assert from "node:assert/strict";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
@@ -222,7 +226,7 @@ Then(
 
 Then(
   "the result is limited to authentication",
-  async function (this: LocalPilotWorld) {
+  function (this: LocalPilotWorld) {
     assert.equal(this.loginResponse, "accepted");
     assert.deepEqual(this.requestUrls, []);
   },
@@ -282,6 +286,8 @@ When(
 
     const context = page.context();
     let closeEventObserved = false;
+    // Set by the close event; read afresh where the type checker cannot see that.
+    const wasCloseEventObserved = (): boolean => closeEventObserved;
     page.once("close", () => {
       closeEventObserved = true;
     });
@@ -295,7 +301,7 @@ When(
       observation,
       exclusions: ["customer login", "post-login application behavior"],
       cleanupStatus:
-        closeEventObserved && page.isClosed() && !pageRemainsAttached
+        wasCloseEventObserved() && page.isClosed() && !pageRemainsAttached
           ? "confirmed"
           : "unknown",
     };
@@ -327,7 +333,7 @@ Then(
   "cleanup is reported separately from the login outcome",
   function (this: LocalPilotWorld) {
     assert.equal(this.evidence?.cleanupStatus, "confirmed");
-    assert.equal(this.evidence?.observation.signedInMarkerVisible, false);
+    assert.equal(this.evidence.observation.signedInMarkerVisible, false);
   },
 );
 
@@ -335,7 +341,7 @@ Then(
   "no customer attempt or post-login action is recorded",
   function (this: LocalPilotWorld) {
     assert.equal(this.evidence?.liveCustomerExecution, false);
-    assert.equal(this.evidence?.observation.requestCount, 0);
-    assert.equal(this.evidence?.observation.submissions, 0);
+    assert.equal(this.evidence.observation.requestCount, 0);
+    assert.equal(this.evidence.observation.submissions, 0);
   },
 );

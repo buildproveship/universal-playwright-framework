@@ -37,7 +37,6 @@ The existing workflow in `local-adapter-contract.md` requires review of the actu
 
 Passing a local check does not itself authorize founder review, customer execution or merge.
 
-
 ## Candidate review checkpoint
 
 Independent read-only review of the actual dependency/lockfile, route-wrapper, setup-guard and isolated-smoke diff found no blocking correctness/security issue. The reviewer confirmed that the existing reviewed-revision workflow permits explicit candidate activation after that review, with subsequent adapter/mutation verification. The implementation digest and both JSON examples were therefore updated together to the candidate digest above. This is a reviewable compatibility candidate, not founder test approval or authorization for customer execution. The stale-review comparisons and mutation tests remain unchanged.

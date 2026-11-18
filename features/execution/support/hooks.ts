@@ -11,7 +11,6 @@ import {
   setWorldConstructor,
   World,
   type ITestCaseHookParameter,
-  type IWorldOptions,
 } from "@cucumber/cucumber";
 import { chromium, type Browser } from "@playwright/test";
 import { settleApprovedRoute } from "../../../src/execution/guarded-route";
@@ -20,6 +19,7 @@ import path from "node:path";
 import { getStepTimeoutMs } from "../../support/step-timeout";
 import type { ExecutionPayload, ExecutionWorld } from "./world";
 
+import type { UntrustedFields } from "../../../src/validation/untrusted";
 import {
   classifyCleanupError,
   type CleanupDiagnostic,
@@ -40,10 +40,6 @@ class CucumberExecutionWorld extends World implements ExecutionWorld {
   page?: ExecutionWorld["page"];
   payload?: ExecutionPayload;
   blockedDestinations: string[] = [];
-
-  constructor(options: IWorldOptions) {
-    super(options);
-  }
 }
 
 setDefaultTimeout(getStepTimeoutMs(process.env.CUCUMBER_STEP_TIMEOUT_MS));
@@ -62,7 +58,8 @@ function parsePayload(value: string | undefined): ExecutionPayload {
   if (typeof parsed !== "object" || parsed === null) {
     throw new Error("Execution payload is invalid");
   }
-  const candidate = parsed as Partial<ExecutionPayload>;
+  // An object, checked above; every field is still checked before it is used.
+  const candidate = parsed as UntrustedFields<ExecutionPayload>;
   const target = candidate.environment?.initialTargetUrl;
   const origin = candidate.environment?.approvedOrigin;
   const redirectTarget = candidate.redirectTargetUrl;
@@ -107,7 +104,8 @@ BeforeAll(async function () {
   cleanupPath = destination;
   browser = await chromium.connect(endpoint, { timeout: 10_000 });
   if (process.env.WEB_EXECUTION_TEST_CLEANUP_FAILURE === "worker-stall") {
-    await new Promise<void>(() => {});
+    // Deliberately never settles: the parent must detect the stalled worker.
+    await new Promise<void>(() => undefined);
   }
 });
 

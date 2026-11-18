@@ -11,12 +11,18 @@ import {
 } from "./agentic-rehearsal";
 
 function change(
-  edit: (value: {
-    version: number;
-    cases: Array<Record<string, unknown>>;
-  }) => void,
+  edit: (value: { version: number; cases: Record<string, unknown>[] }) => void,
 ): string {
-  const value = JSON.parse(SYNTHETIC_BASELINE);
+  const parsed: unknown = JSON.parse(SYNTHETIC_BASELINE);
+  assert.ok(
+    typeof parsed === "object" &&
+      parsed !== null &&
+      "version" in parsed &&
+      typeof parsed.version === "number" &&
+      "cases" in parsed &&
+      Array.isArray(parsed.cases),
+  );
+  const value = parsed as { version: number; cases: Record<string, unknown>[] };
   edit(value);
   return JSON.stringify(value);
 }
@@ -187,7 +193,7 @@ function catalog(source: string): string[] {
       ts.isIdentifier(node.expression) &&
       node.expression.text === "test"
     ) {
-      const name = node.arguments[0];
+      const name = node.arguments.at(0);
       if (!name || !ts.isStringLiteral(name))
         throw new Error("Missing literal test ID");
       const id = /^(synthetic-AUTH-\d{3}):/.exec(name.text)?.[1];

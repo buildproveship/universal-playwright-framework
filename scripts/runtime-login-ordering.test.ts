@@ -1,8 +1,22 @@
+// Test classification: unit
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Checks cancellation-versus-deadline ordering in withFreshLoginPage using mocked timers and in-memory browser, context and page doubles; no real browser is launched.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Browser } from "@playwright/test";
 import { withFreshLoginPage } from "../src/execution/runtime-login-browser";
 import { RuntimeLoginFailure } from "../src/input-preparation/runtime-login";
+const noop = (): undefined => undefined;
+/**
+ * Runs `work` synchronously like an async function body: a return resolves
+ * the promise and a synchronous throw rejects it.
+ */
+function settle<T>(work: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(work());
+  });
+}
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => {
@@ -12,29 +26,34 @@ function deferred() {
 }
 function resources(events: string[]) {
   const closed = deferred();
-  const page = { setDefaultTimeout() {}, setDefaultNavigationTimeout() {} };
+  const page = { setDefaultTimeout: noop, setDefaultNavigationTimeout: noop };
   const context = {
-    setOffline: async (value: boolean) => {
-      assert.equal(value, true);
-      events.push("offline");
-    },
-    newPage: async () => {
-      events.push("page");
-      return page;
-    },
-    close: async () => {
-      events.push("context-close");
-    },
+    setOffline: (value: boolean) =>
+      settle(() => {
+        assert.equal(value, true);
+        events.push("offline");
+      }),
+    newPage: () =>
+      settle(() => {
+        events.push("page");
+        return page;
+      }),
+    close: () =>
+      settle(() => {
+        events.push("context-close");
+      }),
   };
   const browser = {
-    newContext: async () => {
-      events.push("context");
-      return context;
-    },
-    close: async () => {
-      events.push("browser-close");
-      closed.resolve();
-    },
+    newContext: () =>
+      settle(() => {
+        events.push("context");
+        return context;
+      }),
+    close: () =>
+      settle(() => {
+        events.push("browser-close");
+        closed.resolve();
+      }),
   };
   return { browser: browser as unknown as Browser, closed };
 }
@@ -52,16 +71,18 @@ test("controlled: drain reached and cancellation wins before the 1000 ms deadlin
         t.mock.timers.tick(999);
         events.push("cancel-request");
         controller.abort();
-        await new Promise<void>(() => {});
+        // Never settles: the drain stays held until cancellation wins.
+        await new Promise<void>(noop);
       },
       {
         timeoutMs: 1000,
         signal: controller.signal,
-        launchBrowser: async (timeout) => {
-          assert.equal(timeout, 1000);
-          events.push("launch");
-          return browser;
-        },
+        launchBrowser: (timeout) =>
+          settle(() => {
+            assert.equal(timeout, 1000);
+            events.push("launch");
+            return browser;
+          }),
       },
     ),
     (error) => {
@@ -93,18 +114,21 @@ test("controlled: acquisition held until the 1000 ms deadline prevents drain can
     promise: new Promise<Browser>((resolve) => {
       releaseBrowser = resolve;
     }),
-    resolve: (browser: Browser) => releaseBrowser(browser),
+    resolve: (browser: Browser) => {
+      releaseBrowser(browser);
+    },
   };
   const controller = new AbortController();
   const { browser, closed } = resources(events);
   let classification: string | undefined;
   let cleanup: string | undefined;
   const operation = withFreshLoginPage(
-    async () => {
-      events.push("drain-entry");
-      events.push("cancel-request");
-      controller.abort();
-    },
+    () =>
+      settle(() => {
+        events.push("drain-entry");
+        events.push("cancel-request");
+        controller.abort();
+      }),
     {
       timeoutMs: 1000,
       signal: controller.signal,

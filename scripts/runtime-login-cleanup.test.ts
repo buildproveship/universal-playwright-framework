@@ -14,44 +14,56 @@ import {
 
 const delay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
+const noop = (): void => undefined;
+/** An owned operation that completes immediately without doing anything. */
+const resolved = (): Promise<void> => Promise.resolve();
+
+/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
+function settle<T>(body: () => T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    resolve(body());
+  });
+}
 
 function fixture(
   offline: () => Promise<void>,
-  browserClose = async () => {},
-  contextClose = async () => {},
+  browserClose = resolved,
+  contextClose = resolved,
 ) {
   const events: string[] = [];
   const browser = {
-    newContext: async () => ({
-      setOffline: async (value: boolean) => {
-        assert.equal(value, true);
-        events.push("offline-start");
-        await offline();
-        events.push("offline-confirmed");
-      },
-      close: async () => {
-        events.push("context-close");
-        await contextClose();
-      },
-      newPage: async () => ({
-        setDefaultTimeout() {},
-        setDefaultNavigationTimeout() {},
+    newContext: () =>
+      Promise.resolve({
+        setOffline: async (value: boolean) => {
+          assert.equal(value, true);
+          events.push("offline-start");
+          await offline();
+          events.push("offline-confirmed");
+        },
+        close: async () => {
+          events.push("context-close");
+          await contextClose();
+        },
+        newPage: () =>
+          Promise.resolve({
+            setDefaultTimeout: noop,
+            setDefaultNavigationTimeout: noop,
+          }),
       }),
-    }),
     close: async () => {
       events.push("browser-close");
       await browserClose();
       events.push("browser-closed");
     },
   } as unknown as Browser;
-  return { events, launchBrowser: async () => browser };
+  return { events, launchBrowser: () => Promise.resolve(browser) };
 }
 
 test("Given completed work, browser transport is disabled before context teardown can disable interception", async () => {
   const owned = fixture(async () => {
     await delay(10);
   });
-  await withFreshLoginPage(async () => {}, owned);
+  await withFreshLoginPage(resolved, owned);
   assert.deepEqual(owned.events, [
     "offline-start",
     "offline-confirmed",
@@ -68,15 +80,12 @@ for (const fault of ["rejected", "never-settles"] as const) {
       await new Promise<void>(() => undefined);
     });
     const started = Date.now();
-    await assert.rejects(
-      withFreshLoginPage(async () => {}, owned),
-      (error) => {
-        assert.ok(error instanceof RuntimeLoginFailure);
-        assert.equal(error.failureStage, "cleanup");
-        assert.equal(error.cleanupStatus, "unconfirmed");
-        return true;
-      },
-    );
+    await assert.rejects(withFreshLoginPage(resolved, owned), (error) => {
+      assert.ok(error instanceof RuntimeLoginFailure);
+      assert.equal(error.failureStage, "cleanup");
+      assert.equal(error.cleanupStatus, "unconfirmed");
+      return true;
+    });
     assert.ok(Date.now() - started < LOGIN_CLEANUP_TIMEOUT_MS + 400);
     assert.equal(owned.events.includes("context-close"), false);
     assert.equal(owned.events.includes("browser-closed"), true);
@@ -90,9 +99,10 @@ test("Given cancellation with pending network isolation, browser shutdown waits 
   });
   await assert.rejects(
     withFreshLoginPage(
-      async () => {
-        controller.abort();
-      },
+      () =>
+        settle(() => {
+          controller.abort();
+        }),
       {
         ...owned,
         signal: controller.signal,
@@ -115,13 +125,10 @@ test("Given cancellation with pending network isolation, browser shutdown waits 
 });
 
 test("Given immediate context shutdown, two-second browser shutdown completes within the approved five-second cleanup budget", async () => {
-  const owned = fixture(
-    async () => {},
-    async () => {
-      await delay(2000);
-    },
-  );
-  await withFreshLoginPage(async () => {}, owned);
+  const owned = fixture(resolved, async () => {
+    await delay(2000);
+  });
+  await withFreshLoginPage(resolved, owned);
   assert.equal(owned.events.at(-1), "browser-closed");
 });
 
@@ -132,37 +139,31 @@ test("Given browser disconnection before slow process cleanup completes, the dea
   const finished = new Promise<void>((resolve) => {
     finish = resolve;
   });
-  const owned = fixture(
-    async () => {},
-    async () => {
-      disconnected = true;
-      await delay(LOGIN_CLEANUP_TIMEOUT_MS + 200);
-      cleanupComplete = true;
-      finish();
-    },
-  );
-  await assert.rejects(
-    withFreshLoginPage(async () => {}, owned),
-    (error) => {
-      assert.ok(error instanceof RuntimeLoginFailure);
-      assert.equal(error.failureStage, "cleanup");
-      assert.equal(error.cleanupStatus, "unconfirmed");
-      assert.equal(disconnected, true);
-      assert.equal(cleanupComplete, false);
-      return true;
-    },
-  );
+  const owned = fixture(resolved, async () => {
+    disconnected = true;
+    await delay(LOGIN_CLEANUP_TIMEOUT_MS + 200);
+    cleanupComplete = true;
+    finish();
+  });
+  await assert.rejects(withFreshLoginPage(resolved, owned), (error) => {
+    assert.ok(error instanceof RuntimeLoginFailure);
+    assert.equal(error.failureStage, "cleanup");
+    assert.equal(error.cleanupStatus, "unconfirmed");
+    assert.equal(disconnected, true);
+    assert.equal(cleanupComplete, false);
+    return true;
+  });
   await finished;
   assert.equal(cleanupComplete, true);
 });
 
 test("Given completed work and stalled cleanup beyond the work deadline, preserve the cleanup failure stage and timeout classification", async () => {
   const owned = fixture(
-    async () => {},
+    resolved,
     async () => new Promise<void>(() => undefined),
   );
   await assert.rejects(
-    withFreshLoginPage(async () => {}, { ...owned, timeoutMs: 1000 }),
+    withFreshLoginPage(resolved, { ...owned, timeoutMs: 1000 }),
     (error) => {
       assert.ok(error instanceof RuntimeLoginFailure);
       assert.equal(error.failureStage, "cleanup");
@@ -174,11 +175,8 @@ test("Given completed work and stalled cleanup beyond the work deadline, preserv
 });
 
 test("Given work completed before its deadline, confirmed cleanup crossing that deadline still succeeds within the separate cleanup budget", async () => {
-  const owned = fixture(
-    async () => {},
-    async () => delay(200),
-  );
-  await withFreshLoginPage(async () => {}, { ...owned, timeoutMs: 100 });
+  const owned = fixture(resolved, async () => delay(200));
+  await withFreshLoginPage(resolved, { ...owned, timeoutMs: 100 });
   assert.equal(owned.events.at(-1), "browser-closed");
 });
 
@@ -186,12 +184,13 @@ test("Given work already past its deadline before the timer callback runs, clean
   const now = Date.now;
   let elapsed = 0;
   Date.now = () => now() + elapsed;
-  const owned = fixture(async () => {});
+  const owned = fixture(resolved);
   try {
     await assert.rejects(
       withFreshLoginPage(
-        async () => {
+        () => {
           elapsed = 200;
+          return Promise.resolve();
         },
         { ...owned, timeoutMs: 100 },
       ),
@@ -210,15 +209,12 @@ test("Given work already past its deadline before the timer callback runs, clean
 
 test("Given cancellation during confirmed cleanup, completed work still reports interrupted", async () => {
   const controller = new AbortController();
-  const owned = fixture(
-    async () => {},
-    async () => {
-      controller.abort();
-      await delay(10);
-    },
-  );
+  const owned = fixture(resolved, async () => {
+    controller.abort();
+    await delay(10);
+  });
   await assert.rejects(
-    withFreshLoginPage(async () => {}, { ...owned, signal: controller.signal }),
+    withFreshLoginPage(resolved, { ...owned, signal: controller.signal }),
     (error) => {
       assert.ok(error instanceof RuntimeLoginFailure);
       assert.equal(error.failureClassification, "interrupted");
@@ -274,9 +270,10 @@ test("RR207-CLEANUP-001 cancellation waits for context close acknowledgement bef
   const controller = new AbortController();
   let browserClosed = false;
   const owned = fixture(
-    async () => {},
-    async () => {
+    resolved,
+    () => {
       browserClosed = true;
+      return Promise.resolve();
     },
     async () => {
       await delay(30);
@@ -286,9 +283,10 @@ test("RR207-CLEANUP-001 cancellation waits for context close acknowledgement bef
   );
   await assert.rejects(
     withFreshLoginPage(
-      async () => {
-        controller.abort();
-      },
+      () =>
+        settle(() => {
+          controller.abort();
+        }),
       { ...owned, signal: controller.signal },
     ),
     (error) => {

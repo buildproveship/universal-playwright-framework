@@ -1,0 +1,7 @@
+{
+  "extends": "./templates/common/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["templates/**/*.ts"]
+}

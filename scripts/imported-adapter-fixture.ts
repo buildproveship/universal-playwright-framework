@@ -14,6 +14,7 @@ import {
   IMPORTED_IMPLEMENTATION_REVISION,
   validateImportedEvidence,
   type ImportedExecutionRequest,
+  type ImportedObservation,
   type RegisteredImportedArtifact,
   type TrustedImportedContext,
 } from "../src/adapter/imported-v1";
@@ -58,9 +59,9 @@ async function main() {
   });
   const listen = (server: ReturnType<typeof createServer>) =>
     new Promise<number>((resolve) =>
-      server.listen(0, "127.0.0.1", () =>
-        resolve((server.address() as { port: number }).port),
-      ),
+      server.listen(0, "127.0.0.1", () => {
+        resolve((server.address() as { port: number }).port);
+      }),
     );
   const port = await listen(own),
     other = await listen(foreign);
@@ -133,17 +134,23 @@ async function main() {
   const artifact: RegisteredImportedArtifact = {
     policy: "normal-ui-only",
     observation: structuredClone(request.observation),
-    async verifyImmutable() {
-      verifications++;
-      if (
-        (scenario === "tamper-before-acquire" && verifications === 2) ||
-        (scenario === "tamper-before-load" && verifications === 3)
-      )
-        return {
-          ...request.observation,
-          observedArtifactDigest: "b".repeat(64),
-        };
-      return structuredClone(request.observation);
+    verifyImmutable() {
+      // Executor runs synchronously; a throw from structuredClone rejects,
+      // exactly as it would from an async method body.
+      return new Promise<ImportedObservation>((resolve) => {
+        verifications++;
+        if (
+          (scenario === "tamper-before-acquire" && verifications === 2) ||
+          (scenario === "tamper-before-load" && verifications === 3)
+        ) {
+          resolve({
+            ...request.observation,
+            observedArtifactDigest: "b".repeat(64),
+          });
+          return;
+        }
+        resolve(structuredClone(request.observation));
+      });
     },
     async runWithInjectedContext(selected, _signal, borrowed) {
       runnerCalls++;
@@ -165,7 +172,9 @@ async function main() {
           .then(() => borrowed.page.route("**/*", (route) => route.continue()))
           .catch(() => undefined);
       if (scenario === "cancel") {
-        setTimeout(() => controller.abort(), 20);
+        setTimeout(() => {
+          controller.abort();
+        }, 20);
         await borrowed.page.waitForTimeout(1000);
       }
       return {
@@ -257,8 +266,10 @@ async function main() {
       : undefined;
     const second = acquired
       ? await executeImportedCase(request, context, artifact, {
-          async beforeAcquire() {
-            throw new Error("Consumed worker must not reach admission");
+          beforeAcquire() {
+            return Promise.reject(
+              new Error("Consumed worker must not reach admission"),
+            );
           },
         })
       : undefined;
@@ -287,7 +298,10 @@ async function main() {
       [own, foreign].map(
         (server) =>
           new Promise<void>((resolve, reject) =>
-            server.close((error) => (error ? reject(error) : resolve())),
+            server.close((error) => {
+              if (error) reject(error);
+              else resolve();
+            }),
           ),
       ),
     );

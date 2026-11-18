@@ -45,8 +45,14 @@ async function main(): Promise<void> {
           undefined,
           "input",
         );
-      descriptor = JSON.parse(readFileSync(descriptorPath, "utf8"));
-      request = JSON.parse(readFileSync(requestPath, "utf8"));
+      // Untrusted JSON: promptAndVerifyPartayLogin validates both shapes at
+      // runtime (validateTarget / validateRuntimeLoginRequest) before use.
+      descriptor = JSON.parse(
+        readFileSync(descriptorPath, "utf8"),
+      ) as PreparedInputDescriptor;
+      request = JSON.parse(
+        readFileSync(requestPath, "utf8"),
+      ) as RuntimeLoginRequest;
     } catch {
       throw new RuntimeLoginFailure(
         "input-validation",

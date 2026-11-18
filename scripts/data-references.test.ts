@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Reviews synthetic dataset/secret references and runs real feature validation and input preparation over owned fixture files; no secret values, browser or external data source are used.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -62,7 +66,6 @@ async function loadPreparationContext(): Promise<{
     manifest: createValidationManifest("synthetic-steps-1"),
   });
   assert.equal(validation.valid, true);
-  if (!validation.valid) throw new Error("Owned synthetic feature is invalid");
 
   const approval: ScenarioApproval = {
     featurePath: validation.featurePath,
@@ -146,7 +149,7 @@ test("Input preparation verifies dataset rows and environment before returning s
   );
   assert.equal(descriptor.dataReferences?.binding, reviewed.binding);
   assert.deepEqual(
-    descriptor.dataReferences?.rows.map((row) => row.dataset.revision),
+    descriptor.dataReferences.rows.map((row) => row.dataset.revision),
     ["v1", "v1"],
   );
   assert.deepEqual(

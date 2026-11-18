@@ -19,15 +19,15 @@ Playwright's upstream planner, generator and healer are potential adapters, not 
 
 ## Proposed authority boundaries
 
-| Authority | Responsibility |
-| --- | --- |
-| Customer | Supplies and approves exact expected outcomes for their requirements |
-| Founder | Alone reviews and approves tests under the current repository policy; candidates remain Not Reviewed until that workflow completes |
-| Test Management | Permanent case identity, revisions, review and result references |
-| Test-assets repository | New E2E and QA-owned integration tests; readable synthetic inputs |
-| Shared framework | Versioned runtime, generic unit/contract tests and existing readiness checks |
-| Trusted validation worker | Independently captures exact-artifact lint, type, execution and cleanup evidence |
-| AI assistant | Proposes a change; cannot grant review, execution permission or correctness |
+| Authority                 | Responsibility                                                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Customer                  | Supplies and approves exact expected outcomes for their requirements                                                               |
+| Founder                   | Alone reviews and approves tests under the current repository policy; candidates remain Not Reviewed until that workflow completes |
+| Test Management           | Permanent case identity, revisions, review and result references                                                                   |
+| Test-assets repository    | New E2E and QA-owned integration tests; readable synthetic inputs                                                                  |
+| Shared framework          | Versioned runtime, generic unit/contract tests and existing readiness checks                                                       |
+| Trusted validation worker | Independently captures exact-artifact lint, type, execution and cleanup evidence                                                   |
+| AI assistant              | Proposes a change; cannot grant review, execution permission or correctness                                                        |
 
 Developer-owned unit/component/integration tests stay with their application. Generic framework contract tests stay here. Scenario IDs are allocated through the existing identity contract (RRDWEB-29), not by the assistant. A synthetic rehearsal identifier is never registered as a real case ID.
 

@@ -12,6 +12,7 @@ import {
   CucumberExpression,
   ParameterTypeRegistry,
 } from "@cucumber/cucumber-expressions";
+import { isList, untrusted } from "./untrusted";
 
 export const MAX_FEATURE_BYTES = 256 * 1024;
 export const DEFAULT_MAX_EXPANDED_SCENARIOS = 1_000;
@@ -183,10 +184,12 @@ async function readFeatureFile(
       return { reason: "Feature path must identify a regular file" };
     }
 
+    // O_NONBLOCK and O_NOFOLLOW do not exist on Windows, although @types/node declares them everywhere.
+    const platformFlags: Partial<typeof fsConstants> = fsConstants;
     const openFlags =
       fsConstants.O_RDONLY |
-      (fsConstants.O_NONBLOCK ?? 0) |
-      (fsConstants.O_NOFOLLOW ?? 0);
+      (platformFlags.O_NONBLOCK ?? 0) |
+      (platformFlags.O_NOFOLLOW ?? 0);
     handle = await open(canonicalPath, openFlags);
     const fileStats = await handle.stat();
     if (!fileStats.isFile()) {
@@ -301,7 +304,12 @@ function parseErrorMessage(error: unknown): string {
 function getEffectiveLimits(
   limits: FeatureValidationLimits | undefined,
 ): EffectiveFeatureValidationLimits | { reason: string } {
-  if (limits !== undefined && (typeof limits !== "object" || limits === null)) {
+  // Untyped callers can pass null or a primitive.
+  const rawLimits: unknown = limits;
+  if (
+    rawLimits !== undefined &&
+    (typeof rawLimits !== "object" || rawLimits === null)
+  ) {
     return { reason: "Feature validation limits must be an object" };
   }
   const maxExpandedScenarios =
@@ -400,7 +408,9 @@ function getExpansionLimitError(
 function compileManifest(
   manifest: ReviewedStepManifest,
 ): { steps: readonly CompiledReviewedStep[] } | { reason: string } {
-  if (typeof manifest !== "object" || manifest === null) {
+  // Untyped callers can pass anything, so each level is checked before it is read.
+  const rawManifest: unknown = manifest;
+  if (typeof rawManifest !== "object" || rawManifest === null) {
     return { reason: "A reviewed step manifest is required" };
   }
   if (
@@ -411,14 +421,15 @@ function compileManifest(
       reason: "Reviewed step manifest needs an implementation revision",
     };
   }
-  if (!Array.isArray(manifest.steps)) {
+  const manifestSteps = untrusted(manifest.steps);
+  if (!isList(manifestSteps)) {
     return { reason: "Reviewed step manifest needs a step list" };
   }
 
   const ids = new Set<string>();
   const registry = new ParameterTypeRegistry();
   const steps: CompiledReviewedStep[] = [];
-  for (const step of manifest.steps) {
+  for (const step of manifestSteps) {
     if (
       typeof step !== "object" ||
       step === null ||
@@ -516,10 +527,6 @@ export async function validateFeatureFile(
     }
   } catch (error) {
     return { valid: false, reason: parseErrorMessage(error) };
-  }
-
-  if (!document.feature) {
-    return { valid: false, reason: "Feature file does not contain a Feature" };
   }
 
   const expansionLimitError = getExpansionLimitError(document.feature, limits);

@@ -5,15 +5,15 @@ export function pauseWorkClock() {
   const nativeSetTimeout = globalThis.setTimeout;
   const nativeClearTimeout = globalThis.clearTimeout;
   const nativeNow = Date.now;
-  type Timer = {
+  interface Timer {
     callback: (...args: unknown[]) => void;
     args: unknown[];
     due: number;
     referenced: boolean;
     native?: ReturnType<typeof setTimeout>;
-  };
+  }
   const owned = new Map<object, Timer>();
-  const known = new WeakSet<object>();
+  const known = new WeakSet();
   const now = nativeNow();
   let allocated = 0;
   let failed = false;
@@ -37,12 +37,12 @@ export function pauseWorkClock() {
     const handle = {
       ref() {
         timer.referenced = true;
-        timer.native?.ref?.();
+        timer.native?.ref();
         return this;
       },
       unref() {
         timer.referenced = false;
-        timer.native?.unref?.();
+        timer.native?.unref();
         return this;
       },
       hasRef() {
@@ -83,7 +83,7 @@ export function pauseWorkClock() {
           },
           Math.max(0, timer.due - nativeNow()),
         );
-        if (!timer.referenced) timer.native.unref?.();
+        if (!timer.referenced) timer.native.unref();
       }
     }
   };

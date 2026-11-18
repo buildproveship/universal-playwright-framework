@@ -19,15 +19,13 @@ export async function closeRuntime(
       await Promise.race([
         browser.close(),
         new Promise<never>((_resolve, reject) => {
-          timeout = setTimeout(
-            () =>
-              reject(
-                new Error(
-                  `Browser close did not finish within ${browserCloseTimeoutMs} ms; browser shutdown status is unknown`,
-                ),
+          timeout = setTimeout(() => {
+            reject(
+              new Error(
+                `Browser close did not finish within ${browserCloseTimeoutMs} ms; browser shutdown status is unknown`,
               ),
-            browserCloseTimeoutMs,
-          );
+            );
+          }, browserCloseTimeoutMs);
         }),
       ]);
     } catch (error) {
@@ -42,7 +40,10 @@ export async function closeRuntime(
   try {
     if (server?.listening) {
       await new Promise<void>((resolve, reject) => {
-        server.close((error) => (error ? reject(error) : resolve()));
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
       });
     }
   } catch (error) {

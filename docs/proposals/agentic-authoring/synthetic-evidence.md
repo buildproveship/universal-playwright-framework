@@ -49,18 +49,18 @@ reference-only; its regression suite runs alongside this rehearsal.
 
 ## Acceptance coverage
 
-| Proposal case | Current evidence and limitation |
-| --- | --- |
-| A | Exact fixed contract runs in a real worker and remains Not Reviewed. Missing-step generation is not implemented. |
-| B, C | Missing, duplicate, renamed IDs and skipped cases are blocked before worker creation. |
-| D | Exact expected assertion text must match. No claim of general JS semantic analysis. |
-| E, L | New immutable source gets a new digest; supplied evidence/pass flags are rejected. No production signing/provenance contract. |
-| F | Execution failure blocks; existing readiness tests cover missing/failed/stale lint/type metadata. This harness does not attest lint/type execution internally. |
-| G | Closed grammar and input-size checks fail closed. |
-| H | Invalid/excessive deadlines block; one candidate, no repair/provider path, zero model calls. Provider availability/token/cost enforcement is not implemented. |
-| I | Fixed worker hang is terminated with exit evidence; fixed worker crash is blocked. No real browser-crash or hostile process-tree proof. |
-| J, M | Extra instruction/pool fields and external data references are rejected without echoing values. No real page or customer data is read. |
-| K | Existing reuse-readiness regression checks retained, not recreated. |
+| Proposal case | Current evidence and limitation                                                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A             | Exact fixed contract runs in a real worker and remains Not Reviewed. Missing-step generation is not implemented.                                               |
+| B, C          | Missing, duplicate, renamed IDs and skipped cases are blocked before worker creation.                                                                          |
+| D             | Exact expected assertion text must match. No claim of general JS semantic analysis.                                                                            |
+| E, L          | New immutable source gets a new digest; supplied evidence/pass flags are rejected. No production signing/provenance contract.                                  |
+| F             | Execution failure blocks; existing readiness tests cover missing/failed/stale lint/type metadata. This harness does not attest lint/type execution internally. |
+| G             | Closed grammar and input-size checks fail closed.                                                                                                              |
+| H             | Invalid/excessive deadlines block; one candidate, no repair/provider path, zero model calls. Provider availability/token/cost enforcement is not implemented.  |
+| I             | Fixed worker hang is terminated with exit evidence; fixed worker crash is blocked. No real browser-crash or hostile process-tree proof.                        |
+| J, M          | Extra instruction/pool fields and external data references are rejected without echoing values. No real page or customer data is read.                         |
+| K             | Existing reuse-readiness regression checks retained, not recreated.                                                                                            |
 
 ## Verification record
 

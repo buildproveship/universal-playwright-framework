@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cancels a login inspection while a real local Chromium holds a transport drain on an owned loopback server, checking interruption and native cleanup; no customer site or credentials are used.
 import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
@@ -75,9 +79,14 @@ test(
             clock.restoreWork();
             controller.abort();
             await stopped;
-            assert.throws(() => policy.assertComplete(), {
-              message: "Inspection transport incomplete",
-            });
+            assert.throws(
+              () => {
+                policy.assertComplete();
+              },
+              {
+                message: "Inspection transport incomplete",
+              },
+            );
             transportIncomplete = true;
           } finally {
             clock.restoreWork();
@@ -97,7 +106,7 @@ test(
       await assert.rejects(operation, (error) => {
         const failure = RuntimeLoginFailure.fromUnknown(error);
         assert.equal(failure?.failureClassification, "interrupted");
-        assert.notEqual(failure?.cleanupStatus, "not-acquired");
+        assert.notEqual(failure.cleanupStatus, "not-acquired");
         return true;
       });
       assert.equal(watchdogFired, false, "native preparation watchdog fired");
@@ -112,7 +121,11 @@ test(
       if (operation) await operation.catch(() => undefined);
       nativeClearTimeout(watchdog);
       server.closeAllConnections();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await new Promise<void>((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      );
       clock.finish();
     }
   },

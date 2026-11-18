@@ -19,9 +19,15 @@ npx playwright install chromium
 npm test
 ```
 
-`npm test` runs ESLint and Prettier over every TypeScript file, then every suite
-(including the browser suites and the readiness tests). The individual suites are
-listed under `scripts` in `package.json`.
+`npm test` runs `npm run check` (build, typecheck, ESLint and Prettier), then
+`npm run test:unit` (no browser) and `npm run test:browser` (the suites that launch
+a browser or a local server, including the readiness tests). ESLint, Prettier and
+the tsconfig base come from the shared `@releaseready/config` package, which
+installs from GitHub Packages: locally, `export NODE_AUTH_TOKEN=$(gh auth token)`
+(a token with `read:packages`) before `npm ci`. Pull requests run the check and
+unit tests in GitHub Actions (`pr.yml`); the browser suites run nightly
+(`nightly.yml`). The individual suites are listed under `scripts` in
+`package.json`.
 
 ## Guides
 

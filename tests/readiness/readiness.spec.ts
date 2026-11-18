@@ -13,9 +13,9 @@ test("page navigation waits for the document, never for network idle", async ({
   page,
 }) => {
   const waits: unknown[] = [];
-  page.goto = async (_url, options) => {
+  page.goto = (_url, options) => {
     waits.push(options?.waitUntil);
-    return null;
+    return Promise.resolve(null);
   };
   await new DocumentPage(page, "/drafts").goto();
   expect(waits).toEqual(["domcontentloaded"]);
@@ -57,7 +57,9 @@ test("document loaded does not mean delayed UI is ready", async ({ page }) => {
   await expect(ready).toBeHidden();
   await page.evaluate(() => {
     setTimeout(() => {
-      document.querySelector("button")!.hidden = false;
+      const button = document.querySelector("button");
+      if (!button) throw new Error("Fixture button is missing");
+      button.hidden = false;
     }, 150);
   });
   await waitForVisible(ready, 2000);
