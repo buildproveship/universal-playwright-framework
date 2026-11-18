@@ -17,7 +17,7 @@ export const REVIEWED_SOURCE_REVISION = "rr207-synthetic-source-2";
 export const REVIEWED_FEATURE_REVISION =
   "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f";
 export const REVIEWED_IMPLEMENTATION_REVISION =
-  "1a5a68345e5f3b468214b2e4ec0b11fbc3dcb60c06679d51fa6ba253c33f348e";
+  "dd1a44afc77473fabfc082ee87942653db75baa33d16da368311f1fa4c510932";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,
@@ -159,6 +159,7 @@ export function calculateReviewedImplementationRevision(): string {
     "dist/cucumber/src/adapter/v2.js",
     "dist/cucumber/src/adapter/v1.js",
     "src/execution/index.ts",
+    "src/execution/limits.ts",
     "src/execution/cleanup-diagnostics.ts",
     "src/execution/guarded-route.ts",
     "src/execution/owned-evidence.ts",
@@ -176,6 +177,7 @@ export function calculateReviewedImplementationRevision(): string {
     "src/validation/feature-validator.ts",
     "src/validation/scenario-selector.ts",
     "dist/cucumber/src/execution/index.js",
+    "dist/cucumber/src/execution/limits.js",
     "dist/cucumber/src/execution/cleanup-diagnostics.js",
     "dist/cucumber/src/execution/guarded-route.js",
     "dist/cucumber/src/execution/owned-evidence.js",

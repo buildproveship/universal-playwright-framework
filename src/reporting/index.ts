@@ -6,21 +6,17 @@ import type {
   ExecutionSummary,
   ScenarioExecutionResult,
 } from "../execution";
+import { z } from "zod";
+import {
+  EXECUTION_STATUSES,
+  MAX_CUCUMBER_REPORT_STEPS,
+  MAX_EXECUTION_ATTEMPTS,
+  MAX_EXECUTION_SCENARIOS,
+} from "../execution/limits";
 import { REVIEWED_SOURCE_REVISION } from "../execution/reviewed-scenarios";
 
-const EXECUTION_STATUSES: readonly ExecutionStatus[] = [
-  "passed",
-  "passed_after_retry",
-  "failed",
-  "incomplete",
-  "timed_out",
-  "cancelled",
-];
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const MAX_SCENARIOS = 6;
-const MAX_ATTEMPTS = 3;
-const MAX_STEPS = 100;
+// Execution references come from crypto.randomUUID(), so only v4 UUIDs are valid.
+const generatedReference = z.uuidv4();
 const MAX_NAME_LENGTH = 300;
 const SCENARIO_ID_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
 const UNSAFE_REFERENCE_PATTERN =
@@ -80,7 +76,7 @@ const EMPTY_OUTCOMES: Record<ExecutionStatus, number> = {
 };
 
 function assertReference(reference: string): void {
-  if (!UUID_PATTERN.test(reference)) {
+  if (!generatedReference.safeParse(reference).success) {
     throw new Error(
       "Report references must be generated execution identifiers",
     );
@@ -121,7 +117,7 @@ function reportScenario(result: ScenarioExecutionResult): ReportScenario {
   if (
     typeof result.scenarioId !== "string" ||
     result.scenarioId.length > MAX_NAME_LENGTH ||
-    (cucumber && cucumber.steps.length > MAX_STEPS)
+    (cucumber && cucumber.steps.length > MAX_CUCUMBER_REPORT_STEPS)
   ) {
     throw new Error("Scenario report data exceeds the local reporting bounds");
   }
@@ -189,16 +185,16 @@ export function createExecutionReport(
   assertReference(summary.diagnosticReference);
   if (
     !Array.isArray(summary.scenarios) ||
-    summary.scenarios.length > MAX_SCENARIOS ||
+    summary.scenarios.length > MAX_EXECUTION_SCENARIOS ||
     !Array.isArray(summary.attempts) ||
-    summary.attempts.length > MAX_ATTEMPTS ||
+    summary.attempts.length > MAX_EXECUTION_ATTEMPTS ||
     summary.attemptCount !== summary.attempts.length
   ) {
     throw new Error("Execution summary exceeds the local reporting bounds");
   }
   for (const attempt of summary.attempts) {
     assertReference(attempt.diagnosticReference);
-    if (attempt.scenarios.length > MAX_SCENARIOS) {
+    if (attempt.scenarios.length > MAX_EXECUTION_SCENARIOS) {
       throw new Error("Attempt report data exceeds the local reporting bounds");
     }
   }

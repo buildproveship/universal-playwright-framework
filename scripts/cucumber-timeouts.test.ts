@@ -62,14 +62,7 @@ function runScenario(
   try {
     result = spawnSync(
       process.execPath,
-      [
-        cucumberBin,
-        "--config",
-        "cucumber-regression.json",
-        "--tags",
-        tag,
-        featurePath,
-      ],
+      [cucumberBin, "--profile", "regression", "--tags", tag, featurePath],
       { cwd: root, encoding: "utf8", env, timeout: processTimeoutMs },
     );
   } finally {
