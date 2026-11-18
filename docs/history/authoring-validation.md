@@ -74,7 +74,7 @@ The already downloaded matching Chromium binary was reused via
 compilation and runner commands otherwise match the maintained starter README.
 
 See [authoring styles](../authoring-styles.md) and the
-[starter README](../../examples/authoring/README.md) for the supported six-combination
+[starter README](https://github.com/releaseready/universal-playwright-framework/blob/d1e936645f535744ca15a9d76b6ca8cbd2292fe2/examples/authoring/README.md) for the supported six-combination
 matrix, checkout distribution and migration path. Portal integration, arbitrary code
 execution and leased data remain outside this implementation. Remote check status
 is reported separately for the pushed exact head; these local results do not claim

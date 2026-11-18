@@ -20,7 +20,7 @@ npm test
 ```
 
 `npm test` runs ESLint and Prettier over every TypeScript file, then every suite
-(including the browser suites and the authoring starter). The individual suites are
+(including the browser suites and the readiness tests). The individual suites are
 listed under `scripts` in `package.json`.
 
 ## Guides
@@ -29,5 +29,5 @@ listed under `scripts` in `package.json`.
 - [Synthetic execution adapter](docs/synthetic-execution.md)
 - [Local adapter contract](docs/local-adapter-contract.md) and [imported adapter contract](docs/imported-adapter-contract.md)
 - [Input preparation contract](docs/input-preparation-contract.md) and [runtime login entry](docs/runtime-login-entry.md)
-- [Authoring styles](docs/authoring-styles.md) with the [authoring starter](examples/authoring/README.md)
+- [Authoring styles](docs/authoring-styles.md): Simple, Page Objects + Components and Business Flows against the framework API
 - [Private starter v1](docs/private-starter-v1.md): the approved version-pinned, private-artifact scaffold and fixed owned-loopback demonstration. It does not configure models or execute customer journeys.

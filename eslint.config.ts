@@ -26,7 +26,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["examples/**/*.spec.ts", "starter/templates/**/*.spec.ts"],
+    files: ["tests/**/*.spec.ts", "starter/templates/**/*.spec.ts"],
     ...playwright.configs["flat/recommended"],
   },
   {
