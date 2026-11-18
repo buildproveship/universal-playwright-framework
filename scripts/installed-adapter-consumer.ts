@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     path.join(process.cwd(), "package.json"),
   );
   const exportPath = requireFromConsumer.resolve(
-    "@universal/playwright-framework/adapter/v1",
+    "@releaseready/playwright-framework/adapter/v1",
   );
   const installedRoot = path.join(process.cwd(), "node_modules");
   assert.ok(
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
     );
   }
   const dataExport = requireFromConsumer.resolve(
-    "@universal/playwright-framework/data-references/v1",
+    "@releaseready/playwright-framework/data-references/v1",
   );
   assert.ok(
     realpathSync(dataExport).startsWith(
@@ -49,7 +49,7 @@ async function main(): Promise<void> {
     ),
   );
   const dataReferences = requireFromConsumer(
-    "@universal/playwright-framework/data-references/v1",
+    "@releaseready/playwright-framework/data-references/v1",
   ) as typeof import("../src/input-preparation/data-references");
   const catalogue = {
     datasets: [{ id: "owned-demo", revision: "v1", rows: ["row-a", "row-b"] }],
@@ -105,7 +105,9 @@ async function main(): Promise<void> {
     runnerRequire.resolve("@cucumber/cucumber-expressions"),
     requireFromConsumer.resolve("@cucumber/cucumber-expressions"),
   );
-  const framework = requireFromConsumer("@universal/playwright-framework") as {
+  const framework = requireFromConsumer(
+    "@releaseready/playwright-framework",
+  ) as {
     executeAdapter: typeof executeAdapter;
     InMemoryRuntimeSecretProvider: typeof import("../src/input-preparation/runtime-login").InMemoryRuntimeSecretProvider;
     consumeRuntimeLoginInputs: typeof import("../src/input-preparation/runtime-login").consumeRuntimeLoginInputs;
@@ -149,7 +151,7 @@ async function main(): Promise<void> {
     runtimeProvider.dispose();
   }
   const adapter = requireFromConsumer(
-    "@universal/playwright-framework/adapter/v1",
+    "@releaseready/playwright-framework/adapter/v1",
   ) as { executeAdapter: typeof executeAdapter };
   assert.equal(framework.executeAdapter, adapter.executeAdapter);
   const { request, context } = examples();
@@ -186,7 +188,9 @@ async function main(): Promise<void> {
   assert.deepEqual(failed.inputs, failedExample.request.inputs);
 
   const adapterRequire = createRequire(
-    requireFromConsumer.resolve("@universal/playwright-framework/adapter/v1"),
+    requireFromConsumer.resolve(
+      "@releaseready/playwright-framework/adapter/v1",
+    ),
   );
   const execution = adapterRequire(
     "../execution",

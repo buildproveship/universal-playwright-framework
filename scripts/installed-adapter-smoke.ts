@@ -40,7 +40,7 @@ export async function installedPackageSmoke(): Promise<AdapterResult> {
     const tarball = resolvePackedTarball(
       consumer,
       packed.stdout,
-      "@universal/playwright-framework",
+      "@releaseready/playwright-framework",
     );
     const digest = hash(tarball);
     writeFileSync(
@@ -62,7 +62,7 @@ export async function installedPackageSmoke(): Promise<AdapterResult> {
     assert.equal(hash(tarball), digest);
     const packageRoot = path.join(
       consumer,
-      "node_modules/@universal/playwright-framework",
+      "node_modules/@releaseready/playwright-framework",
     );
     assert.equal(lstatSync(packageRoot).isSymbolicLink(), false);
     const worker = path.join(

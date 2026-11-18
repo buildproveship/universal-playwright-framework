@@ -174,7 +174,7 @@ import {
   verifyDataReferenceBinding,
   type DataReferenceSelection,
   type ApprovedDataCatalogue,
-} from "@universal/playwright-framework/data-references/v1";
+} from "@releaseready/playwright-framework/data-references/v1";
 ```
 
 Do not import internal `dist` paths: the package exports map intentionally limits
@@ -239,7 +239,7 @@ insufficient for this runtime boundary.
 ### Operator collection and Web6 consumption
 
 ```typescript
-import { withOperatorLoginInputs } from "@universal/playwright-framework";
+import { withOperatorLoginInputs } from "@releaseready/playwright-framework";
 
 const receipt = await withOperatorLoginInputs(
   preparedDescriptor,

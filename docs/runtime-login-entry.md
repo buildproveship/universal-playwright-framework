@@ -15,7 +15,7 @@ import {
   type RuntimeLoginRequest,
   type RuntimeSecretProvider,
   type RuntimeLoginBrowserOptions,
-} from "@universal/playwright-framework/runtime-login/v1";
+} from "@releaseready/playwright-framework/runtime-login/v1";
 ```
 
 The root entry remains compatible; each overlapping exported value has the same

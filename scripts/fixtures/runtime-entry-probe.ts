@@ -43,7 +43,7 @@ loader._load = function (request, parent, isMain) {
   return originalLoad.call(this, request, parent, isMain);
 };
 const api = publicRequire(
-  "@universal/playwright-framework/runtime-login/v1",
+  "@releaseready/playwright-framework/runtime-login/v1",
 ) as typeof RuntimeEntry;
 // Type-only imports above disappear; the fixture has no browser dependency.
 const { runtimeEntryFixture } = publicRequire(
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
     assert.equal(launches, 0);
   } else if (mode === "root") {
     browserAllowed = true;
-    const root = publicRequire("@universal/playwright-framework") as Record<
+    const root = publicRequire("@releaseready/playwright-framework") as Record<
       string,
       unknown
     >;

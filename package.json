@@ -1,9 +1,7 @@
 {
-  "name": "@universal/playwright-framework",
+  "name": "@releaseready/playwright-framework",
   "version": "1.0.0",
   "description": "Reviewed Cucumber + Playwright execution adapters, runtime login and input preparation for ReleaseReady",
-  "main": "dist/cucumber/src/index.js",
-  "types": "dist/cucumber/src/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/cucumber/src/index.d.ts",
@@ -28,7 +26,8 @@
     "./adapter/imported-v1": {
       "types": "./dist/cucumber/src/adapter/imported-v1.d.ts",
       "default": "./dist/cucumber/src/adapter/imported-v1.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "build": "npm run build:cucumber",
@@ -55,7 +54,6 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "npm run build",
     "check:typescript": "npm run build && node dist/cucumber/scripts/check-typescript-source-policy.js",
     "test:typescript-source-policy": "npm run check:typescript && node --test dist/cucumber/scripts/typescript-source-policy.test.js",
     "test:login-inspection": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/login-inspection.test.js dist/cucumber/scripts/paused-work-clock.test.js dist/cucumber/scripts/login-inspection-cancellation.test.js",
@@ -68,7 +66,8 @@
     "test:private-starter": "npm run build:cucumber && node --test dist/cucumber/scripts/private-starter.test.js",
     "verify:private-starter": "npm run build:cucumber && VERIFY_PRIVATE_STARTER=1 node --test dist/cucumber/scripts/private-starter-artifact.test.js",
     "test:browser-isolation": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/isolated-product-playwright.test.js dist/cucumber/scripts/runtime-login-cancellation-browser.test.js",
-    "test:readiness": "tsc -p tests/readiness/tsconfig.json && playwright test --config tests/readiness/playwright.config.ts"
+    "test:readiness": "tsc -p tests/readiness/tsconfig.json && playwright test --config tests/readiness/playwright.config.ts",
+    "prepack": "npm run build"
   },
   "keywords": [
     "playwright",
@@ -127,5 +126,8 @@
     },
     "minimatch@>=9": "11.0.5"
   },
-  "prettier": "@releaseready/config/prettier"
+  "prettier": "@releaseready/config/prettier",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
 }

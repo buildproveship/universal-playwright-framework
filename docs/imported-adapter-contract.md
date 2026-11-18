@@ -1,6 +1,6 @@
 # First-party imported adapter v1 — RRDSCRUM-207
 
-Candidate entry: `@universal/playwright-framework/adapter/imported-v1`. This is a trusted first-party normal-UI bridge, not a sandbox for arbitrary customer Node code. It does not create case reviews, prepared data receipts, or run approvals.
+Candidate entry: `@releaseready/playwright-framework/adapter/imported-v1`. This is a trusted first-party normal-UI bridge, not a sandbox for arbitrary customer Node code. It does not create case reviews, prepared data receipts, or run approvals.
 
 `ImportedExecutionRequest` separates the frozen source selection (`selection.runId`, `selection.revision`) from the actual execution (`run.id`, attempt exactly one). Its observation binds the existing source case UUID/revision/digest, canonical source ID, exact product repository commit, application/environment configuration versions, artifact manifest and observed closure hashes, framework commit/implementation hash, and explicit data policy/requirements hashes. App version/build, owned loopback target receipt, prepared input receipt, configuration digest and expiring per-run approval are exact pins.
 

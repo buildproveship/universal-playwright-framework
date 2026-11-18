@@ -42,7 +42,7 @@ This does not change either command's authorization or input requirements.
 ## Runtime integration
 
 ```typescript
-import { verifyPartayLogin } from "@universal/playwright-framework";
+import { verifyPartayLogin } from "@releaseready/playwright-framework";
 
 await verifyPartayLogin(preparedDescriptor, reviewedRequest, runtimeProvider, {
   signal: cancellationSignal,

@@ -224,7 +224,7 @@ test("templates are reference-only, keep one rulebook and never assign canonical
     "utf8",
   );
   assert.match(page, /extends BasePage/);
-  assert.match(page, /@universal\/playwright-framework/);
+  assert.match(page, /@releaseready\/playwright-framework/);
 });
 
 function runSetup(
