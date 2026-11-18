@@ -181,7 +181,7 @@ JSON examples together. The installed smoke also modifies a packaged worker and
 proves that the same call subsequently rejects stale approval.
 
 The RRDSCRUM-207 compatibility candidate pins Playwright 1.65.1. See
-[upgrade evidence and review state](rrdscrum-207-playwright-compatibility.md).
+[upgrade evidence and review state](history/rrdscrum-207-playwright-compatibility.md).
 The earlier runtime remediation used official
 Cucumber 12.9.0, Gherkin 38.0.0 and cucumber-expressions 19.0.0, removing the affected nested UUID chain and
 resolving maintained glob/minimatch dependencies through the current root override policy. Cucumber

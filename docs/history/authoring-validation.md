@@ -73,8 +73,8 @@ The already downloaded matching Chromium binary was reused via
 `PLAYWRIGHT_BROWSERS_PATH=/workspace/.cache/ms-playwright`; package installation,
 compilation and runner commands otherwise match the maintained starter README.
 
-See [authoring styles](authoring-styles.md) and the
-[starter README](../examples/authoring/README.md) for the supported six-combination
+See [authoring styles](../authoring-styles.md) and the
+[starter README](../../examples/authoring/README.md) for the supported six-combination
 matrix, checkout distribution and migration path. Portal integration, arbitrary code
 execution and leased data remain outside this implementation. Remote check status
 is reported separately for the pushed exact head; these local results do not claim
