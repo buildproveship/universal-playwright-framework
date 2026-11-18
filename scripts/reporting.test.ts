@@ -23,6 +23,7 @@ import {
   renderExecutionReportJson,
 } from "../src/reporting";
 import { saveExecutionReport } from "../src/reporting/output";
+import { MAX_EXECUTION_ATTEMPTS } from "../src/execution/limits";
 import { createReportFixtures } from "../features/reporting/report-fixture";
 
 const repositoryRoot = path.resolve(__dirname, "../../..");
@@ -177,6 +178,44 @@ test("caller-controlled traversal references are rejected without being echoed",
     assert.doesNotMatch(`${text}${json}`, /unrelated\/private\.log/);
     assert.doesNotMatch(`${text}${json}`, /https:\/\//);
   }
+});
+
+test("only generated v4 execution references are accepted", () => {
+  const fixture = createReportFixtures()[0];
+  for (const diagnosticReference of [
+    "00000000-0000-0000-0000-000000000000",
+    "00000000-0000-1000-8000-000000000000",
+    "not-a-uuid",
+  ]) {
+    assert.throws(
+      () => createExecutionReport({ ...fixture, diagnosticReference }),
+      /Report references must be generated execution identifiers/,
+      diagnosticReference,
+    );
+  }
+  assert.doesNotThrow(() =>
+    createExecutionReport({
+      ...fixture,
+      diagnosticReference: "00000000-0000-4000-8000-000000000000",
+    }),
+  );
+});
+
+test("reports reject more attempts than execution can produce", () => {
+  const fixture = createReportFixtures()[0];
+  const attempts = Array.from(
+    { length: MAX_EXECUTION_ATTEMPTS + 1 },
+    () => fixture.attempts[0],
+  );
+  assert.throws(
+    () =>
+      createExecutionReport({
+        ...fixture,
+        attempts,
+        attemptCount: attempts.length,
+      }),
+    /Execution summary exceeds the local reporting bounds/,
+  );
 });
 
 test("missing Cucumber evidence remains unavailable without changing its outcome", () => {

@@ -10,6 +10,13 @@ import {
   loadReviewedScenarios,
   reviewedFixturePolicy,
 } from "../execution/reviewed-scenarios";
+import {
+  MAX_CONCURRENT_SCENARIOS,
+  MAX_EXECUTION_RETRIES,
+  MAX_RUN_TIMEOUT_MS,
+  MAX_SCENARIO_TIMEOUT_MS,
+  MIN_TIMEOUT_MS,
+} from "../execution/limits";
 import { prepareScenarioInputs } from "../input-preparation";
 import { createExecutionReport, type ExecutionReport } from "../reporting";
 import { selectApprovedScenarios } from "../validation/scenario-selector";
@@ -49,10 +56,22 @@ const requestSchema = z
     inputs: inputsSchema,
     limits: z
       .object({
-        runTimeoutMs: z.number().int().min(50).max(120000),
-        scenarioTimeoutMs: z.number().int().min(50).max(60000),
-        maxConcurrentScenarios: z.number().int().min(1).max(2),
-        retryCount: z.number().int().min(0).max(2),
+        runTimeoutMs: z
+          .number()
+          .int()
+          .min(MIN_TIMEOUT_MS)
+          .max(MAX_RUN_TIMEOUT_MS),
+        scenarioTimeoutMs: z
+          .number()
+          .int()
+          .min(MIN_TIMEOUT_MS)
+          .max(MAX_SCENARIO_TIMEOUT_MS),
+        maxConcurrentScenarios: z
+          .number()
+          .int()
+          .min(1)
+          .max(MAX_CONCURRENT_SCENARIOS),
+        retryCount: z.number().int().min(0).max(MAX_EXECUTION_RETRIES),
       })
       .strict(),
   })

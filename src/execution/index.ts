@@ -27,19 +27,26 @@ import {
   runtimePackagePath,
 } from "./reviewed-scenarios";
 
-export const MAX_EXECUTION_SCENARIOS = 6;
-export const MAX_CONCURRENT_SCENARIOS = 2;
-export const MAX_SCENARIO_TIMEOUT_MS = 60_000;
-export const MAX_RUN_TIMEOUT_MS = 120_000;
-export const MAX_EXECUTION_RETRIES = 2;
+import {
+  MAX_CONCURRENT_SCENARIOS,
+  MAX_CUCUMBER_REPORT_STEPS,
+  MAX_EXECUTION_RETRIES,
+  MAX_EXECUTION_SCENARIOS,
+  MAX_RUN_TIMEOUT_MS,
+  MAX_SCENARIO_TIMEOUT_MS,
+  MIN_TIMEOUT_MS,
+  type ExecutionStatus,
+} from "./limits";
 
-export type ExecutionStatus =
-  | "passed"
-  | "passed_after_retry"
-  | "failed"
-  | "incomplete"
-  | "timed_out"
-  | "cancelled";
+export {
+  EXECUTION_STATUSES,
+  MAX_CONCURRENT_SCENARIOS,
+  MAX_EXECUTION_RETRIES,
+  MAX_EXECUTION_SCENARIOS,
+  MAX_RUN_TIMEOUT_MS,
+  MAX_SCENARIO_TIMEOUT_MS,
+  type ExecutionStatus,
+} from "./limits";
 export type ResourceCleanupStatus =
   "not_required" | "confirmed" | "failed" | "unknown";
 type WorkerStopReason =
@@ -164,11 +171,10 @@ const CUCUMBER_CONFIG = "cucumber-execution.json";
 const DEFAULT_RUN_TIMEOUT_MS = 90_000;
 const DEFAULT_SCENARIO_TIMEOUT_MS = 30_000;
 const MAX_CUCUMBER_REPORT_BYTES = 256_000;
-const MAX_CUCUMBER_REPORT_STEPS = 100;
 
 function validateOptions(
   options: ExecutionOptions,
-  minimumRunTimeoutMs = 50,
+  minimumRunTimeoutMs = MIN_TIMEOUT_MS,
 ): {
   readonly runTimeoutMs: number;
   readonly scenarioTimeoutMs: number;
@@ -187,7 +193,7 @@ function validateOptions(
     runTimeoutMs < minimumRunTimeoutMs ||
     runTimeoutMs > MAX_RUN_TIMEOUT_MS ||
     !Number.isSafeInteger(scenarioTimeoutMs) ||
-    scenarioTimeoutMs < 50 ||
+    scenarioTimeoutMs < MIN_TIMEOUT_MS ||
     scenarioTimeoutMs > MAX_SCENARIO_TIMEOUT_MS ||
     !Number.isSafeInteger(concurrency) ||
     concurrency < 1 ||

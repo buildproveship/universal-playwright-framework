@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import { executeReviewedScenarios, type ExecutionSummary } from "../execution";
+import { EXECUTION_STATUSES } from "../execution/limits";
 import {
   loadReviewedScenarios,
   reviewedFixturePolicy,
@@ -110,14 +111,7 @@ export type OwnedLocalRequest = z.infer<typeof requestSchema>;
 export type OwnedLocalContext = z.infer<typeof contextSchema>;
 export type TrustedOwnedLocalContext = OwnedLocalContext;
 
-const statuses = z.enum([
-  "passed",
-  "passed_after_retry",
-  "failed",
-  "incomplete",
-  "timed_out",
-  "cancelled",
-]);
+const statuses = z.enum(EXECUTION_STATUSES);
 const cleanupStatus = z.enum([
   "not_required",
   "confirmed",

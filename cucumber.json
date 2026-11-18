@@ -1,6 +1,8 @@
 {
   "default": {
-    "paths": ["features/**/*.feature"],
+    "paths": [
+      "features/**/*.feature"
+    ],
     "tags": "not @web-run-inputs and not @retry-regression and not @web-readable-results and not @local-package-adapter",
     "require": [
       "dist/cucumber/features/support/hooks.js",
@@ -8,6 +10,79 @@
       "dist/cucumber/features/steps/login-ui.steps.js",
       "dist/cucumber/features/steps/rrdweb-8-local-pilot.steps.js"
     ],
-    "format": ["progress", "json:reports/cucumber-results.json"]
+    "format": [
+      "progress",
+      "json:reports/cucumber-results.json"
+    ]
+  },
+  "adapter": {
+    "paths": [
+      "features/adapter/local-package.feature"
+    ],
+    "require": [
+      "dist/cucumber/features/adapter/steps.js"
+    ],
+    "format": [
+      "progress"
+    ]
+  },
+  "input-preparation": {
+    "paths": [
+      "features/input-preparation.feature",
+      "features/data-references.feature"
+    ],
+    "require": [
+      "dist/cucumber/features/input-preparation/steps.js",
+      "dist/cucumber/features/input-preparation/data-reference.steps.js"
+    ],
+    "format": [
+      "progress"
+    ]
+  },
+  "login-ui": {
+    "paths": [
+      "features/login-ui.feature",
+      "features/rrdweb-8-local-pilot.feature"
+    ],
+    "require": [
+      "dist/cucumber/features/support/hooks.js",
+      "dist/cucumber/features/steps/login-ui.steps.js",
+      "dist/cucumber/features/steps/rrdweb-8-local-pilot.steps.js"
+    ],
+    "format": [
+      "progress"
+    ]
+  },
+  "regression": {
+    "require": [
+      "dist/cucumber/features/support/hooks.js",
+      "dist/cucumber/features/steps/synthetic.steps.js",
+      "dist/cucumber/features/steps/timeout-regression.steps.js"
+    ],
+    "format": [
+      "progress"
+    ]
+  },
+  "reporting": {
+    "paths": [
+      "features/reporting/readable-results.feature"
+    ],
+    "require": [
+      "dist/cucumber/features/reporting/steps.js"
+    ],
+    "format": [
+      "progress"
+    ]
+  },
+  "retry-regression": {
+    "paths": [
+      "features/execution/retries.feature"
+    ],
+    "require": [
+      "dist/cucumber/features/execution/retry-steps.js"
+    ],
+    "format": [
+      "progress"
+    ]
   }
 }

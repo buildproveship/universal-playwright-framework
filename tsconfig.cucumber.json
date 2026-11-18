@@ -10,11 +10,8 @@
     "noEmitOnError": true
   },
   "include": [
-    "src/adapter/**/*.ts",
-    "src/input-preparation/**/*.ts",
-    "src/execution/**/*.ts",
-    "src/reporting/**/*.ts",
-    "src/validation/**/*.ts",
+    "src/**/*.ts",
+    "fixtures/**/*.ts",
     "features/execution/**/*.ts",
     "features/adapter/**/*.ts",
     "features/reporting/**/*.ts",
@@ -23,5 +20,8 @@
     "features/steps/**/*.ts",
     "scripts/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
