@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Cold-process probe for the public runtime-login entry: lazy browser loading, guards, load timeout and root identity; it does not sign in to a customer site.
 import assert from "node:assert/strict";
 import Module, { createRequire } from "node:module";
 import { createServer } from "node:http";
@@ -27,7 +31,7 @@ loader._load = function (request, parent, isMain) {
       `Browser dependency loaded before consumption: ${request}`,
     );
   }
-  if (mode === "load-timeout" && request === "@playwright/test" && !delayed) {
+  if (mode === "load-timeout" && request === "playwright-core" && !delayed) {
     delayed = true;
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 150);
   }

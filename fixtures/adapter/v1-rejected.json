@@ -11,7 +11,7 @@
   "approval": {
     "sourceRevision": "rr207-synthetic-source-2",
     "featureRevision": "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f",
-    "implementationRevision": "71fa1f41e59abb83b351958597279cc35072839ae68432ddc7d4e0519e1b5dcd"
+    "implementationRevision": "2c4839b14f3a4a3285c9f40ee0788bd65d064a0064b38fa75d3280c378527485"
   },
   "inputs": {
     "fixtureRevision": "synthetic-execution-fixtures-1",
