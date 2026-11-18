@@ -5,7 +5,7 @@
 The synthetic preparation API and standalone provider below remain supported.
 ReleaseReady's automatic portal-to-TDM-to-worker integration already composes
 these public APIs; it must not be rebuilt as a second provider in this package.
-See the [RRDWEB-3 source and acceptance map](https://github.com/releaseready/universal-playwright-framework/blob/main/docs/rrdweb-3-acceptance-evidence.md)
+See the [RRDWEB-3 source and acceptance map](https://github.com/releaseready/universal-playwright-framework/blob/main/docs/history/rrdweb-3-acceptance-evidence.md)
 for exact source identities, tests, and the distinction between recorded local
 acceptance and still-gated hosted/customer evidence.
 
@@ -315,7 +315,7 @@ and receipt serialization, and real owned Chromium input delivery with fresh
 context isolation. It never navigates to the customer website.
 
 The automatic integration and approved fresh local synthetic acceptance are
-recorded separately in the [current evidence map](https://github.com/releaseready/universal-playwright-framework/blob/main/docs/rrdweb-3-acceptance-evidence.md).
+recorded separately in the [current evidence map](https://github.com/releaseready/universal-playwright-framework/blob/main/docs/history/rrdweb-3-acceptance-evidence.md).
 They do not establish hosted or live customer acceptance. RRDWEB-3's hosted AC
 remains gated through RRDPLAT-12; local test success alone does not complete the
 whole ticket. No customer credentials or live customer login are included in
