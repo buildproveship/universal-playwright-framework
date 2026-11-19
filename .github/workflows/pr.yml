@@ -50,4 +50,4 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: gitleaks, trivy, semgrep and zizmor
-        uses: releaseready/config/.github/actions/security-scan@019b8616cb02d79b8a885356e22ff4bf59ea72a7 # v2.1.0
+        uses: releaseready/config/.github/actions/security-scan@6248d46f291d5a3eec87fdf07da5e8f2b1b5becb # v2.1.0
