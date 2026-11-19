@@ -1,0 +1,23 @@
+[
+  {
+    "RuleID": "generic-api-key",
+    "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+    "StartLine": 922,
+    "EndLine": 922,
+    "StartColumn": 8,
+    "EndColumn": 53,
+    "Match": "SECRET_MARKER = \"REDACTED\"",
+    "Secret": "REDACTED",
+    "File": "scripts/reuse-readiness.test.ts",
+    "SymlinkFile": "",
+    "Commit": "7f25f6d3bd465d8f1423146968ab7e0a5c0ac895",
+    "Link": "https://github.com/releaseready/universal-playwright-framework/blob/7f25f6d3bd465d8f1423146968ab7e0a5c0ac895/scripts/reuse-readiness.test.ts#L922",
+    "Entropy": 3.8693314,
+    "Author": "noisegatemusicstudio",
+    "Email": "83857198+noisegatemusicstudio@users.noreply.github.com",
+    "Date": "2026-11-11T14:12:38Z",
+    "Message": "Merge pull request #58 from releaseready/feature/RRDWEB-24-reuse-readiness\n\nfeat(RRDWEB-24): add reviewed test reuse readiness",
+    "Tags": [],
+    "Fingerprint": "7f25f6d3bd465d8f1423146968ab7e0a5c0ac895:scripts/reuse-readiness.test.ts:generic-api-key:922"
+  }
+]
