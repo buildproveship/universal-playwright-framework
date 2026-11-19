@@ -1,0 +1,6 @@
+rules:
+  use-trusted-publishing:
+    ignore:
+      # Reason: we publish to GitHub Packages (npm.pkg.github.com), which has no OIDC trusted publishing; the
+      # GITHUB_TOKEN with packages: write is the supported credential.
+      - release.yml:38
