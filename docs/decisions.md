@@ -2,6 +2,10 @@
 
 Owner decisions that change how this repository is built, checked or released. Newest first.
 
+## 19 November 2026: CI runs on the self-hosted runner
+
+- **Scope:** private-repo Actions minutes are unavailable, so `pr.yml`, `nightly.yml` and `release.yml` run on the organisation's self-hosted macOS arm64 runner (`runs-on: [self-hosted, rr-local]`). Pull request jobs skip drafts. No job needs Linux.
+
 ## 18 November 2026: light pull request checks in GitHub Actions
 
 - **Decided by:** the owner, choosing "Apply all six (Recommended)" for the cross-repo programme (recommendations 1 and 2).
