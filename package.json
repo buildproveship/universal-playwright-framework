@@ -1,6 +1,6 @@
 {
   "name": "@releaseready/playwright-framework",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Reviewed Cucumber + Playwright execution adapters, runtime login and input preparation for ReleaseReady",
   "exports": {
     ".": {

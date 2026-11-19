@@ -17,6 +17,7 @@ import {
   prepareScenarioInputs,
   type PreparedInputDescriptor,
 } from "../input-preparation";
+import type { ExecutionTestSeam } from "./test-seam";
 import { selectApprovedScenarios } from "../validation/scenario-selector";
 import {
   INPUT_FIXTURE_PATH,
@@ -59,9 +60,7 @@ export interface ScenarioExecutionResult {
   readonly cleanupStatus: ResourceCleanupStatus;
   readonly cleanupFailures: readonly string[];
   readonly cleanupDiagnostics?: readonly CleanupDiagnostic[];
-  readonly cleanupFaultInjected: boolean;
   readonly workerStopped: boolean;
-  readonly workerStallInjected: boolean;
 }
 
 export type CucumberStepStatus =
@@ -90,7 +89,6 @@ export interface ExecutionSummary {
     readonly failures: readonly string[];
     readonly browserProcessStopped: boolean | null;
     readonly blockedTargetRequestCount: number;
-    readonly injectedPendingCleanup: boolean;
   };
   readonly dataRestoration: {
     readonly status: "unknown";
@@ -117,11 +115,8 @@ export interface ExecutionOptions {
   readonly maxConcurrentScenarios?: number;
   readonly retryCount?: number;
   readonly signal?: AbortSignal;
-  readonly testCleanupFailure?:
-    "context" | "server-pending" | "worker-stall" | "browser-state-unknown";
-  readonly testAssertionMismatchAttempts?: readonly number[];
-  readonly testNow?: () => number;
-  readonly testOnAttemptCleanupStarted?: () => void;
+  /** Test-only fault injection; never set by production callers. */
+  readonly testSeam?: ExecutionTestSeam;
   readonly onBrowserProcessStarted?: (pid: number) => void;
 }
 
@@ -155,12 +150,10 @@ interface CleanupReport {
   readonly diagnostics?: readonly CleanupDiagnostic[];
   readonly status: ResourceCleanupStatus;
   readonly failures: readonly string[];
-  readonly injectedFailure: boolean;
 }
 
 interface BrowserStopResult {
   readonly stopped: boolean;
-  readonly injectedPendingClose: boolean;
 }
 
 const CUCUMBER_BIN = path.join(
@@ -187,7 +180,7 @@ function validateOptions(
   const concurrency = options.maxConcurrentScenarios ?? 1;
   const retryCount = options.retryCount ?? 0;
   const testAssertionMismatchAttempts =
-    options.testAssertionMismatchAttempts ?? [];
+    options.testSeam?.assertionMismatchAttempts ?? [];
   if (
     !Number.isSafeInteger(runTimeoutMs) ||
     runTimeoutMs < minimumRunTimeoutMs ||
@@ -345,9 +338,9 @@ function closeServer(
   server: Server | undefined,
   sockets: ReadonlySet<Socket>,
   ignoreCallback = false,
-): Promise<{ readonly closed: boolean; readonly injectedPending: boolean }> {
+): Promise<{ readonly closed: boolean }> {
   if (!server) {
-    return Promise.resolve({ closed: true, injectedPending: false });
+    return Promise.resolve({ closed: true });
   }
   return new Promise((resolve) => {
     let settled = false;
@@ -364,7 +357,7 @@ function closeServer(
           clearTimeout(timer);
         }
       }
-      resolve({ closed, injectedPending: ignoreCallback });
+      resolve({ closed });
     };
     const verifyStopped = (): boolean =>
       !server.listening && sockets.size === 0;
@@ -569,32 +562,22 @@ async function stopBrowserServer(
     : browserServer.close();
   void close.catch(() => undefined);
   if (await waitForChildExit(browserProcess, testPendingClose ? 200 : 1_500)) {
-    return {
-      stopped: !testUnknownState,
-      injectedPendingClose: testPendingClose,
-    };
+    return { stopped: !testUnknownState };
   }
 
   const kill = browserServer.kill();
   void kill.catch(() => undefined);
   if (await waitForChildExit(browserProcess, 1_000)) {
-    return {
-      stopped: !testUnknownState,
-      injectedPendingClose: testPendingClose,
-    };
+    return { stopped: !testUnknownState };
   }
   browserProcess.kill("SIGTERM");
   if (await waitForChildExit(browserProcess, 500)) {
-    return {
-      stopped: !testUnknownState,
-      injectedPendingClose: testPendingClose,
-    };
+    return { stopped: !testUnknownState };
   }
   browserProcess.kill("SIGKILL");
   return {
     stopped:
       !testUnknownState && (await waitForChildExit(browserProcess, 1_000)),
-    injectedPendingClose: testPendingClose,
   };
 }
 
@@ -609,8 +592,7 @@ function safeCleanupReport(reportPath: string): CleanupReport | undefined {
       report.failures.some(
         (failure) =>
           typeof failure !== "string" || !/^[a-z-]{1,48}$/.test(failure),
-      ) ||
-      typeof report.injectedFailure !== "boolean"
+      )
     ) {
       return undefined;
     }
@@ -713,7 +695,7 @@ function cucumberScenarioEvidence(
 function workerEnvironment(
   payload: WorkerPayload,
   cleanupPath: string,
-  testCleanupFailure: ExecutionOptions["testCleanupFailure"],
+  testCleanupFailure: ExecutionTestSeam["cleanupFailure"],
   browserEndpoint: string,
   testAssertionMismatch: boolean,
 ): NodeJS.ProcessEnv {
@@ -764,7 +746,7 @@ async function executeScenario(
   browserEndpoint: string,
   timeoutMs: number,
   runSignal: AbortSignal,
-  testCleanupFailure: ExecutionOptions["testCleanupFailure"],
+  testCleanupFailure: ExecutionTestSeam["cleanupFailure"],
   testAssertionMismatch: boolean,
 ): Promise<ScenarioExecutionResult> {
   const reportPath = path.join(temporaryDirectory, `${scenarioId}.json`);
@@ -880,9 +862,7 @@ async function executeScenario(
           ? "owned-process-terminated"
           : "owned-process-state-unknown",
       ],
-      cleanupFaultInjected: false,
       workerStopped,
-      workerStallInjected: testCleanupFailure === "worker-stall",
     };
   }
   const completion = outcome.completion;
@@ -892,9 +872,7 @@ async function executeScenario(
       status: "incomplete",
       cleanupStatus: "unknown",
       cleanupFailures: ["worker-start"],
-      cleanupFaultInjected: false,
       workerStopped: true,
-      workerStallInjected: testCleanupFailure === "worker-stall",
     };
   }
 
@@ -922,9 +900,7 @@ async function executeScenario(
     ...(cleanup?.diagnostics
       ? { cleanupDiagnostics: cleanup.diagnostics }
       : {}),
-    cleanupFaultInjected: cleanup?.injectedFailure ?? false,
     workerStopped: true,
-    workerStallInjected: testCleanupFailure === "worker-stall",
   };
 }
 
@@ -955,7 +931,6 @@ function summary(
   cleanupFailures: readonly string[] = [],
   browserProcessStopped: boolean | null = null,
   blockedTargetRequestCount = 0,
-  injectedPendingCleanup = false,
 ): SingleExecutionSummary {
   return {
     diagnosticReference,
@@ -965,7 +940,6 @@ function summary(
       failures: cleanupFailures,
       browserProcessStopped,
       blockedTargetRequestCount,
-      injectedPendingCleanup,
     },
     dataRestoration: { status: "unknown", operationPerformed: false },
     scenarios,
@@ -1012,7 +986,6 @@ async function executeReviewedScenarioAttempt(
   // Flags set in callbacks and catch blocks; read afresh where the type checker cannot see that.
   const runAborted = (): boolean => runController.signal.aborted;
   const isBrowserLaunchUncertain = (): boolean => browserLaunchUncertain;
-  let serverPendingCloseInjected = false;
   let resourcesAcquired = false;
   let temporaryDirectory: string | undefined;
   let status: ExecutionStatus;
@@ -1138,9 +1111,7 @@ async function executeReviewedScenarioAttempt(
               status: "incomplete",
               cleanupStatus: "unknown",
               cleanupFailures: ["prepared-input-missing"],
-              cleanupFaultInjected: false,
               workerStopped: true,
-              workerStallInjected: false,
             };
             continue;
           }
@@ -1159,8 +1130,8 @@ async function executeReviewedScenarioAttempt(
             browserEndpoint,
             scenarioTimeoutMs,
             runController.signal,
-            options.testCleanupFailure,
-            (options.testAssertionMismatchAttempts ?? []).includes(
+            options.testSeam?.cleanupFailure,
+            (options.testSeam?.assertionMismatchAttempts ?? []).includes(
               attemptNumber,
             ),
           );
@@ -1188,9 +1159,7 @@ async function executeReviewedScenarioAttempt(
                 : "incomplete",
           cleanupStatus: "unknown",
           cleanupFailures: ["scenario-not-started"],
-          cleanupFaultInjected: false,
           workerStopped: true,
-          workerStallInjected: false,
         };
       }
     }
@@ -1216,7 +1185,7 @@ async function executeReviewedScenarioAttempt(
           : "incomplete";
   } finally {
     try {
-      options.testOnAttemptCleanupStarted?.();
+      options.testSeam?.onAttemptCleanupStarted?.();
     } catch {
       cleanupFailures.push("attempt-cleanup-hook");
     }
@@ -1226,11 +1195,10 @@ async function executeReviewedScenarioAttempt(
       try {
         const browserStop = await stopBrowserServer(
           browserServer,
-          options.testCleanupFailure === "server-pending",
-          options.testCleanupFailure === "browser-state-unknown",
+          options.testSeam?.cleanupFailure === "server-pending",
+          options.testSeam?.cleanupFailure === "browser-state-unknown",
         );
         browserProcessStopped = browserStop.stopped;
-        serverPendingCloseInjected = browserStop.injectedPendingClose;
         if (!browserStop.stopped) {
           cleanupFailures.push("browser-process-state-unknown");
         }
@@ -1245,9 +1213,8 @@ async function executeReviewedScenarioAttempt(
       const fixtureServer = await closeServer(
         server,
         serverSockets,
-        options.testCleanupFailure === "server-pending",
+        options.testSeam?.cleanupFailure === "server-pending",
       );
-      serverPendingCloseInjected ||= fixtureServer.injectedPending;
       if (!fixtureServer.closed) {
         cleanupFailures.push("fixture-server-state-unknown");
       }
@@ -1310,7 +1277,6 @@ async function executeReviewedScenarioAttempt(
     cleanupFailures,
     browserProcessStopped,
     blockedTargetRequestCount?.() ?? 0,
-    serverPendingCloseInjected,
   );
 }
 
@@ -1318,7 +1284,7 @@ export async function executeReviewedScenarios(
   options: ExecutionOptions = {},
 ): Promise<ExecutionSummary> {
   const { runTimeoutMs, retryCount } = validateOptions(options);
-  const now = options.testNow ?? (() => performance.now());
+  const now = options.testSeam?.now ?? (() => performance.now());
   const deadline = now() + runTimeoutMs;
   const runController = new AbortController();
   const onAbort = (): void => {

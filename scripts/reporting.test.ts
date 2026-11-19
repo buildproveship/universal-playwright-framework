@@ -33,7 +33,9 @@ test("the typed report retains Cucumber evidence from real retried execution", a
   const summary = await executeReviewedScenarios({
     scenarioIds: ["retry-assertion-flow"],
     retryCount: 1,
-    testAssertionMismatchAttempts: [1],
+    testSeam: {
+      assertionMismatchAttempts: [1],
+    },
   });
   const report = createExecutionReport(summary);
   const failedScenario = report.attempts[0].scenarios[0];

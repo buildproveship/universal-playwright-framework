@@ -84,7 +84,9 @@ test("a real assertion failure stays visible when a fresh browser attempt passes
   const browserPids: number[] = [];
   const result = await run("retry-assertion-flow", {
     retryCount: 1,
-    testAssertionMismatchAttempts: [1],
+    testSeam: {
+      assertionMismatchAttempts: [1],
+    },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
 
@@ -111,7 +113,9 @@ test("a real assertion failure stays visible when a fresh browser attempt passes
 
 test("retries are disabled unless an explicit retry count is supplied", async () => {
   const result = await run("retry-assertion-flow", {
-    testAssertionMismatchAttempts: [1],
+    testSeam: {
+      assertionMismatchAttempts: [1],
+    },
   });
 
   assert.equal(result.status, "failed");
@@ -124,7 +128,9 @@ test("retries are disabled unless an explicit retry count is supplied", async ()
 test("retry limit exhaustion preserves every attempt", async () => {
   const result = await run("retry-assertion-flow", {
     retryCount: 1,
-    testAssertionMismatchAttempts: [1, 2],
+    testSeam: {
+      assertionMismatchAttempts: [1, 2],
+    },
   });
 
   assert.equal(result.status, "failed");
@@ -159,8 +165,10 @@ test("cancellation during teardown preserves a completed successful attempt", as
   const controller = new AbortController();
   const result = await run("browser-flow", {
     signal: controller.signal,
-    testOnAttemptCleanupStarted: () => {
-      controller.abort();
+    testSeam: {
+      onAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     },
   });
 
@@ -174,9 +182,11 @@ test("a deadline during teardown preserves a completed successful attempt", asyn
   let now = 0;
   const result = await run("browser-flow", {
     runTimeoutMs: 30_000,
-    testNow: () => now,
-    testOnAttemptCleanupStarted: () => {
-      now = 30_001;
+    testSeam: {
+      now: () => now,
+      onAttemptCleanupStarted: () => {
+        now = 30_001;
+      },
     },
   });
 
@@ -192,9 +202,11 @@ test("cancellation between attempts preserves failure and prevents another launc
   const result = await run("retry-assertion-flow", {
     retryCount: 1,
     signal: controller.signal,
-    testAssertionMismatchAttempts: [1],
-    testOnAttemptCleanupStarted: () => {
-      controller.abort();
+    testSeam: {
+      assertionMismatchAttempts: [1],
+      onAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
@@ -214,10 +226,12 @@ test("a deadline between attempts preserves failure and prevents another launch"
   const result = await run("retry-assertion-flow", {
     retryCount: 1,
     runTimeoutMs: 30_000,
-    testAssertionMismatchAttempts: [1],
-    testNow: () => now,
-    testOnAttemptCleanupStarted: () => {
-      now = 30_001;
+    testSeam: {
+      assertionMismatchAttempts: [1],
+      now: () => now,
+      onAttemptCleanupStarted: () => {
+        now = 30_001;
+      },
     },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
@@ -237,9 +251,11 @@ test("unknown browser cleanup during late cancellation remains unknown and non-r
   const result = await run("browser-flow", {
     retryCount: 1,
     signal: controller.signal,
-    testCleanupFailure: "browser-state-unknown",
-    testOnAttemptCleanupStarted: () => {
-      controller.abort();
+    testSeam: {
+      cleanupFailure: "browser-state-unknown",
+      onAttemptCleanupStarted: () => {
+        controller.abort();
+      },
     },
     onBrowserProcessStarted: (pid) => browserPids.push(pid),
   });
@@ -259,7 +275,9 @@ test("the public 50 ms minimum still admits a positive internal remaining budget
   const result = await executeReviewedScenarios({
     scenarioIds: ["not-approved"],
     runTimeoutMs: 50,
-    testNow: () => (clockReads++ === 0 ? 0 : 1),
+    testSeam: {
+      now: () => (clockReads++ === 0 ? 0 : 1),
+    },
   });
 
   assert.equal(result.status, "incomplete");
@@ -271,13 +289,17 @@ test("the public 50 ms minimum still admits a positive internal remaining budget
 test("cleanup failure prevents another attempt", async () => {
   const result = await run("browser-flow", {
     retryCount: 2,
-    testCleanupFailure: "context",
+    testSeam: {
+      cleanupFailure: "context",
+    },
   });
 
   assert.equal(result.status, "failed");
   assert.equal(result.attemptCount, 1);
   assert.equal(result.resourceCleanup.status, "failed");
-  assert.equal(result.attempts[0].scenarios[0].cleanupFaultInjected, true);
+  assert.deepEqual(result.attempts[0].scenarios[0].cleanupFailures, [
+    "context-close-injected",
+  ]);
 });
 
 test("assertion and pending failures never produce a passing run", async () => {
@@ -415,11 +437,12 @@ test("a never-exiting worker and pending browser close are bounded and evidenced
   const workerStall = await run("timeout-flow", {
     scenarioTimeoutMs: 500,
     runTimeoutMs: 5_000,
-    testCleanupFailure: "worker-stall",
+    testSeam: {
+      cleanupFailure: "worker-stall",
+    },
     onBrowserProcessStarted: (pid) => workerPids.push(pid),
   });
   assert.equal(workerStall.status, "timed_out");
-  assert.equal(workerStall.scenarios[0].workerStallInjected, true);
   assert.equal(workerStall.scenarios[0].workerStopped, true);
   assert.equal(workerStall.scenarios[0].cleanupStatus, "confirmed");
   assert.equal(workerStall.resourceCleanup.browserProcessStopped, true);
@@ -428,13 +451,14 @@ test("a never-exiting worker and pending browser close are bounded and evidenced
   const startedAt = Date.now();
   let browserPid = 0;
   const pendingClose = await run("browser-flow", {
-    testCleanupFailure: "server-pending",
+    testSeam: {
+      cleanupFailure: "server-pending",
+    },
     onBrowserProcessStarted: (pid) => {
       browserPid = pid;
     },
   });
   assert.equal(pendingClose.status, "passed");
-  assert.equal(pendingClose.resourceCleanup.injectedPendingCleanup, true);
   assert.equal(pendingClose.resourceCleanup.browserProcessStopped, true);
   assert.ok(Date.now() - startedAt < 5_000);
   await assertProcessExited(browserPid);
@@ -443,14 +467,15 @@ test("a never-exiting worker and pending browser close are bounded and evidenced
 test("injected cleanup failure is visible and has a safe diagnostic reference", async () => {
   const result = await executeReviewedScenarios({
     scenarioIds: ["browser-flow", "pending-flow"],
-    testCleanupFailure: "context",
+    testSeam: {
+      cleanupFailure: "context",
+    },
   });
 
   assert.equal(result.status, "failed");
   assert.equal(result.resourceCleanup.status, "failed");
   assert.equal(result.scenarios.length, 2);
   assert.equal(result.scenarios[0].cleanupStatus, "failed");
-  assert.equal(result.scenarios[0].cleanupFaultInjected, true);
   assert.deepEqual(result.scenarios[0].cleanupFailures, [
     "context-close-injected",
   ]);

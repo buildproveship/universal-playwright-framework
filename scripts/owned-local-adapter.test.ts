@@ -475,7 +475,6 @@ for (const hasBusinessEvidence of [false, true]) {
         failures: [failure],
         browserProcessStopped: null,
         blockedTargetRequestCount: 0,
-        injectedPendingCleanup: false,
       };
       const dataRestoration = {
         status: "unknown" as const,
