@@ -35,7 +35,7 @@
     "typecheck": "tsc -p tsconfig.cucumber.json --noEmit && tsc -p tests/readiness/tsconfig.json && tsc -p starter/tsconfig.json && tsc -p tsconfig.tools.json",
     "check": "npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails",
     "check:guardrails": "releaseready-guardrails",
-    "test": "npm run check && npm run test:unit && npm run test:browser",
+    "test": "npm run check && npm run check:review-pins && npm run test:unit && npm run test:browser",
     "test:unit": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/reference-only-preparation.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/windows-taskkill.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js dist/cucumber/scripts/paused-work-clock.test.js dist/cucumber/scripts/feature-validation.test.js dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js dist/cucumber/scripts/private-starter.test.js && cucumber-js --profile input-preparation && cucumber-js --profile reporting && npm run test:typescript-source-policy",
     "test:browser": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/execution-adapter.test.js dist/cucumber/scripts/reporting.test.js dist/cucumber/scripts/adapter-contract.test.js dist/cucumber/scripts/cucumber-timeouts.test.js dist/cucumber/scripts/login-inspection.test.js dist/cucumber/scripts/login-inspection-cancellation.test.js dist/cucumber/scripts/authentication-only.test.js dist/cucumber/scripts/owned-local-adapter.test.js dist/cucumber/scripts/runtime-login-entry.test.js dist/cucumber/scripts/runtime-login-package.test.js dist/cucumber/scripts/isolated-product-playwright.test.js dist/cucumber/scripts/runtime-login-cancellation-browser.test.js && cucumber-js --config cucumber.json && cucumber-js --profile adapter && cucumber-js --profile retry-regression && npm run test:readiness",
     "test:input-preparation": "npm run build:cucumber && cucumber-js --profile input-preparation && node --test dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/reference-only-preparation.test.js",
@@ -47,6 +47,7 @@
     "test:execution": "npm run build:cucumber && node --test dist/cucumber/scripts/windows-taskkill.test.js dist/cucumber/scripts/execution-adapter.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js && cucumber-js --profile retry-regression",
     "test:reporting": "npm run build:cucumber && node --test dist/cucumber/scripts/reporting.test.js && cucumber-js --profile reporting",
     "test:adapter": "npm run build:cucumber && node --test dist/cucumber/scripts/adapter-contract.test.js && cucumber-js --profile adapter",
+    "check:review-pins": "npm run build && node dist/cucumber/scripts/check-review-pins.js",
     "review:revision": "npm run build && node dist/cucumber/scripts/reviewed-revision.js",
     "execute:synthetic": "npm run build:cucumber && node dist/cucumber/src/execution/cli.js",
     "test:features:regression": "npm run test:input-preparation && npm run test:customer-login && npm run test:validation && npm run test:features && npm run test:execution && node --test dist/cucumber/scripts/cucumber-timeouts.test.js && npm run test:reporting && npm run test:adapter",
@@ -79,7 +80,7 @@
     "releaseready"
   ],
   "author": "Universal Testing Framework Contributors",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/releaseready/universal-playwright-framework.git"

@@ -168,7 +168,7 @@ The direct Cucumber, parser, Zod and Playwright runtime versions/manifests are
 checked through Node resolution from the installed package (including hoisted
 dependencies), not a checkout-local `node_modules`. npm intentionally excludes
 `package-lock.json` from tarballs, so runtime identity is now pinned by exact
-runtime dependencies in the hashed `package.json` and actual resolved manifests;
+runtime dependencies in the hashed `dependencies` and `exports` of `package.json` and actual resolved manifests;
 the source lock remains checked in. The implementation hash binds the actual
 adapter and worker JavaScript, fixed input, feature, and execution configuration.
 Only the embedded implementation digest is normalized to avoid a self-hash cycle.

@@ -162,8 +162,8 @@ The tests use only `fixtures/validation/reviewed-scenarios.feature` and syntheti
 in-memory snapshots, including synthetic secret markers.
 
 **Proposed script and pin plan (root decides).** A dedicated
-`test:reuse-readiness` script would change `package.json`, which is hashed into
-`REVIEWED_IMPLEMENTATION_REVISION`. Doing that safely takes one reviewed change
+`test:reuse-readiness` script would change `package.json`; only its `dependencies` and `exports` are hashed into
+`REVIEWED_IMPLEMENTATION_REVISION`, so a script-only change would not need a re-pin. Doing that safely takes one reviewed change
 with these steps:
 
 1. Add the script, and optionally list it in `test:features:regression`.
