@@ -5,7 +5,7 @@ import {
   type ScenarioApproval,
 } from "./scenario-selector";
 
-export interface SelectedCaseReference {
+interface SelectedCaseReference {
   readonly caseId: string;
   readonly caseRevision: string;
 }
@@ -40,7 +40,7 @@ export interface ReuseReadinessInput {
   readonly approval: ScenarioApproval;
 }
 
-export type ReadinessOutcome =
+type ReadinessOutcome =
   "reused" | "missing" | "ambiguous" | "invalidated" | "unapproved";
 
 const OUTCOME_BY_CODE = {
@@ -64,7 +64,7 @@ const OUTCOME_BY_CODE = {
   "scenario-not-approved": "unapproved",
 } as const satisfies Record<string, ReadinessOutcome>;
 
-export type ReadinessCode = keyof typeof OUTCOME_BY_CODE;
+type ReadinessCode = keyof typeof OUTCOME_BY_CODE;
 
 /** Fixed, sanitized explanations; no feature text or upstream reasons. */
 const REASON_BY_CODE: Record<ReadinessCode, string> = {
@@ -105,7 +105,7 @@ const REASON_BY_CODE: Record<ReadinessCode, string> = {
     "Mapped scenario is not in the approved scenario manifest",
 };
 
-export interface StepReuse {
+interface StepReuse {
   readonly index: number;
   readonly status: "reused" | "missing" | "ambiguous";
   readonly implementationId: string | null;
@@ -138,7 +138,7 @@ export type ReuseReadinessReport =
       readonly summary: Readonly<Record<ReadinessOutcome, number>>;
     };
 
-export interface CandidateCheckEvidence {
+interface CandidateCheckEvidence {
   readonly status: "passed" | "failed" | "not-run";
   readonly candidateRevision: string;
 }
@@ -159,7 +159,7 @@ export interface AuthoringCandidateEvidence {
   };
 }
 
-export type CandidateBlockerCode =
+type CandidateBlockerCode =
   | "reuse-report-stale"
   | "case-not-in-report"
   | "case-not-awaiting-step-implementation"
@@ -172,7 +172,7 @@ export type CandidateBlockerCode =
   | "validation-failed"
   | "validation-stale";
 
-export interface CandidateBlocker {
+interface CandidateBlocker {
   readonly code: CandidateBlockerCode;
   readonly detail: string;
 }
@@ -192,12 +192,12 @@ export type CandidateReviewReadiness =
       readonly evidenceDigest: string;
     };
 
-export const MAX_SELECTED_CASES = 1_000;
-export const MAX_CASE_SNAPSHOTS = 10_000;
-export const MAX_MAPPING_SNAPSHOTS = 10_000;
+const MAX_SELECTED_CASES = 1_000;
+const MAX_CASE_SNAPSHOTS = 10_000;
+const MAX_MAPPING_SNAPSHOTS = 10_000;
 // Match the feature validator's hard expansion ceilings.
-export const MAX_VALIDATED_SCENARIOS = 10_000;
-export const MAX_VALIDATED_STEPS = 100_000;
+const MAX_VALIDATED_SCENARIOS = 10_000;
+const MAX_VALIDATED_STEPS = 100_000;
 const MAX_APPROVED_SCENARIOS = 10_000;
 const MAX_TAGS_PER_SCENARIO = 1_000;
 const MAX_IDENTIFIER_LENGTH = 200;
@@ -228,14 +228,12 @@ const IDENTITY_FIELDS = [
 ] as const;
 
 /** Decisions this module cannot make; a ready candidate still needs all of them. */
-export const CANDIDATE_HUMAN_REVIEW_REQUIRED: readonly string[] = Object.freeze(
-  [
-    "Assertions prove the approved expected outcome and were not weakened or removed",
-    "Code belongs in the correct repository (generic public framework or private customer automation)",
-    "A reviewed implementation revision and pin update cover the candidate code",
-    "The case-to-implementation mapping is approved for the exact case and implementation revisions",
-  ],
-);
+const CANDIDATE_HUMAN_REVIEW_REQUIRED: readonly string[] = Object.freeze([
+  "Assertions prove the approved expected outcome and were not weakened or removed",
+  "Code belongs in the correct repository (generic public framework or private customer automation)",
+  "A reviewed implementation revision and pin update cover the candidate code",
+  "The case-to-implementation mapping is approved for the exact case and implementation revisions",
+]);
 
 type Identity = Record<(typeof IDENTITY_FIELDS)[number], string>;
 
