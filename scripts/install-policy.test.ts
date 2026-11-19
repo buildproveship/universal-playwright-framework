@@ -1,7 +1,7 @@
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
-// Scope: Checks the locked install policy (prepare hook, pinned Playwright, no install scripts) and the Cucumber report assertion in isolated temporary fixtures; it does not prove customer execution or hosted deployment.
+// Scope: Checks the locked install policy (prepack build, no prepare hook, pinned Playwright, no install scripts) and the Cucumber report assertion in isolated temporary fixtures; it does not prove customer execution or hosted deployment.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -19,7 +19,7 @@ import { test } from "node:test";
 
 const root = path.resolve(__dirname, "../../..");
 
-test("the prepare hook builds the package and no dependency has an install script", () => {
+test("the package is built in prepack, has no prepare hook, and no dependency has an install script", () => {
   const manifest = JSON.parse(
     readFileSync(path.join(root, "package.json"), "utf8"),
   ) as {
@@ -34,7 +34,10 @@ test("the prepare hook builds the package and no dependency has an install scrip
       { version?: string; hasInstallScript?: boolean; optional?: boolean }
     >;
   };
-  assert.equal(manifest.scripts.prepare, "npm run build");
+  // #86: the build moved from `prepare` to `prepack`. `prepare` would also run on
+  // every consumer git-install and `npm ci`, which the release workflow does not need.
+  assert.equal(manifest.scripts.prepack, "npm run build");
+  assert.equal(manifest.scripts.prepare, undefined);
   assert.equal(manifest.dependencies["@playwright/test"], "1.65.1");
   assert.equal(
     lock.packages["node_modules/@playwright/test"].version,
