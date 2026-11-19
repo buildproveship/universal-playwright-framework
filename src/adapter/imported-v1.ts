@@ -1,3 +1,4 @@
+import { referenceSchema } from "../schema/reference";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -18,11 +19,7 @@ import {
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const commit = z.string().regex(/^[a-f0-9]{40}$/);
 const revision = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
-const reference = z
-  .string()
-  .min(1)
-  .max(128)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
+const reference = referenceSchema;
 const scope = z
   .object({ tenantId: z.uuid(), projectId: z.uuid(), environmentId: z.uuid() })
   .strict();
@@ -228,7 +225,7 @@ function reject(
 
 // Candidate only until independent implementation review explicitly updates it.
 export const IMPORTED_IMPLEMENTATION_REVISION =
-  "ae2382f670ac4a11b63fa05fba754c683d0e410bbf3ea458ef0c8d09d2e6ec27";
+  "137d37d4180c016e6e257c8ff9a9b4c1adfa663b99ef307d7929593c13f9db2d";
 export function calculateImportedImplementationRevision(): string {
   const digest = createHash("sha256");
   for (const file of [

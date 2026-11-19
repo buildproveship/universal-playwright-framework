@@ -1408,7 +1408,7 @@ test("cleanup errors cannot turn a completed login into success or expose secret
   await assertDisposed(provider, request);
 });
 
-test("Given legacy or raw assertion-shaped errors, when reported, then evidence stays unknown", () => {
+test("Given raw assertion-shaped errors, when reported, then evidence stays unknown", () => {
   for (const error of [
     new Error("AssertionError: expected Partay"),
     new RuntimeLoginFailure("brand-text", "confirmed"),

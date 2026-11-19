@@ -1,6 +1,6 @@
 import type { FeatureValidation, ValidatedScenario } from "./feature-validator";
 
-export interface ApprovedScenario {
+interface ApprovedScenario {
   readonly id: string;
   readonly tags: readonly string[];
 }
@@ -19,7 +19,7 @@ export interface ScenarioSelectionFilters {
 }
 
 /** A validated scenario that carries its identifier; only these can be approved and selected. */
-export type SelectedScenario = ValidatedScenario & { readonly id: string };
+type SelectedScenario = ValidatedScenario & { readonly id: string };
 
 function hasId(scenario: ValidatedScenario): scenario is SelectedScenario {
   return scenario.id !== null;

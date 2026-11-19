@@ -99,7 +99,7 @@ test("Cucumber step timeout defaults and rejects values outside its documented b
   }
 });
 
-test("a step longer than the legacy 5s timeout passes with the default", () => {
+test("a step longer than the former 5s timeout passes with the default", () => {
   const result = runScenario(
     `@timeout-regression
 Feature: Cucumber step timeout

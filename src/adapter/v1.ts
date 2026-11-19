@@ -18,13 +18,11 @@ import {
   MIN_TIMEOUT_MS,
 } from "../execution/limits";
 import { prepareScenarioInputs } from "../input-preparation";
+import { referenceSchema } from "../schema/reference";
 import { createExecutionReport, type ExecutionReport } from "../reporting";
 import { selectApprovedScenarios } from "../validation/scenario-selector";
 
-const reference = z
-  .string()
-  .max(128)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
+const reference = referenceSchema;
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 const gitRevision = z.string().regex(/^[a-f0-9]{40}$/);
 const approvalSchema = z

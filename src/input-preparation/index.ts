@@ -1,3 +1,4 @@
+import { referenceSchema } from "../schema/reference";
 import { z } from "zod";
 import {
   selectApprovedScenarios,
@@ -12,13 +13,10 @@ import {
   type ReviewedDataReferences,
 } from "./data-references";
 
-export const MAX_INPUT_DOCUMENT_BYTES = 64 * 1024;
-export const MAX_PREPARED_SCENARIOS = 100;
+const MAX_INPUT_DOCUMENT_BYTES = 64 * 1024;
+const MAX_PREPARED_SCENARIOS = 100;
 
-const identifierSchema = z
-  .string()
-  .max(128)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
+const identifierSchema = referenceSchema;
 const revisionSchema = z
   .string()
   .max(128)
@@ -200,9 +198,9 @@ const fixtureRevisionSchema = z
   })
   .strict();
 
-export type CleanupOutcome = "restored" | "unrestored" | "unknown";
+type CleanupOutcome = "restored" | "unrestored" | "unknown";
 
-export type ReviewedFixtureFieldSchema =
+type ReviewedFixtureFieldSchema =
   | { readonly type: "string"; readonly maxLength: number }
   | {
       readonly type: "string-list";
@@ -248,7 +246,7 @@ export interface RuntimeSecretProvider {
   dispose?(): void;
 }
 
-export interface PreparedScenarioInputs {
+interface PreparedScenarioInputs {
   readonly id: string;
   readonly tags: readonly string[];
   readonly dataReference?: DataReferenceSelection["rows"][number];

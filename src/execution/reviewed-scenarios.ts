@@ -14,10 +14,10 @@ export const REVIEWED_FEATURE_PATH =
 export const INPUT_FIXTURE_PATH = "fixtures/execution/approved-inputs.json";
 
 export const REVIEWED_SOURCE_REVISION = "rr207-synthetic-source-2";
-export const REVIEWED_FEATURE_REVISION =
+const REVIEWED_FEATURE_REVISION =
   "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f";
-export const REVIEWED_IMPLEMENTATION_REVISION =
-  "f778118f15ea94707a6063bdf622d92244e8c6d74f22af4b2439400548a029d4";
+const REVIEWED_IMPLEMENTATION_REVISION =
+  "f4c0670477b786894f006fbd7ea60f032d88c6930eaab197a6b03232f0bbb1c3";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,

@@ -35,6 +35,7 @@ export default defineConfig(
   {
     files: ["starter/templates/common/scripts/demo.ts"],
     rules: {
+      // Untyped JSON from the demo's own output; typing only, template bytes are approved (RRDWEB-34).
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
     },
@@ -42,6 +43,7 @@ export default defineConfig(
   {
     files: ["starter/templates/demo/fixtures/demo.ts"],
     rules: {
+      // Playwright fixture callbacks in the approved template (RRDWEB-34); style only, not behaviour.
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
     },

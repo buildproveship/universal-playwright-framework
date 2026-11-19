@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@releaseready/config/guardrails/config.schema.json",
+  "allow": [
+    {
+      "rule": "copied-schema-primitive",
+      "path": "src/schema/reference.ts",
+      "max": 1,
+      "reason": "universal-playwright-framework does not depend on test-management; this is the one reference definition, imported by every module in this repo"
+    },
+    {
+      "rule": "copied-canonical-digest",
+      "path": "src/validation/reuse-readiness.ts",
+      "max": 1,
+      "reason": "readiness module must import only node:crypto and ./scenario-selector (asserted by reuse-readiness.test.ts), so it keeps a 10-line key-sorting canonicalizer instead of a package"
+    },
+    {
+      "rule": "skipped-test",
+      "path": "scripts/agentic-rehearsal.test.ts",
+      "max": 1,
+      "reason": "the text test.skip('x') is input to the rehearsal parser, which must reject unsupported syntax; no test is skipped"
+    }
+  ]
+}
