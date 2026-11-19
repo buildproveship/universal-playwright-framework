@@ -13,6 +13,7 @@ import { RuntimeLoginFailure } from "../input-preparation/runtime-login";
 import { untrusted } from "../validation/untrusted";
 import {
   REPOSITORY_ROOT,
+  runtimeManifestDigestInput,
   runtimePackagePath,
 } from "../execution/reviewed-scenarios";
 
@@ -225,11 +226,15 @@ function reject(
 
 // Candidate only until independent implementation review explicitly updates it.
 export const IMPORTED_IMPLEMENTATION_REVISION =
-  "c84fc1bb41cfe11eab6e922ab4f4401afe47eb38ea34ae33071c869cc045a340";
+  "809c2a90e10e7a957cd614abe563b58897b76865b3addf6ba9be2cf5ca818472";
 export function calculateImportedImplementationRevision(): string {
   const digest = createHash("sha256");
+  digest
+    .update("package.json#runtime")
+    .update("\0")
+    .update(runtimeManifestDigestInput())
+    .update("\0");
   for (const file of [
-    "package.json",
     "src/adapter/imported-v1.ts",
     "dist/cucumber/src/adapter/imported-v1.js",
     "src/execution/reviewed-scenarios.ts",

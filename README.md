@@ -25,7 +25,16 @@ Bump `version` in `package.json` (semver) in a pull request and merge it, then p
 matching tag (`git tag v1.0.1 && git push origin v1.0.1`). `release.yml` runs the
 check and unit tests and publishes with `GITHUB_TOKEN`; `npm publish` builds in
 `prepack`. Run `npm run review:revision` and update `REVIEWED_IMPLEMENTATION_REVISION`
-whenever the reviewed runtime files or `package.json` change.
+whenever the reviewed runtime files or the runtime parts of `package.json`
+(`dependencies`, `exports`) change. Scripts, devDependencies and the version are not
+hashed. `npm test` runs `check:review-pins` and fails with the new digests when a pin
+is stale.
+
+## Licence
+
+Proprietary: `"license": "UNLICENSED"`. The package is published to the private
+GitHub Packages registry for ReleaseReady only. It is not marked `private: true`,
+because `npm publish` refuses private packages.
 
 ## Develop
 

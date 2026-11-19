@@ -16,8 +16,8 @@ export const INPUT_FIXTURE_PATH = "fixtures/execution/approved-inputs.json";
 export const REVIEWED_SOURCE_REVISION = "rr207-synthetic-source-2";
 const REVIEWED_FEATURE_REVISION =
   "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f";
-const REVIEWED_IMPLEMENTATION_REVISION =
-  "d0b830d988d19656cdec110a1ddcae188531394499723b651de98f0fe0a7f2df";
+export const REVIEWED_IMPLEMENTATION_REVISION =
+  "33f20877cbb9758ba63594a8483b309d077cf5d4fa252989454ea58ec53b2f4f";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,
@@ -148,12 +148,26 @@ export function runtimePackagePath(name: string): string {
   throw new Error("Reviewed runtime package manifest is unavailable");
 }
 
+/**
+ * The only parts of package.json that change runtime behaviour. Scripts,
+ * devDependencies, version and metadata are deliberately excluded so that they
+ * cannot invalidate a recorded implementation review.
+ */
+export function runtimeManifestDigestInput(): string {
+  const manifest = JSON.parse(
+    readFileSync(path.join(REPOSITORY_ROOT, "package.json"), "utf8"),
+  ) as { dependencies?: unknown; exports?: unknown };
+  return JSON.stringify({
+    dependencies: manifest.dependencies,
+    exports: manifest.exports,
+  });
+}
+
 export function calculateReviewedImplementationRevision(): string {
   const hash = createHash("sha256");
   for (const relativePath of [
     "cucumber-execution.json",
     "tsconfig.cucumber.json",
-    "package.json",
     "src/adapter/v1.ts",
     "src/adapter/v2.ts",
     "dist/cucumber/src/adapter/v2.js",
@@ -207,6 +221,8 @@ export function calculateReviewedImplementationRevision(): string {
         : bytes;
     hash.update(normalized).update("\0");
   }
+  hash.update("package.json#runtime").update("\0");
+  hash.update(runtimeManifestDigestInput()).update("\0");
   for (const name of RUNTIME_DEPENDENCIES) {
     hash.update(name).update("\0");
     hash.update(readFileSync(runtimePackagePath(name))).update("\0");
