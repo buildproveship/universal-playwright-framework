@@ -106,10 +106,7 @@ export interface AdapterError {
 }
 
 interface Lifecycle {
-  readonly resourceCleanup: Omit<
-    ExecutionSummary["resourceCleanup"],
-    "injectedPendingCleanup"
-  >;
+  readonly resourceCleanup: ExecutionSummary["resourceCleanup"];
   readonly dataRestoration: ExecutionSummary["dataRestoration"];
 }
 export type AdapterResult =
@@ -158,11 +155,7 @@ function sameReferences(
   return Object.keys(left).every((key) => left[key] === right[key]);
 }
 
-export function adapterLifecycle(
-  summary: Lifecycle & {
-    resourceCleanup: ExecutionSummary["resourceCleanup"];
-  },
-): Lifecycle {
+export function adapterLifecycle(summary: Lifecycle): Lifecycle {
   return {
     resourceCleanup: {
       status: summary.resourceCleanup.status,
@@ -250,7 +243,6 @@ export async function executeAdapter(
         failures: ["execution-evidence-unavailable"],
         browserProcessStopped: null,
         blockedTargetRequestCount: 0,
-        injectedPendingCleanup: false,
       },
       dataRestoration: { status: "unknown", operationPerformed: false },
       scenarios: [],

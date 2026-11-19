@@ -30,7 +30,9 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["retry-assertion-flow"],
       retryCount: 1,
-      testAssertionMismatchAttempts: [1],
+      testSeam: {
+        assertionMismatchAttempts: [1],
+      },
       onBrowserProcessStarted: (pid) => this.browserPids.push(pid),
     });
   },
@@ -41,7 +43,9 @@ When(
   async function (this: RetryWorld) {
     this.result = await executeReviewedScenarios({
       scenarioIds: ["retry-assertion-flow"],
-      testAssertionMismatchAttempts: [1],
+      testSeam: {
+        assertionMismatchAttempts: [1],
+      },
     });
   },
 );
@@ -52,7 +56,9 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["retry-assertion-flow"],
       retryCount: 1,
-      testAssertionMismatchAttempts: [1, 2],
+      testSeam: {
+        assertionMismatchAttempts: [1, 2],
+      },
     });
   },
 );
@@ -79,7 +85,9 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["browser-flow"],
       retryCount: 2,
-      testCleanupFailure: "context",
+      testSeam: {
+        cleanupFailure: "context",
+      },
     });
   },
 );
@@ -91,8 +99,10 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["browser-flow"],
       signal: controller.signal,
-      testOnAttemptCleanupStarted: () => {
-        controller.abort();
+      testSeam: {
+        onAttemptCleanupStarted: () => {
+          controller.abort();
+        },
       },
     });
   },
@@ -105,9 +115,11 @@ When(
     this.result = await executeReviewedScenarios({
       scenarioIds: ["browser-flow"],
       runTimeoutMs: 30_000,
-      testNow: () => now,
-      testOnAttemptCleanupStarted: () => {
-        now = 30_001;
+      testSeam: {
+        now: () => now,
+        onAttemptCleanupStarted: () => {
+          now = 30_001;
+        },
       },
     });
   },
@@ -121,9 +133,11 @@ When(
       scenarioIds: ["retry-assertion-flow"],
       retryCount: 1,
       signal: controller.signal,
-      testAssertionMismatchAttempts: [1],
-      testOnAttemptCleanupStarted: () => {
-        controller.abort();
+      testSeam: {
+        assertionMismatchAttempts: [1],
+        onAttemptCleanupStarted: () => {
+          controller.abort();
+        },
       },
       onBrowserProcessStarted: (pid) => this.browserPids.push(pid),
     });
@@ -138,10 +152,12 @@ When(
       scenarioIds: ["retry-assertion-flow"],
       retryCount: 1,
       runTimeoutMs: 30_000,
-      testAssertionMismatchAttempts: [1],
-      testNow: () => now,
-      testOnAttemptCleanupStarted: () => {
-        now = 30_001;
+      testSeam: {
+        assertionMismatchAttempts: [1],
+        now: () => now,
+        onAttemptCleanupStarted: () => {
+          now = 30_001;
+        },
       },
       onBrowserProcessStarted: (pid) => this.browserPids.push(pid),
     });
@@ -156,9 +172,11 @@ When(
       scenarioIds: ["browser-flow"],
       retryCount: 1,
       signal: controller.signal,
-      testCleanupFailure: "browser-state-unknown",
-      testOnAttemptCleanupStarted: () => {
-        controller.abort();
+      testSeam: {
+        cleanupFailure: "browser-state-unknown",
+        onAttemptCleanupStarted: () => {
+          controller.abort();
+        },
       },
     });
   },
@@ -234,10 +252,9 @@ Then(
     assert.equal(this.result.status, "failed");
     assert.equal(this.result.resourceCleanup.status, "failed");
     assert.equal(this.result.attemptCount, attempts);
-    assert.equal(
-      this.result.attempts[0].scenarios[0].cleanupFaultInjected,
-      true,
-    );
+    assert.deepEqual(this.result.attempts[0].scenarios[0].cleanupFailures, [
+      "context-close-injected",
+    ]);
   },
 );
 

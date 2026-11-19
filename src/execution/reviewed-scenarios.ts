@@ -17,7 +17,7 @@ export const REVIEWED_SOURCE_REVISION = "rr207-synthetic-source-2";
 const REVIEWED_FEATURE_REVISION =
   "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f";
 export const REVIEWED_IMPLEMENTATION_REVISION =
-  "33f20877cbb9758ba63594a8483b309d077cf5d4fa252989454ea58ec53b2f4f";
+  "4f1d9097226df44c19b6dbf96d27c1263386da92df933348adf7caecead6773c";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,

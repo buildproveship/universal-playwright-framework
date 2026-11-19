@@ -132,9 +132,12 @@ test("approved real execution retains caller identity and matches direct busines
     result.report.scenarios[0].steps,
     direct.scenarios[0].cucumber?.steps,
   );
-  const { injectedPendingCleanup: _injected, ...directCleanup } =
-    direct.resourceCleanup;
-  assert.deepEqual(result.lifecycle.resourceCleanup, directCleanup);
+  assert.deepEqual(result.lifecycle.resourceCleanup, direct.resourceCleanup);
+  assert.doesNotMatch(
+    JSON.stringify({ result, direct }),
+    /injected|FaultInjected|StallInjected/i,
+    "fault-injection flags must not appear in any result",
+  );
   assert.deepEqual(result.lifecycle.dataRestoration, {
     status: "unknown",
     operationPerformed: false,
@@ -241,8 +244,10 @@ test("cancellation is isolated between two real runs and late cancellation canno
     (options: engine.ExecutionOptions) =>
       original({
         ...options,
-        testOnAttemptCleanupStarted: () => {
-          late.abort();
+        testSeam: {
+          onAttemptCleanupStarted: () => {
+            late.abort();
+          },
         },
       }),
   );

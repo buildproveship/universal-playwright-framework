@@ -32,7 +32,6 @@ let payload: ExecutionPayload | undefined;
 let cleanupPath: string | undefined;
 let contextClosed = false;
 let browserDisconnected = false;
-let injectedFailure = false;
 
 class CucumberExecutionWorld extends World implements ExecutionWorld {
   browser?: Browser;
@@ -184,7 +183,6 @@ After(async function (this: CucumberExecutionWorld) {
     throw new Error("Scenario context cleanup failed");
   }
   if (process.env.WEB_EXECUTION_TEST_CLEANUP_FAILURE === "context") {
-    injectedFailure = true;
     failures.push("context-close-injected");
     throw new Error("Injected scenario context cleanup failure");
   }
@@ -218,7 +216,6 @@ AfterAll(async function () {
       JSON.stringify({
         status: cleanupStatus,
         failures,
-        injectedFailure,
         ...(diagnostics.length ? { diagnostics } : {}),
       }),
       { encoding: "utf8", flag: "wx" },

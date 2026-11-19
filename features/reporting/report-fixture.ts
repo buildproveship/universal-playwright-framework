@@ -10,7 +10,6 @@ const confirmedCleanup = {
   failures: [],
   browserProcessStopped: true,
   blockedTargetRequestCount: 0,
-  injectedPendingCleanup: false,
 };
 const dataRestoration = {
   status: "unknown" as const,
@@ -29,9 +28,7 @@ function scenario(
     ...(cucumber ? { cucumber } : {}),
     cleanupStatus: status === "incomplete" ? "unknown" : "confirmed",
     cleanupFailures,
-    cleanupFaultInjected: false,
     workerStopped: true,
-    workerStallInjected: false,
   };
 }
 

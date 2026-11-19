@@ -575,7 +575,6 @@ async function executeOwnedLocalAdapterInternal(
         failures: ["execution-evidence-unavailable"],
         browserProcessStopped: null,
         blockedTargetRequestCount: 0,
-        injectedPendingCleanup: false,
       },
       dataRestoration: { status: "unknown", operationPerformed: false },
       scenarios: [],

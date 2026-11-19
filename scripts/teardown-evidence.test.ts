@@ -183,7 +183,6 @@ function runFixture(mode: string) {
       assert.deepEqual(JSON.parse(readFileSync(marker, "utf8")), {
         status: "unknown",
         failures: ["context-close"],
-        injectedFailure: false,
         diagnostics: [{ phase: "context-close", category: "unclassified" }],
       });
     assert.equal(
@@ -818,7 +817,7 @@ test("actual cleanup hooks preserve sanitized throws and failure precedence with
         await assert.rejects(callbacks.AfterAll(), error => error !== timeout && error.message === "Execution resource cleanup failed" && !error.stack.includes("PRIVATE_CANARY"));
         const bytes = fs.readFileSync(process.env.WEB_EXECUTION_CLEANUP_PATH, "utf8");
         assert.equal(bytes.includes("PRIVATE_CANARY"), false);
-        assert.deepEqual(JSON.parse(bytes), {status:"unknown", failures:["context-close","browser-close"], injectedFailure:false, diagnostics:[{phase:"context-close",category:"playwright-timeout"},{phase:"browser-close",category:"playwright-timeout"}]});
+        assert.deepEqual(JSON.parse(bytes), {status:"unknown", failures:["context-close","browser-close"], diagnostics:[{phase:"context-close",category:"playwright-timeout"},{phase:"browser-close",category:"playwright-timeout"}]});
         // A report write failure retains its existing precedence over cleanup failures.
         await assert.rejects(callbacks.AfterAll(), error => error.message === "Execution cleanup report could not be written");
       })().catch(() => {process.exitCode=1;});
