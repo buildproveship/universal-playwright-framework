@@ -19,6 +19,10 @@ npm install @releaseready/playwright-framework@^1.0.0
 
 It is not a generic template.
 
+This framework is browser-only. API testing (native `fetch` and k6) is owned by
+[universal-api-framework](https://github.com/releaseready/universal-api-framework); do not add an
+API client here.
+
 ## Release
 
 Bump `version` in `package.json` (semver) in a pull request and merge it, then push a
