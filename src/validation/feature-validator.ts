@@ -17,17 +17,17 @@ import { isList, untrusted } from "./untrusted";
 export const MAX_FEATURE_BYTES = 256 * 1024;
 export const DEFAULT_MAX_EXPANDED_SCENARIOS = 1_000;
 export const DEFAULT_MAX_EXPANDED_STEPS = 10_000;
-export const MAX_CONFIGURABLE_EXPANDED_SCENARIOS = 10_000;
-export const MAX_CONFIGURABLE_EXPANDED_STEPS = 100_000;
+const MAX_CONFIGURABLE_EXPANDED_SCENARIOS = 10_000;
+const MAX_CONFIGURABLE_EXPANDED_STEPS = 100_000;
 const SCENARIO_ID_TAG = "@scenario-id=";
 const STABLE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-export interface FeatureValidationLimits {
+interface FeatureValidationLimits {
   readonly maxExpandedScenarios?: number;
   readonly maxExpandedSteps?: number;
 }
 
-export interface ReviewedStep {
+interface ReviewedStep {
   readonly id: string;
   readonly expression: string;
 }
@@ -37,7 +37,7 @@ export interface ReviewedStepManifest {
   readonly steps: readonly ReviewedStep[];
 }
 
-export interface ValidatedStep {
+interface ValidatedStep {
   readonly index: number;
   readonly text: string;
   readonly type: string;
@@ -45,7 +45,7 @@ export interface ValidatedStep {
   readonly issue?: "undefined" | "ambiguous";
 }
 
-export interface ExampleRow {
+interface ExampleRow {
   readonly caseId: string | null;
   readonly values: Readonly<Record<string, string>>;
 }

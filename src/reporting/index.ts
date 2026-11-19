@@ -1,5 +1,4 @@
 import type {
-  CucumberScenarioEvidence,
   CucumberStepStatus,
   ExecutionAttemptSummary,
   ExecutionStatus,
@@ -23,7 +22,7 @@ const SCENARIO_ID_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
 const UNSAFE_REFERENCE_PATTERN =
   /(?:https?:\/\/|file:|javascript:|(?:^|[\s"'`])(?:\.\.?[\\/]|[a-z]:[\\/]|\/\S))/i;
 
-export interface ReportScenario {
+interface ReportScenario {
   readonly scenarioId?: string;
   readonly featureName?: string;
   readonly scenarioName?: string;
@@ -306,5 +305,3 @@ export function renderExecutionReport(report: ExecutionReport): string {
 export function renderExecutionReportJson(report: ExecutionReport): string {
   return `${JSON.stringify(report, null, 2)}\n`;
 }
-
-export type { CucumberScenarioEvidence };

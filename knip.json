@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/index.ts",
+    "src/adapter/{v1,v2,imported-v1}.ts",
+    "src/runtime-login/v1.ts",
+    "src/input-preparation/data-references.ts",
+    "src/execution/cli.ts",
+    "scripts/**/*.ts",
+    "features/**/*.ts",
+    "tests/**/*.ts",
+    "starter/**/*.ts"
+  ],
+  "project": ["**/*.{ts,mts}"]
+}

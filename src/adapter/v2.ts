@@ -10,11 +10,9 @@ import {
 } from "../execution/reviewed-scenarios";
 import { createExecutionReport } from "../reporting";
 import { adapterLifecycle } from "./v1";
+import { referenceSchema } from "../schema/reference";
 
-const reference = z
-  .string()
-  .max(128)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
+const reference = referenceSchema;
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 const approvalSchema = z
   .object({
