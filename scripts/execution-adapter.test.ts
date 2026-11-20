@@ -71,9 +71,7 @@ test("reviewed synthetic browser actions pass with confirmed isolated cleanup", 
       },
       cleanupStatus: "confirmed",
       cleanupFailures: [],
-      cleanupFaultInjected: false,
       workerStopped: true,
-      workerStallInjected: false,
     },
   ]);
   assert.ok(browserPid > 0);

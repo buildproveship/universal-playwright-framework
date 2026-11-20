@@ -502,9 +502,7 @@ for (const hasBusinessEvidence of [false, true]) {
             : {}),
           cleanupStatus: "unknown" as const,
           cleanupFailures: [failure],
-          cleanupFaultInjected: false,
           workerStopped: true,
-          workerStallInjected: false,
         },
       ];
       const engineFailure = mock.method(

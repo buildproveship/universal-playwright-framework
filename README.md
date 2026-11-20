@@ -54,8 +54,8 @@ a browser or a local server, including the readiness tests). ESLint, Prettier an
 the tsconfig base come from the shared `@releaseready/config` package, which
 installs from GitHub Packages: locally, `export NODE_AUTH_TOKEN=$(gh auth token)`
 (a token with `read:packages`) before `npm ci`. Pull requests run the check and
-unit tests in GitHub Actions (`pr.yml`) on the organisation's self-hosted macOS
-runner (`rr-local`); the browser suites run nightly there too (`nightly.yml`). The individual suites are listed under `scripts` in
+unit tests in GitHub Actions (`pr.yml`) on GitHub-hosted `ubuntu-24.04`
+runners; the browser suites run weekly there too (`nightly.yml`). The individual suites are listed under `scripts` in
 `package.json`.
 
 ## Guides
