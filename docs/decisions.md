@@ -2,6 +2,11 @@
 
 Owner decisions that change how this repository is built, checked or released. Newest first.
 
+## 20 November 2026: minimum Actions spend ($10/month organisation budget)
+
+- **Decided by:** the owner (no clients yet; the organisation's Actions budget is a $10/month hard stop).
+- **Scope:** `pr.yml` skips documentation-only pull requests (`**/*.md`, `docs/**`); no status check is required (branch protection is unavailable on the free plan), so skipped checks block nothing. `nightly.yml` (browser suites) runs weekly (Sunday) and on demand, and a scheduled run exits early when `main` has no new commit since the last successful run. Playwright browsers are cached by lockfile hash. Every job has `timeout-minutes`.
+
 ## 20 November 2026: CI runs on GitHub-hosted Ubuntu
 
 - **Decided by:** the owner.

@@ -4,6 +4,7 @@
 
 ### Changed
 
+- CI: documentation-only pull requests skip `pr.yml`; the browser suites run weekly instead of nightly and a scheduled run skips when `main` is unchanged since the last success; Playwright browsers are cached across runs (owner decision, 20 Nov 2026).
 - CI runs on GitHub-hosted `ubuntu-24.04` (pr, nightly, release); Playwright installs Chromium with `--with-deps`.
 - Drop the removed `cleanupFaultInjected` and `workerStallInjected` fields from the expectations in `execution-adapter.test.ts` and `owned-local-adapter.test.ts` (they were left stale by UPF-11 and failed the nightly browser suites).
 
