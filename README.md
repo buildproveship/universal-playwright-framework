@@ -36,9 +36,8 @@ is stale.
 
 ## Licence
 
-Proprietary: `"license": "UNLICENSED"`. The package is published to the private
-GitHub Packages registry for ReleaseReady only. It is not marked `private: true`,
-because `npm publish` refuses private packages.
+Apache-2.0. See [LICENSE](LICENSE). The package is published to GitHub Packages
+under the `@releaseready` scope.
 
 ## Develop
 
