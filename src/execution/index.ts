@@ -5,9 +5,9 @@ import {
 export type { CleanupDiagnostic } from "./cleanup-diagnostics";
 import { OWNED_EVIDENCE_ID, readOwnedEvidence } from "./owned-evidence";
 import { randomUUID } from "node:crypto";
-import { lstatSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
-import { createServer, type Server } from "node:http";
-import { execFile, spawn, type ChildProcess } from "node:child_process";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import type { Server } from "node:http";
+import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { chromium, type BrowserServer } from "playwright-core";
 import type { Socket } from "node:net";
@@ -20,17 +20,14 @@ import {
 import type { ExecutionTestSeam } from "./test-seam";
 import { selectApprovedScenarios } from "../validation/scenario-selector";
 import {
-  INPUT_FIXTURE_PATH,
   loadReviewedScenarios,
   REPOSITORY_ROOT,
-  REVIEWED_FEATURE_PATH,
   reviewedFixturePolicy,
   runtimePackagePath,
 } from "./reviewed-scenarios";
 
 import {
   MAX_CONCURRENT_SCENARIOS,
-  MAX_CUCUMBER_REPORT_STEPS,
   MAX_EXECUTION_RETRIES,
   MAX_EXECUTION_SCENARIOS,
   MAX_RUN_TIMEOUT_MS,
@@ -48,6 +45,29 @@ export {
   MAX_SCENARIO_TIMEOUT_MS,
   type ExecutionStatus,
 } from "./limits";
+import {
+  makeFixtureInput,
+  startFixtureServer,
+  closeServer,
+} from "./fixture-server";
+import {
+  terminateOwnedProcess,
+  waitForChildExit,
+  stopBrowserServer,
+} from "./process-control";
+import {
+  cucumberScenarioEvidence,
+  type CucumberScenarioEvidence,
+} from "./cucumber-report";
+export type {
+  CucumberScenarioEvidence,
+  CucumberStepStatus,
+} from "./cucumber-report";
+export { makeFixtureInput } from "./fixture-server";
+export {
+  resolveWindowsTaskkill,
+  terminateWindowsProcessTree,
+} from "./process-control";
 export type ResourceCleanupStatus =
   "not_required" | "confirmed" | "failed" | "unknown";
 type WorkerStopReason =
@@ -61,24 +81,6 @@ export interface ScenarioExecutionResult {
   readonly cleanupFailures: readonly string[];
   readonly cleanupDiagnostics?: readonly CleanupDiagnostic[];
   readonly workerStopped: boolean;
-}
-
-export type CucumberStepStatus =
-  | "passed"
-  | "failed"
-  | "skipped"
-  | "pending"
-  | "undefined"
-  | "ambiguous"
-  | "unknown";
-
-export interface CucumberScenarioEvidence {
-  readonly featureName: string;
-  readonly scenarioName: string;
-  readonly steps: readonly {
-    readonly name: string;
-    readonly status: CucumberStepStatus;
-  }[];
 }
 
 export interface ExecutionSummary {
@@ -128,15 +130,6 @@ interface SingleExecutionSummary {
   readonly scenarios: readonly ScenarioExecutionResult[];
 }
 
-interface FixtureDocument {
-  readonly environment: {
-    approvedOrigin: string;
-    initialTargetUrl: string;
-  };
-  accounts: { reference: string }[];
-  scenarios: { id: string; accountReference: string }[];
-}
-
 interface WorkerPayload {
   readonly scenario: {
     readonly id: string;
@@ -152,10 +145,6 @@ interface CleanupReport {
   readonly failures: readonly string[];
 }
 
-interface BrowserStopResult {
-  readonly stopped: boolean;
-}
-
 const CUCUMBER_BIN = path.join(
   path.dirname(runtimePackagePath("@cucumber/cucumber")),
   "bin/cucumber.js",
@@ -163,7 +152,6 @@ const CUCUMBER_BIN = path.join(
 const CUCUMBER_CONFIG = "cucumber-execution.json";
 const DEFAULT_RUN_TIMEOUT_MS = 90_000;
 const DEFAULT_SCENARIO_TIMEOUT_MS = 30_000;
-const MAX_CUCUMBER_REPORT_BYTES = 256_000;
 
 function validateOptions(
   options: ExecutionOptions,
@@ -228,359 +216,6 @@ function validateOptions(
   return { runTimeoutMs, scenarioTimeoutMs, concurrency, retryCount };
 }
 
-export function makeFixtureInput(
-  selectedIds: readonly string[],
-  approvedOrigin: string,
-): string {
-  const input = JSON.parse(
-    readFileSync(path.join(REPOSITORY_ROOT, INPUT_FIXTURE_PATH), "utf8"),
-  ) as FixtureDocument & Record<string, unknown>;
-  input.environment.approvedOrigin = approvedOrigin;
-  input.environment.initialTargetUrl = `${approvedOrigin}/demo`;
-  const selected = new Set(selectedIds);
-  const selectedScenarios = input.scenarios.filter((scenario) =>
-    selected.has(scenario.id),
-  );
-  const accountReferences = new Set(
-    selectedScenarios.map((scenario) => scenario.accountReference),
-  );
-  input.scenarios = selectedScenarios;
-  input.accounts = input.accounts.filter((account) =>
-    accountReferences.has(account.reference),
-  );
-  return JSON.stringify(input);
-}
-
-async function startFixtureServer(): Promise<{
-  readonly server: Server;
-  readonly sockets: Set<Socket>;
-  readonly origin: string;
-  readonly redirectServer: Server;
-  readonly redirectSockets: Set<Socket>;
-  readonly redirectTargetUrl: string;
-  readonly blockedTargetRequestCount: () => number;
-}> {
-  let blockedTargetRequestCount = 0;
-  const redirectServer = createServer((_request, response) => {
-    blockedTargetRequestCount += 1;
-    response.writeHead(200).end();
-  });
-  const redirectSockets = new Set<Socket>();
-  redirectServer.on("connection", (socket) => {
-    redirectSockets.add(socket);
-    socket.once("close", () => redirectSockets.delete(socket));
-  });
-  await new Promise<void>((resolve, reject) => {
-    redirectServer.once("error", reject);
-    redirectServer.listen(0, "127.0.0.1", resolve);
-  });
-  const redirectAddress = redirectServer.address();
-  if (!redirectAddress || typeof redirectAddress === "string") {
-    throw new Error("Owned redirect-destination server did not start");
-  }
-  const redirectTargetUrl = `http://127.0.0.1:${redirectAddress.port}/blocked`;
-  const server = createServer((request, response) => {
-    if (request.url === "/redirect") {
-      response.writeHead(302, { location: redirectTargetUrl }).end();
-      return;
-    }
-    if (request.url !== "/demo") {
-      response.writeHead(404).end();
-      return;
-    }
-    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    response.end(`<!doctype html>
-      <html lang="en">
-        <head><title>Reviewed synthetic page</title></head>
-        <body>
-          <label>Display name <input aria-label="Display name"></label>
-          <button type="button">Continue</button>
-          <p role="status">Waiting</p>
-          <script>
-            document.querySelector('button').addEventListener('click', () => {
-              const name = document.querySelector('input').value;
-              document.querySelector('[role="status"]').textContent = 'Welcome, ' + name;
-            });
-          </script>
-        </body>
-      </html>`);
-  });
-  const sockets = new Set<Socket>();
-  server.on("connection", (socket) => {
-    sockets.add(socket);
-    socket.once("close", () => sockets.delete(socket));
-  });
-  try {
-    await new Promise<void>((resolve, reject) => {
-      server.once("error", reject);
-      server.listen(0, "127.0.0.1", resolve);
-    });
-    const address = server.address();
-    if (!address || typeof address === "string") {
-      throw new Error("Owned synthetic server did not start");
-    }
-    return {
-      server,
-      sockets,
-      origin: `http://127.0.0.1:${address.port}`,
-      redirectServer,
-      redirectSockets,
-      redirectTargetUrl,
-      blockedTargetRequestCount: () => blockedTargetRequestCount,
-    };
-  } catch (error) {
-    await closeServer(redirectServer, redirectSockets);
-    throw error;
-  }
-}
-
-function closeServer(
-  server: Server | undefined,
-  sockets: ReadonlySet<Socket>,
-  ignoreCallback = false,
-): Promise<{ readonly closed: boolean }> {
-  if (!server) {
-    return Promise.resolve({ closed: true });
-  }
-  return new Promise((resolve) => {
-    let settled = false;
-    let injectedTimer: ReturnType<typeof setTimeout> | undefined;
-    const forcedClose: { timer?: ReturnType<typeof setTimeout> } = {};
-    let finalTimer: ReturnType<typeof setTimeout> | undefined;
-    const finish = (closed: boolean): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      for (const timer of [injectedTimer, forcedClose.timer, finalTimer]) {
-        if (timer) {
-          clearTimeout(timer);
-        }
-      }
-      resolve({ closed });
-    };
-    const verifyStopped = (): boolean =>
-      !server.listening && sockets.size === 0;
-    const initiateClose = (observeCallback: boolean): void => {
-      if (!server.listening) {
-        if (verifyStopped()) {
-          finish(true);
-        }
-        return;
-      }
-      server.close((error) => {
-        if (observeCallback) {
-          if (!error && verifyStopped()) {
-            finish(true);
-          }
-        }
-      });
-    };
-    if (ignoreCallback) {
-      initiateClose(false);
-      injectedTimer = setTimeout(() => {
-        if (verifyStopped()) {
-          finish(true);
-        }
-      }, 200);
-    } else {
-      initiateClose(true);
-    }
-    forcedClose.timer = setTimeout(() => {
-      for (const socket of sockets) {
-        socket.destroy();
-      }
-      if (server.listening) {
-        initiateClose(true);
-      }
-      finalTimer = setTimeout(() => {
-        finish(verifyStopped());
-      }, 500);
-    }, 1_000);
-  });
-}
-
-function groupExists(pid: number): boolean {
-  try {
-    process.kill(-pid, 0);
-    return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code !== "ESRCH";
-  }
-}
-
-async function waitForGroupExit(
-  pid: number,
-  timeoutMs: number,
-): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (!groupExists(pid)) {
-      return true;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-  return !groupExists(pid);
-}
-
-const TASKKILL_VARIABLE = "PLAYWRIGHT_FRAMEWORK_TASKKILL_EXECUTABLE";
-
-/**
- * @internal Exported for focused regression tests, not the public package API.
- * Deployment trust boundary: the operator must provide a taskkill.exe whose
- * file and parent directories are protected against untrusted modification.
- * Syntax validation does NOT validate ACLs, provenance, or reparse points.
- * Never derive this executable from PATH, SystemRoot, or the working directory.
- */
-function hasControlCharacter(value: string): boolean {
-  for (let index = 0; index < value.length; index += 1) {
-    if (value.charCodeAt(index) < 32) return true;
-  }
-  return false;
-}
-
-export function resolveWindowsTaskkill(
-  environment: NodeJS.ProcessEnv = process.env,
-): string | undefined {
-  const executable = environment[TASKKILL_VARIABLE];
-  if (
-    !executable ||
-    !/^[a-z]:\\/i.test(executable) ||
-    /["<>|?*]/.test(executable) ||
-    hasControlCharacter(executable) ||
-    executable.slice(2).includes(":") ||
-    executable.includes("/") ||
-    executable
-      .split("\\")
-      .some(
-        (segment) =>
-          !segment ||
-          segment === "." ||
-          segment === ".." ||
-          /[. ]$/.test(segment),
-      ) ||
-    path.win32.basename(executable).toLowerCase() !== "taskkill.exe"
-  ) {
-    return undefined;
-  }
-  return executable;
-}
-
-/**
- * @internal Exported for focused regression tests, not the public package API.
- * Success confirms taskkill's exit only; callers must still observe child exit.
- */
-export async function terminateWindowsProcessTree(
-  pid: number,
-): Promise<boolean> {
-  if (process.platform !== "win32") {
-    return false;
-  }
-  const executable = resolveWindowsTaskkill();
-  if (!executable) {
-    return false;
-  }
-  return new Promise<boolean>((resolve) => {
-    try {
-      execFile(
-        executable,
-        ["/PID", String(pid), "/T", "/F"],
-        { timeout: 3_000, windowsHide: true },
-        (error) => {
-          resolve(!error);
-        },
-      );
-    } catch {
-      resolve(false);
-    }
-  });
-}
-
-async function terminateOwnedProcess(child: ChildProcess): Promise<boolean> {
-  const pid = child.pid;
-  if (!pid) {
-    return true;
-  }
-  if (process.platform === "win32") {
-    const treeTerminated = await terminateWindowsProcessTree(pid);
-    if (treeTerminated) {
-      return waitForChildExit(child, 1_000);
-    }
-    child.kill("SIGTERM");
-    const exited = await waitForChildExit(child, 300);
-    if (!exited) {
-      child.kill("SIGKILL");
-      await waitForChildExit(child, 1_000);
-    }
-    return false;
-  }
-  try {
-    process.kill(-pid, "SIGTERM");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ESRCH") {
-      return waitForChildExit(child, 500);
-    }
-  }
-  if (await waitForGroupExit(pid, 300)) {
-    return waitForChildExit(child, 500);
-  }
-  try {
-    process.kill(-pid, "SIGKILL");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ESRCH") {
-      return waitForChildExit(child, 500);
-    }
-  }
-  return (
-    (await waitForGroupExit(pid, 1_000)) && (await waitForChildExit(child, 500))
-  );
-}
-
-async function waitForChildExit(
-  child: ChildProcess,
-  timeoutMs: number,
-): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  while (
-    child.exitCode === null &&
-    child.signalCode === null &&
-    Date.now() < deadline
-  ) {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-  return child.exitCode !== null || child.signalCode !== null;
-}
-
-async function stopBrowserServer(
-  browserServer: BrowserServer,
-  testPendingClose = false,
-  testUnknownState = false,
-): Promise<BrowserStopResult> {
-  const browserProcess = browserServer.process();
-  const close = testPendingClose
-    ? new Promise<void>(() => undefined)
-    : browserServer.close();
-  void close.catch(() => undefined);
-  if (await waitForChildExit(browserProcess, testPendingClose ? 200 : 1_500)) {
-    return { stopped: !testUnknownState };
-  }
-
-  const kill = browserServer.kill();
-  void kill.catch(() => undefined);
-  if (await waitForChildExit(browserProcess, 1_000)) {
-    return { stopped: !testUnknownState };
-  }
-  browserProcess.kill("SIGTERM");
-  if (await waitForChildExit(browserProcess, 500)) {
-    return { stopped: !testUnknownState };
-  }
-  browserProcess.kill("SIGKILL");
-  return {
-    stopped:
-      !testUnknownState && (await waitForChildExit(browserProcess, 1_000)),
-  };
-}
-
 function safeCleanupReport(reportPath: string): CleanupReport | undefined {
   try {
     const report = JSON.parse(
@@ -608,85 +243,6 @@ function safeCleanupReport(reportPath: string): CleanupReport | undefined {
       return { ...report, diagnostics: diagnostics.data } as CleanupReport;
     }
     return report as CleanupReport;
-  } catch {
-    return undefined;
-  }
-}
-
-function cucumberScenarioEvidence(
-  reportPath: string,
-  expectedScenarioId: string,
-): CucumberScenarioEvidence | undefined {
-  try {
-    const reportFile = lstatSync(reportPath);
-    if (
-      !reportFile.isFile() ||
-      reportFile.isSymbolicLink() ||
-      reportFile.size > MAX_CUCUMBER_REPORT_BYTES
-    ) {
-      return undefined;
-    }
-    const features = JSON.parse(readFileSync(reportPath, "utf8")) as {
-      name?: string;
-      uri?: string;
-      elements?: {
-        type?: string;
-        name?: string;
-        tags?: { name?: string }[];
-        steps?: { name?: string; result?: { status?: string } }[];
-      }[];
-    }[];
-    const scenarios = features.flatMap((feature) =>
-      (feature.elements ?? [])
-        .filter((element) => element.type === "scenario")
-        .map((scenario) => ({ feature, scenario })),
-    );
-    if (scenarios.length !== 1) {
-      return undefined;
-    }
-    const { feature, scenario } = scenarios[0];
-    if (
-      feature.uri !== REVIEWED_FEATURE_PATH ||
-      !scenario.tags?.some(
-        (tag) => tag.name === `@scenario-id=${expectedScenarioId}`,
-      )
-    ) {
-      return undefined;
-    }
-    const businessSteps =
-      scenario.steps?.filter(
-        (step): step is typeof step & { name: string } =>
-          typeof step.name === "string",
-      ) ?? [];
-    if (
-      typeof feature.name !== "string" ||
-      feature.name.length > 300 ||
-      typeof scenario.name !== "string" ||
-      scenario.name.length > 300 ||
-      businessSteps.length === 0 ||
-      businessSteps.length > MAX_CUCUMBER_REPORT_STEPS ||
-      businessSteps.some((step) => step.name.length > 300)
-    ) {
-      return undefined;
-    }
-    const statuses: readonly CucumberStepStatus[] = [
-      "passed",
-      "failed",
-      "skipped",
-      "pending",
-      "undefined",
-      "ambiguous",
-    ];
-    return {
-      featureName: feature.name,
-      scenarioName: scenario.name,
-      steps: businessSteps.map((step) => ({
-        name: step.name,
-        status: statuses.includes(step.result?.status as CucumberStepStatus)
-          ? (step.result?.status as CucumberStepStatus)
-          : "unknown",
-      })),
-    };
   } catch {
     return undefined;
   }

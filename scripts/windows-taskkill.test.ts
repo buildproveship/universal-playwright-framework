@@ -133,7 +133,7 @@ describe("Windows taskkill deployment trust boundary", () => {
 
   it("guards the existing child-exit check and conservative fallback against recurrence", () => {
     const source = readFileSync(
-      path.join(process.cwd(), "src/execution/index.ts"),
+      path.join(process.cwd(), "src/execution/process-control.ts"),
       "utf8",
     ).replace(/\r\n/g, "\n");
     const branch = source.slice(
