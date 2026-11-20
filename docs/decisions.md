@@ -2,7 +2,13 @@
 
 Owner decisions that change how this repository is built, checked or released. Newest first.
 
-## 19 November 2026: CI runs on the self-hosted runner
+## 20 November 2026: CI runs on GitHub-hosted Ubuntu
+
+- **Decided by:** the owner.
+- **Scope:** every workflow (`pr.yml`, `nightly.yml`, `release.yml`) runs on GitHub-hosted `ubuntu-24.04`. The macOS arm64 runner (`rr-local`) is reserved for tests that need macOS; no job here does. Pull request jobs skip drafts, and `concurrency` cancels superseded runs (release does not cancel).
+- **Replaces:** the 19 November 2026 decision below.
+
+## 19 November 2026: CI runs on the self-hosted runner (superseded)
 
 - **Scope:** private-repo Actions minutes are unavailable, so `pr.yml`, `nightly.yml` and `release.yml` run on the organisation's self-hosted macOS arm64 runner (`runs-on: [self-hosted, rr-local]`). Pull request jobs skip drafts. No job needs Linux.
 

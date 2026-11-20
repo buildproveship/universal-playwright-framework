@@ -1,4 +1,4 @@
-# Runs on the org's self-hosted macOS arm64 runner (rr-local); hosted minutes are not used.
+# Runs on GitHub-hosted ubuntu-24.04 (owner decision, 20 Nov 2026; docs/decisions.md).
 # Light pull request checks. Owner decision of 18 Nov 2026 (docs/decisions.md): build, lint, typecheck and unit tests run on
 # every pull request. Suites that launch a browser or a local server run on demand and nightly (nightly.yml). This replaces the
 # 12 Nov 2026 manual-only Actions decision (RRDPLAT-44) for this light set only.
@@ -16,7 +16,7 @@ concurrency:
 jobs:
   checks:
     if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, rr-local]
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,7 +46,7 @@ jobs:
         run: npm run test:unit
   security:
     if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, rr-local]
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

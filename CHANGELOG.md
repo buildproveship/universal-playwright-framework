@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-20
+
+### Changed
+
+- CI runs on GitHub-hosted `ubuntu-24.04` (pr, nightly, release); Playwright installs Chromium with `--with-deps`.
+- Drop the removed `cleanupFaultInjected` and `workerStallInjected` fields from the expectations in `execution-adapter.test.ts` and `owned-local-adapter.test.ts` (they were left stale by UPF-11 and failed the nightly browser suites).
+
 ## 2026-11-14
 
 ### Changed
