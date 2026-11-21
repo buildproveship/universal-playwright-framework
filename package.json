@@ -86,7 +86,7 @@
     "url": "git+https://github.com/releaseready/universal-playwright-framework.git"
   },
   "devDependencies": {
-    "@releaseready/config": "^2.0.0",
+    "@releaseready/config": "^3.0.0",
     "@types/node": "^22.20.5",
     "eslint": "10.13.0",
     "eslint-plugin-playwright": "^2.12.2",
