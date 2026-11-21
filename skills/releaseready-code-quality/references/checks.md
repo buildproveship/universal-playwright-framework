@@ -1,7 +1,10 @@
 # What CI checks, and how to adopt it
 
 `releaseready-guardrails` and the shared ESLint config ship in `@releaseready/config` (one source for every repo).
-Every repo runs them in `pr.yml`, which is a required status check on the default branch.
+Every repo runs them in `pr.yml`. Merge only when `pr.yml` is green. config and universal-appium-framework enforce
+this with GitHub branch protection (required check `checks`, up to date with `main`, no force pushes, admins
+included). The other eight repos are private on GitHub's free plan, which has no branch protection, so there a local
+Claude Code hook on the owner's machine blocks `gh pr merge` until every check on the PR is green.
 
 ## Commands
 
@@ -18,24 +21,31 @@ vulture and pip-audit.
 
 ## Rules
 
-| Rule                             | Fails on                                                                                                         | Findings                      |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `dependency-source`              | git/GitHub/SHA/tarball/URL/`file:`/`link:` specs in any package.json or lockfile; `@releaseready/*` not `^x.y.z` | RR-15, TDM-12, UPF-16, FUI-04 |
-| `tsconfig-private-path`          | tsconfig/jsconfig `paths` targets in `dist/` or `node_modules`                                                   | RR-14, RPT-08, UPF-14         |
-| `tsconfig-not-strict`            | `strict`, `noImplicitAny`, `strictNullChecks` … set to `false`                                                   | standard 2                    |
-| `build-in-node-modules`          | scripts with `--prefix node_modules/…`, `cd node_modules`, `tsc -p node_modules/…`                               | TDM-11, RPT-15                |
-| `copied-schema-primitive`        | the reference regex anywhere; UUID and 64-hex digest regexes in repos that depend on test-management             | TM-07, TM-16, TDM-07          |
-| `copied-canonical-digest`        | a local `canonical()`, `canonicalJson`, `stableStringify` …                                                      | TM-06, TDM-21                 |
-| `copied-jwt-verifier`            | `jwtVerify`, `createRemoteJWKSet`, `jsonwebtoken`, `jwks-rsa`, PyJWT                                             | TM-18, TDM-06                 |
-| `copied-wcag-contrast`           | the sRGB luminance coefficients or linearisation constants                                                       | RPT-11                        |
-| `legacy-marker`                  | `@deprecated`, `legacy`, backwards-compat, compat layer/shim/alias, `shim`, `TODO remove`                        | RR-03, RR-04, TM-11, UPF-01   |
-| `skipped-test`                   | `.skip(`, `.todo(`, `xit(`, `{ skip: true }` in test files                                                       | standard 2                    |
-| `eslint-rule-off-without-reason` | a rule set to `off`/`warn`/`0` in eslint.config without a comment on it or above its group                       | UPF-03, UA2-06                |
-| `readme-dated-history`           | README headings with a date or a ticket key; "Status as of <date>" lines                                         | TDM-20, RPT-17, OBS-17        |
-| `skill-drift`                    | this skill differs from the published copy; AGENTS.md/CLAUDE.md missing or not pointing here                     | UA2-21                        |
-| `unused-allow`                   | an allowlist entry that matches nothing, or whose `max` is higher than today's count                             | —                             |
-| knip                             | unused files, exports, dependencies; unlisted dependencies and binaries                                          | TDM-17, RPT-19, UA2-04/05     |
-| jscpd                            | duplicated JS/TS/Python above the repo's threshold (default 3%)                                                  | RR-17, TM-23, UPF-15          |
+| Rule                              | Fails on                                                                                                                                                                                                                 | Findings                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `dependency-source`               | git/GitHub/SHA/tarball/URL/`file:`/`link:` specs in any package.json or lockfile; `@releaseready/*` not `^x.y.z`                                                                                                         | RR-15, TDM-12, UPF-16, FUI-04 |
+| `unpublished-internal-dependency` | `@releaseready/*` from git, a tarball, or a local or `dist/` folder through an `npm:` alias or `overrides`; a lockfile link outside the repo or a release-tarball `resolved`                                             | Nov 2026 review               |
+| `tsconfig-private-path`           | tsconfig/jsconfig `paths` targets in `dist/` or `node_modules`                                                                                                                                                           | RR-14, RPT-08, UPF-14         |
+| `tsconfig-not-strict`             | `strict`, `noImplicitAny`, `strictNullChecks` … set to `false`                                                                                                                                                           | standard 2                    |
+| `build-in-node-modules`           | scripts with `--prefix node_modules/…`, `cd node_modules`, `tsc -p node_modules/…`                                                                                                                                       | TDM-11, RPT-15                |
+| `copied-schema-primitive`         | the reference regex anywhere; UUID and 64-hex digest regexes in repos that depend on test-management                                                                                                                     | TM-07, TM-16, TDM-07          |
+| `copied-canonical-digest`         | a local `canonical()`, `canonicalJson`, `stableStringify` …                                                                                                                                                              | TM-06, TDM-21                 |
+| `copied-jwt-verifier`             | `jwtVerify`, `createRemoteJWKSet`, `jsonwebtoken`, `jwks-rsa`, PyJWT                                                                                                                                                     | TM-18, TDM-06                 |
+| `hand-written-archive-parser`     | `inflateRaw`/`inflateRawSync` or a ZIP local-file-header signature in source (use `fflate` or `yauzl`)                                                                                                                   | RR-08                         |
+| `copied-wcag-contrast`            | the sRGB luminance coefficients or linearisation constants                                                                                                                                                               | RPT-11                        |
+| `runtime-assert`                  | a Python `assert` statement outside test files (removed by `python -O`; use `if not …: raise`)                                                                                                                           | SonarCloud, 20 Nov 2026       |
+| `hardcoded-tmp`                   | a literal `"/tmp"` string in non-test source (publicly writable; use `mkdtemp`); allowlistable with a reason, e.g. a path inside a container                                                                             | SonarCloud, 20 Nov 2026       |
+| `legacy-marker`                   | `@deprecated`, `legacy`, backwards-compat, compat layer/shim/alias, `shim`, `TODO remove`                                                                                                                                | RR-03, RR-04, TM-11, UPF-01   |
+| `skipped-test`                    | `.skip(`, `.todo(`, `xit(`, `{ skip: true }` in test files                                                                                                                                                               | standard 2                    |
+| `eslint-rule-off-without-reason`  | a rule set to `off`/`warn`/`0` in eslint.config without a comment on it or above its group                                                                                                                               | UPF-03, UA2-06                |
+| `tracked-ds-store`                | a `.DS_Store` in the git index (`git ls-files`), at any depth; untracked or ignored ones pass                                                                                                                            | standard 7                    |
+| `tracked-build-output`            | a tracked `dist/` or `build/` folder at any depth (one finding per folder, from `git ls-files`)                                                                                                                          | Nov 2026 review               |
+| `oversized-source-file`           | a non-generated source file (JS/TS/Python) over the line limit (default 1,000; `fileLength.maxLines`); `generated/`, `generated.*`, `*.generated.*`, `*.gen.*`, `*.min.js` and `fileLength.generated` globs do not count | Nov 2026 review               |
+| `readme-dated-history`            | README headings with a date or a ticket key; "Status as of <date>" lines                                                                                                                                                 | TDM-20, RPT-17, OBS-17        |
+| `skill-drift`                     | this skill differs from the published copy; AGENTS.md/CLAUDE.md missing or not pointing here                                                                                                                             | UA2-21                        |
+| `unused-allow`                    | an allowlist entry that matches nothing, or whose `max` is higher than today's count                                                                                                                                     | —                             |
+| knip                              | unused files, exports, dependencies; unlisted dependencies and binaries                                                                                                                                                  | TDM-17, RPT-19, UA2-04/05     |
+| jscpd                             | duplicated JS/TS/Python above the repo's threshold (default 3%)                                                                                                                                                          | RR-17, TM-23, UPF-15          |
 
 Shared ESLint (`@releaseready/config/eslint`), on every JS and TS file:
 
@@ -76,6 +86,8 @@ goes in the repo's `releaseready-guardrails.json`, never in an inline comment:
 - `match` narrows an entry to lines containing that text.
 - An entry that matches nothing fails (`unused-allow`), so the list only shrinks.
 - A jscpd threshold above 3% or `knip.enabled: false` needs a `reason`.
+- `fileLength.maxLines` above 1000 needs a `reason`; each `fileLength.generated` entry is `{ "path": "<glob>", "reason": "<what writes the file>" }`.
+  A lower limit needs no reason.
 
 Adding an allowlist entry, raising `max` or a threshold, or turning a rule off is weakening a guard: do it only with
 the owner's agreement, and say so in the PR.
