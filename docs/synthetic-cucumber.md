@@ -4,7 +4,7 @@ This maintained Cucumber/Gherkin path runs an assertion-backed browser scenario 
 
 ## Setup and run
 
-Requirements: Node.js `^22.12.0` or `>=24.0.0` and npm, matching the version declared in `package.json`.
+Requirements: Node.js `^22.13.0` or `>=24.0.0` and npm, matching the version declared in `package.json`.
 
 ```bash
 npm ci
