@@ -10,6 +10,7 @@ import {
 } from "./fixtures/loopback-server";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { parseArgs } from "node:util";
 import { createServer } from "node:http";
 import fs from "node:fs";
 import { chromium } from "@playwright/test";
@@ -26,7 +27,7 @@ import {
 const portOf = (url: string) => Number(new URL(url).port);
 
 async function main() {
-  const scenario = process.argv[2];
+  const [scenario] = parseArgs({ allowPositionals: true }).positionals;
   const allowed = [
     "pass",
     "fail",

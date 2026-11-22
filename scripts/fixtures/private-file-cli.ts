@@ -8,10 +8,11 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { mock } from "node:test";
+import { parseArgs } from "node:util";
 // A compiled ES module namespace is the live exports object, so mocks apply.
 import * as partay from "../../src/customer-login/partay";
 
-const file = process.argv[2];
+const [file] = parseArgs({ allowPositionals: true }).positionals;
 if (!file) throw new Error("Expected an owned synthetic fixture path");
 
 const protectedPaths = new Set(["descriptor", "request", file]);
