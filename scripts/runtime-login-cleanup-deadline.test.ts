@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: unit
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -43,7 +44,7 @@ for (const scenario of [
     let now = 100_000;
     context.mock.method(Date, "now", () => now);
     const events: string[] = [];
-    const browser = {
+    const browser = fake<Browser>({
       newContext: () =>
         Promise.resolve({
           setOffline: (offline: boolean) =>
@@ -69,7 +70,7 @@ for (const scenario of [
           if (scenario.rejects) throw new Error("owned close failure");
           events.push("browser-closed");
         }),
-    } as unknown as Browser;
+    });
     const operation = withFreshLoginPage(() => Promise.resolve(), {
       launchBrowser: () => Promise.resolve(browser),
     });

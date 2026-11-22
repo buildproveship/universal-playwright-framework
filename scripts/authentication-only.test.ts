@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -523,7 +524,7 @@ for (const variant of [
           if (variant !== "before-document") await page.goto(url);
           assert.ok(handle);
           const resource = DECLARED_BLOCKED_RESOURCES[0];
-          const request = {
+          const request = fake<import("@playwright/test").Request>({
             url: () =>
               resource.url +
               (variant === "query-variant" ? "?unexpected=1" : ""),
@@ -531,8 +532,8 @@ for (const variant of [
             resourceType: () =>
               variant === "wrong-type" ? "fetch" : resource.resourceType,
             isNavigationRequest: () => variant === "navigation",
-          } as unknown as import("@playwright/test").Request;
-          const route = {
+          });
+          const route = fake<import("@playwright/test").Route>({
             request: () => request,
             abort: () => {
               denials++;
@@ -544,7 +545,7 @@ for (const variant of [
               externalTransports++;
               return Promise.reject(new Error("Unexpected external transport"));
             },
-          } as unknown as import("@playwright/test").Route;
+          });
           await handle(route, request);
           if (variant === "excess") await handle(route, request);
           assert.equal(
@@ -601,20 +602,20 @@ test("Given a known denial starts after asynchronous admission, do not dispatch 
           if (request.method() === "POST") {
             assert.ok(handle);
             const resource = DECLARED_BLOCKED_RESOURCES[0];
-            const deniedRequest = {
+            const deniedRequest = fake<import("@playwright/test").Request>({
               url: () => resource.url,
               method: () => "GET",
               resourceType: () => resource.resourceType,
               isNavigationRequest: () => false,
-            } as unknown as import("@playwright/test").Request;
-            const deniedRoute = {
+            });
+            const deniedRoute = fake<import("@playwright/test").Route>({
               request: () => deniedRequest,
               abort: async () => {
                 entered();
                 await blocked;
               },
               fetch: () => Promise.reject(new Error("Forbidden transport")),
-            } as unknown as import("@playwright/test").Route;
+            });
             denial = Promise.resolve(handle(deniedRoute, deniedRequest));
             await denialEntered;
           }

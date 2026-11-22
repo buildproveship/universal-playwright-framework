@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -230,14 +231,14 @@ test("both cleanup failures are attempted and preserved", async () => {
   const browser = {
     close: () => Promise.reject(browserError),
   } as Pick<Browser, "close">;
-  const server = {
+  const server = fake<Pick<Server, "listening" | "close">>({
     listening: true,
     close: (callback?: (error?: Error) => void) => {
       serverCloseAttempted = true;
       callback?.(serverError);
       return server;
     },
-  } as unknown as Pick<Server, "listening" | "close">;
+  });
 
   await assert.rejects(closeRuntime(browser, server), (error) => {
     assert.ok(error instanceof AggregateError);

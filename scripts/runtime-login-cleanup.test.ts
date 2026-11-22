@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -31,7 +32,7 @@ function fixture(
   contextClose = resolved,
 ) {
   const events: string[] = [];
-  const browser = {
+  const browser = fake<Browser>({
     newContext: () =>
       Promise.resolve({
         setOffline: async (value: boolean) => {
@@ -55,7 +56,7 @@ function fixture(
       await browserClose();
       events.push("browser-closed");
     },
-  } as unknown as Browser;
+  });
   return { events, launchBrowser: () => Promise.resolve(browser) };
 }
 

@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: unit
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -100,14 +101,14 @@ test("early context failure cannot leave the cleanup deadline paused", async (t)
   });
   let entered = false;
   let settled = false;
-  const browser = {
+  const browser = fake<Browser>({
     newContext: () => Promise.reject(new Error("owned context failure")),
     close: async () => {
       closeStarted();
       // Never settles: models a browser close that hangs.
       await new Promise<void>(noop);
     },
-  } as unknown as Browser;
+  });
   const operation = withFreshLoginPage(
     () => {
       entered = true;

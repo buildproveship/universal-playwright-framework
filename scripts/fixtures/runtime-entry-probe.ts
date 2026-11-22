@@ -14,7 +14,7 @@ const mode = process.argv[2];
 let delayed = false;
 
 // Each probe starts a cold Node process. No browser modules are preloaded by tests.
-const loader = Module as unknown as {
+const loader = Module as typeof Module & {
   _load: (
     this: unknown,
     request: string,

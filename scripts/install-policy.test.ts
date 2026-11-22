@@ -67,6 +67,7 @@ for (const passed of [true, false]) {
       "scripts/cucumber-timeouts.test.js",
       "scripts/install-policy.test.js",
       "scripts/fixtures/loopback-server.js",
+      "scripts/fixtures/fake-playwright.js",
       "features/support/step-timeout.js",
       "features/support/cleanup-runtime.js",
     ];
