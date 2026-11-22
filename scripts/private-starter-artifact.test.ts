@@ -1,8 +1,8 @@
-import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Opt-in private artifact build/install/owned-demo packaging acceptance; no customer journey, canonical registration or portal acceptance.
+import { fake } from "./fixtures/fake-playwright";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {

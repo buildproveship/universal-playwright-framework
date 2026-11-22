@@ -1,8 +1,8 @@
-import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Tests authentication transport and cleanup guards against isolated synthetic fixtures; no real customer authentication or external requests are authorized.
+import { fake } from "./fixtures/fake-playwright";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {

@@ -1,3 +1,7 @@
+// Test classification: integration
+// Review status: Not Reviewed
+// Evidence: synthetic
+// Scope: Runs the TypeScript source-policy check against synthetic temporary source trees and git state; it does not check the real repository tree.
 import ts from "typescript";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
