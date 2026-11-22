@@ -5,6 +5,12 @@ from the package root or any `exports` subpath. It produces deterministic,
 reference-only metadata. It does **not** execute tests, generate code, call an AI
 provider, contact a target, or grant run permission.
 
+The module is split by responsibility: `reuse-readiness.ts` (the entry point and reuse decisions),
+`reuse-readiness-candidate.ts` (candidate review readiness), `reuse-readiness-shared.ts` (snapshot
+projection, limits and digests) and `reuse-readiness-types.ts` (types only). The files may import only
+`node:crypto`, `scenario-selector` and each other; `scripts/reuse-readiness.test.ts` checks each file's
+exact imports.
+
 ## What it does
 
 `assessReuseReadiness(input)` takes immutable snapshots of:
