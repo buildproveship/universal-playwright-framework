@@ -4,13 +4,14 @@
 // Scope: Cold-process probe for the public runtime-login entry: lazy browser loading, guards, load timeout and root identity; it does not sign in to a customer site.
 import { closeLoopbackServer, listenOnLoopback } from "./loopback-server";
 import assert from "node:assert/strict";
+import { parseArgs } from "node:util";
 import Module, { createRequire } from "node:module";
 import { createServer } from "node:http";
 import type { Browser } from "@playwright/test";
 import type * as RuntimeEntry from "../../src/runtime-login/v1";
 
 const publicRequire = createRequire(__filename);
-const mode = process.argv[2];
+const [mode] = parseArgs({ allowPositionals: true }).positionals;
 let delayed = false;
 
 // Each probe starts a cold Node process. No browser modules are preloaded by tests.
