@@ -3,6 +3,8 @@
 // Evidence: synthetic
 // Scope: Shared login-command, loopback-server and reviewed-fixture helpers with synthetic inputs; it does not run a browser or customer journey.
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 import {
   createOutlineFixtureFields,
@@ -104,6 +106,25 @@ test("owned loopback fixtures close on both successful and failing consumers", a
     else await run;
     await assert.rejects(fetch(url));
   }
+});
+
+test("test servers start and stop only through the shared loopback helpers", () => {
+  // Guard for RRDSCRUM-353: hand-written listen/close sequences leak sockets
+  // because they skip server.closeAllConnections().
+  const scriptsDir = join(__dirname, "..", "..", "..", "scripts");
+  const files = [
+    ...readdirSync(scriptsDir).map((name) => join(scriptsDir, name)),
+    ...readdirSync(join(scriptsDir, "fixtures")).map((name) =>
+      join(scriptsDir, "fixtures", name),
+    ),
+  ].filter(
+    (file) => file.endsWith(".ts") && !file.endsWith("loopback-server.ts"),
+  );
+  assert.ok(files.length > 10);
+  const offenders = files.filter((file) =>
+    /\.listen\(\s*0\b/.test(readFileSync(file, "utf8")),
+  );
+  assert.deepEqual(offenders, []);
 });
 
 test("reviewed test fixture factories return independent copies without broadening approval", () => {

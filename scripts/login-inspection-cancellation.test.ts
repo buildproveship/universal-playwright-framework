@@ -2,6 +2,10 @@
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Cancels a login inspection while a real local Chromium holds a transport drain on an owned loopback server, checking interruption and native cleanup; no customer site or credentials are used.
+import {
+  closeLoopbackServer,
+  listenOnLoopback,
+} from "./fixtures/loopback-server";
 import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
@@ -35,12 +39,7 @@ test(
       }
       response.end("<html><body>Owned drain fixture</body></html>");
     });
-    await new Promise<void>((resolve) =>
-      server.listen(0, "127.0.0.1", resolve),
-    );
-    const address = server.address();
-    assert.ok(address && typeof address === "object");
-    const url = `http://127.0.0.1:${address.port}/`;
+    const url = await listenOnLoopback(server);
     const controller = new AbortController();
     let browser: Browser | undefined;
     let watchdogFired = false;
@@ -120,12 +119,7 @@ test(
       controller.abort();
       if (operation) await operation.catch(() => undefined);
       nativeClearTimeout(watchdog);
-      server.closeAllConnections();
-      await new Promise<void>((resolve) =>
-        server.close(() => {
-          resolve();
-        }),
-      );
+      await closeLoopbackServer(server);
       clock.finish();
     }
   },
