@@ -189,7 +189,7 @@ resolving maintained glob/minimatch dependencies through the current root overri
 The installed consumer checks the root adapter export. Validation and execution resolve the same step
 matcher; both the source and independently installed consumer assert this.
 
-The package requires Node 22.12 or later in the Node 22 line, or Node 24 or later;
+The package requires Node 22.13 or later in the Node 22 line, or Node 24 or later;
 RRDSCRUM-207 compatibility validation uses Node 24. The framework-root production-only audit is clean with its root overrides;
 a freshly installed consumer requires its own override policy and audit (see
 the RRDSCRUM-207 upgrade evidence above). Development tooling findings remain outside this runtime repair;
