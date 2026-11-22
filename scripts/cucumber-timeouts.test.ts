@@ -2,6 +2,10 @@
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Cucumber step-timeout defaults, long-step regression, readable assertion failures and the real E2E report assertion against an owned local server; it does not run customer journeys.
+import {
+  closeLoopbackServer,
+  listenOnLoopback,
+} from "./fixtures/loopback-server";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createServer } from "node:http";
@@ -166,10 +170,7 @@ Feature: invalid timeout setting
 test("server closes when browser close rejects and the browser error is preserved", async () => {
   const browserError = new Error("browser close failed");
   const server = createServer();
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
-  });
+  await listenOnLoopback(server);
   const browser = {
     close: () => Promise.reject(browserError),
   } as Pick<Browser, "close">;
@@ -185,24 +186,14 @@ test("server closes when browser close rejects and the browser error is preserve
       "HTTP listener must close despite browser error",
     );
   } finally {
-    if (server.listening) {
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => {
-          if (error) reject(error);
-          else resolve();
-        });
-      });
-    }
+    if (server.listening) await closeLoopbackServer(server);
   }
 });
 
 test("server closes within a bound when browser close never settles", async () => {
   const browserCloseTimeoutMs = 100;
   const server = createServer();
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
-  });
+  await listenOnLoopback(server);
   const browser = {
     close: () =>
       new Promise<void>(() => {
@@ -228,14 +219,7 @@ test("server closes within a bound when browser close never settles", async () =
       "cleanup should finish shortly after the bounded browser-close timeout",
     );
   } finally {
-    if (server.listening) {
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => {
-          if (error) reject(error);
-          else resolve();
-        });
-      });
-    }
+    if (server.listening) await closeLoopbackServer(server);
   }
 });
 

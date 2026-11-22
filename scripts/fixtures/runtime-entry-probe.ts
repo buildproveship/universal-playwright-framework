@@ -2,6 +2,7 @@
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Cold-process probe for the public runtime-login entry: lazy browser loading, guards, load timeout and root identity; it does not sign in to a customer site.
+import { closeLoopbackServer, listenOnLoopback } from "./loopback-server";
 import assert from "node:assert/strict";
 import Module, { createRequire } from "node:module";
 import { createServer } from "node:http";
@@ -213,12 +214,7 @@ async function main(): Promise<void> {
         '<div id="brandLogo">Partay</div><div id="overlay"><input id="username"><input id="password" type="password"><button id="authGo">Sign in</button></div><script>document.querySelector("button").onclick=()=>{document.querySelector("#overlay").style.display="none";}</script>',
       );
     });
-    await new Promise<void>((resolve) =>
-      server.listen(0, "127.0.0.1", resolve),
-    );
-    const address = server.address();
-    assert.ok(address && typeof address !== "string");
-    const fixtureUrl = `http://127.0.0.1:${address.port}/`;
+    const fixtureUrl = await listenOnLoopback(server);
     let browser: Browser | undefined;
     let contextClosed = false;
     let requests = 0;
@@ -263,13 +259,7 @@ async function main(): Promise<void> {
       assert.equal(browser?.isConnected(), false);
     } finally {
       await browser?.close();
-      server.closeAllConnections();
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => {
-          if (error) reject(error);
-          else resolve();
-        }),
-      );
+      await closeLoopbackServer(server);
     }
   } else {
     throw new Error("Unknown probe mode");

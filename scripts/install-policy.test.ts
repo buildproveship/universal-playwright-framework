@@ -66,6 +66,7 @@ for (const passed of [true, false]) {
     const files = [
       "scripts/cucumber-timeouts.test.js",
       "scripts/install-policy.test.js",
+      "scripts/fixtures/loopback-server.js",
       "features/support/step-timeout.js",
       "features/support/cleanup-runtime.js",
     ];

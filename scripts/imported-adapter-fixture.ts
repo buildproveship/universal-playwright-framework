@@ -4,6 +4,10 @@
  * Evidence: synthetic
  * Scope: Fixed local test authority and local HTTP targets exercise the imported adapter; no TCM receipt, founder approval or customer run is created.
  */
+import {
+  closeLoopbackServer,
+  listenOnLoopback,
+} from "./fixtures/loopback-server";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
@@ -18,6 +22,8 @@ import {
   type RegisteredImportedArtifact,
   type TrustedImportedContext,
 } from "../src/adapter/imported-v1";
+
+const portOf = (url: string) => Number(new URL(url).port);
 
 async function main() {
   const scenario = process.argv[2];
@@ -57,14 +63,8 @@ async function main() {
     foreignRequests++;
     res.end("Foreign synthetic target");
   });
-  const listen = (server: ReturnType<typeof createServer>) =>
-    new Promise<number>((resolve) =>
-      server.listen(0, "127.0.0.1", () => {
-        resolve((server.address() as { port: number }).port);
-      }),
-    );
-  const port = await listen(own),
-    other = await listen(foreign);
+  const port = portOf(await listenOnLoopback(own)),
+    other = portOf(await listenOnLoopback(foreign));
   const digest = "a".repeat(64);
   const request: ImportedExecutionRequest = {
     version: "first-party-imported/v1",
@@ -294,17 +294,7 @@ async function main() {
     );
   } finally {
     fs.readFileSync = original;
-    await Promise.all(
-      [own, foreign].map(
-        (server) =>
-          new Promise<void>((resolve, reject) =>
-            server.close((error) => {
-              if (error) reject(error);
-              else resolve();
-            }),
-          ),
-      ),
-    );
+    await Promise.all([own, foreign].map(closeLoopbackServer));
   }
 }
 void main().catch(() => {

@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { createServer, type RequestListener } from "node:http";
+import { createServer, type RequestListener, type Server } from "node:http";
 
-export async function withLoopbackServer(
-  handler: RequestListener,
-  run: (url: string) => Promise<void>,
-): Promise<void> {
-  const server = createServer(handler);
+// Platform only: node:http already provides listen and closeAllConnections.
+// These two helpers are the one place tests start and stop a loopback server.
+export async function listenOnLoopback(server: Server): Promise<string> {
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => {
@@ -13,17 +11,30 @@ export async function withLoopbackServer(
       resolve();
     });
   });
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  return `http://127.0.0.1:${address.port}/`;
+}
+
+export async function closeLoopbackServer(server: Server): Promise<void> {
+  server.closeAllConnections();
+  await new Promise<void>((resolve, reject) =>
+    server.close((error) => {
+      if (error) reject(error);
+      else resolve();
+    }),
+  );
+}
+
+export async function withLoopbackServer(
+  handler: RequestListener,
+  run: (url: string) => Promise<void>,
+): Promise<void> {
+  const server = createServer(handler);
+  const url = await listenOnLoopback(server);
   try {
-    const address = server.address();
-    assert.ok(address && typeof address !== "string");
-    await run(`http://127.0.0.1:${address.port}/`);
+    await run(url);
   } finally {
-    server.closeAllConnections();
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => {
-        if (error) reject(error);
-        else resolve();
-      }),
-    );
+    await closeLoopbackServer(server);
   }
 }

@@ -2,6 +2,10 @@
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Exercises the login contract against owned local transport fixtures with synthetic credentials; no real customer login or external traffic is performed.
+import {
+  closeLoopbackServer,
+  listenOnLoopback,
+} from "./fixtures/loopback-server";
 import { launchAuthenticationFixtureBrowser } from "./fixtures/authentication-fixture-launcher";
 import assert from "node:assert/strict";
 import { inspect } from "node:util";
@@ -286,15 +290,9 @@ function ownedBrowser(mode: Mode, afterSubmit?: () => void) {
                 };
               </script>`);
         });
-        await new Promise<void>((resolve) =>
-          server.listen(0, "127.0.0.1", resolve),
-        );
-        const address = server.address();
-        assert.ok(address && typeof address !== "string");
-        const fixtureUrl = `http://127.0.0.1:${address.port}/`;
+        const fixtureUrl = await listenOnLoopback(server);
         browser.on("disconnected", () => {
-          server.closeAllConnections();
-          server.close();
+          void closeLoopbackServer(server).catch(() => undefined);
         });
         const registerRoute = context.route.bind(context);
         context.route = async (url, handler, options) => {
@@ -1069,31 +1067,11 @@ async function localTransport(
       response.end();
     }
   });
-  const listen = async (
-    server: ReturnType<typeof createServer>,
-  ): Promise<string> => {
-    await new Promise<void>((resolve) =>
-      server.listen(0, "127.0.0.1", resolve),
-    );
-    const address = server.address();
-    assert.ok(address && typeof address !== "string");
-    return `http://127.0.0.1:${address.port}/`;
-  };
   try {
-    destinationUrl = await listen(destination);
-    await run(await listen(source), destinationUrl, counts);
+    destinationUrl = await listenOnLoopback(destination);
+    await run(await listenOnLoopback(source), destinationUrl, counts);
   } finally {
-    await Promise.all(
-      [source, destination].map(async (server) => {
-        server.closeAllConnections();
-        await new Promise<void>((resolve, reject) =>
-          server.close((error) => {
-            if (error) reject(error);
-            else resolve();
-          }),
-        );
-      }),
-    );
+    await Promise.all([source, destination].map(closeLoopbackServer));
   }
 }
 
@@ -1693,11 +1671,8 @@ for (const state of [
         res.end('{"token":"OWNED_RESPONSE_CANARY"}');
       }
     });
-    await new Promise<void>((resolve) =>
-      server.listen(0, "127.0.0.1", resolve),
-    );
-    const address = server.address();
-    assert.ok(address && typeof address !== "string");
+    const serverUrl = await listenOnLoopback(server);
+    const serverOrigin = serverUrl.replace(/\/$/, "");
     try {
       const operation = verifyPartayLogin(descriptor, request, provider, {
         authenticationOnlyPolicy: PARTAY_AUTHENTICATION_ONLY_POLICY,
@@ -1725,10 +1700,10 @@ for (const state of [
                   assert.equal(opts.maxRetries, 0);
                   const path = new URL(req.url()).pathname;
                   // Deliberately do not forward or inspect input values/headers.
-                  return context.request.fetch(
-                    `http://127.0.0.1:${address.port}${path}`,
-                    { method: req.method(), maxRedirects: 0 },
-                  );
+                  return context.request.fetch(`${serverOrigin}${path}`, {
+                    method: req.method(),
+                    maxRedirects: 0,
+                  });
                 };
                 await handler(route, req);
               });
@@ -1813,12 +1788,7 @@ for (const state of [
       assert.equal(browserClosed, true);
       await assertDisposed(provider, request);
     } finally {
-      server.closeAllConnections();
-      await new Promise<void>((resolve) =>
-        server.close(() => {
-          resolve();
-        }),
-      );
+      await closeLoopbackServer(server);
     }
   });
 }

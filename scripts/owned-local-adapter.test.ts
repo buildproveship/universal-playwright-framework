@@ -2,6 +2,10 @@
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Real adapter/browser lifecycle against isolated synthetic registration navigation; no customer case approval.
+import {
+  closeLoopbackServer,
+  listenOnLoopback,
+} from "./fixtures/loopback-server";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as adapterV2 from "../src/adapter/v2";
@@ -169,18 +173,11 @@ async function syntheticTarget(broken = false) {
       `<!doctype html><h1>Sign in to ReleaseReady</h1><button onclick="showRegistration()">New here? Create your ReleaseReady account</button><script>function showRegistration(){document.body.innerHTML='<h1>${broken ? "Wrong screen" : "Create your account"}</h1><button onclick=location.reload()>Already have an account? Sign in</button>'}</script>`,
     );
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  assert.ok(address && typeof address !== "string");
+  const url = await listenOnLoopback(server);
   return {
-    origin: `http://127.0.0.1:${address.port}`,
+    origin: url.replace(/\/$/, ""),
     requests: () => requests,
-    stop: () =>
-      new Promise<void>((resolve) =>
-        server.close(() => {
-          resolve();
-        }),
-      ),
+    stop: () => closeLoopbackServer(server),
   };
 }
 
@@ -437,11 +434,9 @@ test("Given cancellation during a target navigation, only the acquired browser s
     abort.abort();
     response.end("<!doctype html><h1>Pending synthetic navigation</h1>");
   });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  assert.ok(address && typeof address !== "string");
+  const url = await listenOnLoopback(server);
   try {
-    const request = await requestFor(`http://127.0.0.1:${address.port}`);
+    const request = await requestFor(url.replace(/\/$/, ""));
     const result = await executeOwnedLocalAdapter(
       request,
       owner(request),
@@ -454,11 +449,7 @@ test("Given cancellation during a target navigation, only the acquired browser s
     assert.equal(result.lifecycle.attempts.length, 1);
     assert.equal(server.listening, true);
   } finally {
-    await new Promise<void>((resolve) =>
-      server.close(() => {
-        resolve();
-      }),
-    );
+    await closeLoopbackServer(server);
   }
 });
 
