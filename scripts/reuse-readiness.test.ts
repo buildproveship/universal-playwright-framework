@@ -1128,14 +1128,28 @@ test("rejects malformed or internally inconsistent reports before candidate revi
   }
 });
 
-test("readiness module never loads step sources, processes or network clients", () => {
-  const compiled = readFileSync(
-    path.join(__dirname, "../src/validation/reuse-readiness.js"),
-    "utf8",
-  );
-  const required = [...compiled.matchAll(/require\("([^"]+)"\)/g)].map(
-    (match) => match[1],
-  );
-  assert.deepEqual(required.sort(), ["./scenario-selector", "node:crypto"]);
-  assert.doesNotMatch(compiled, /\bimport\(|eval\(|new Function/);
+test("readiness modules never load step sources, processes or network clients", () => {
+  // The module group may import only node:crypto, the scenario selector and each other,
+  // each file with an exact allowed set, so a new dependency in any file fails here.
+  const allowed: Record<string, string[]> = {
+    "reuse-readiness": [
+      "./reuse-readiness-candidate",
+      "./reuse-readiness-shared",
+      "./scenario-selector",
+    ],
+    "reuse-readiness-candidate": ["./reuse-readiness-shared"],
+    "reuse-readiness-shared": ["node:crypto"],
+    "reuse-readiness-types": [],
+  };
+  for (const [name, expected] of Object.entries(allowed)) {
+    const compiled = readFileSync(
+      path.join(__dirname, `../src/validation/${name}.js`),
+      "utf8",
+    );
+    const required = [...compiled.matchAll(/require\("([^"]+)"\)/g)].map(
+      (match) => match[1],
+    );
+    assert.deepEqual([...new Set(required)].sort(), expected, name);
+    assert.doesNotMatch(compiled, /\bimport\(|eval\(|new Function/, name);
+  }
 });

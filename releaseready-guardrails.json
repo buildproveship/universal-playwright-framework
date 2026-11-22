@@ -9,9 +9,9 @@
     },
     {
       "rule": "copied-canonical-digest",
-      "path": "src/validation/reuse-readiness.ts",
+      "path": "src/validation/reuse-readiness-shared.ts",
       "max": 1,
-      "reason": "readiness module must import only node:crypto and ./scenario-selector (asserted by reuse-readiness.test.ts), so it keeps a 10-line key-sorting canonicalizer instead of a package"
+      "reason": "the readiness module group may import only node:crypto, ./scenario-selector and its own files (asserted by reuse-readiness.test.ts), so it keeps a 10-line key-sorting canonicalizer instead of a package"
     },
     {
       "rule": "skipped-test",
@@ -30,12 +30,6 @@
       "path": "scripts/reuse-readiness.test.ts",
       "max": 1,
       "reason": "currently 1141 lines; test file mirroring src/validation/reuse-readiness.ts one-to-one with shared fixtures; split together with that module in a follow-up"
-    },
-    {
-      "rule": "oversized-source-file",
-      "path": "src/validation/reuse-readiness.ts",
-      "max": 1,
-      "reason": "currently 1321 lines; readiness module must import only node:crypto and ./scenario-selector (asserted by reuse-readiness.test.ts), so it cannot be split into sibling imports without changing that contract; split in a follow-up"
     }
   ]
 }
