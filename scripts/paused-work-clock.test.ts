@@ -1,8 +1,8 @@
-import { fake } from "./fixtures/fake-playwright";
 // Test classification: unit
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Exercises the paused work-clock fixture and the login-page cleanup deadline with mocked timers and an in-memory browser double; no real browser is launched.
+import { fake } from "./fixtures/fake-playwright";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Browser } from "@playwright/test";

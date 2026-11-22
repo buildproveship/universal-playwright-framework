@@ -1,8 +1,8 @@
-import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Browser cleanup sequencing with controlled resource doubles; no customer scenario or production browser.
+import { fake } from "./fixtures/fake-playwright";
 import { launchAuthenticationFixtureBrowser } from "./fixtures/authentication-fixture-launcher";
 import assert from "node:assert/strict";
 import test from "node:test";

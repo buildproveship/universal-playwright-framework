@@ -1,8 +1,8 @@
-import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Cucumber step-timeout defaults, long-step regression, readable assertion failures and the real E2E report assertion against an owned local server; it does not run customer journeys.
+import { fake } from "./fixtures/fake-playwright";
 import {
   closeLoopbackServer,
   listenOnLoopback,

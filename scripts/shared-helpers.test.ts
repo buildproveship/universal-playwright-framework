@@ -11,7 +11,12 @@ import {
   createValidationManifest,
 } from "../fixtures/input-preparation/reviewed-fixtures";
 import { RuntimeLoginFailure } from "../src/input-preparation/runtime-login";
-import { withLoopbackServer } from "./fixtures/loopback-server";
+import { createServer } from "node:http";
+import {
+  closeLoopbackServer,
+  listenOnLoopback,
+  withLoopbackServer,
+} from "./fixtures/loopback-server";
 import { runLoginCommand } from "./login-command";
 
 const signalNames = ["SIGINT", "SIGTERM"] as const;
@@ -124,6 +129,59 @@ test("test servers start and stop only through the shared loopback helpers", () 
   const offenders = files.filter((file) =>
     /\.listen\(\s*0\b/.test(readFileSync(file, "utf8")),
   );
+  assert.deepEqual(offenders, []);
+});
+
+test("closing a loopback server ends connections a handler never finished", async () => {
+  // Guard for the closeAllConnections() call: without it close() waits for the held request forever.
+  const server = createServer(() => {
+    // Deliberately never responds: models a held keep-alive request.
+  });
+  const url = await listenOnLoopback(server);
+  const held = fetch(url).then(
+    () => "completed",
+    () => "dropped",
+  );
+  await new Promise<void>((resolve) => server.once("connection", resolve));
+  const closing = closeLoopbackServer(server);
+  let timer: NodeJS.Timeout | undefined;
+  const closed = await Promise.race([
+    closing.then(() => "closed"),
+    new Promise<string>((resolve) => {
+      timer = setTimeout(() => {
+        resolve("timed out");
+      }, 5_000);
+    }),
+  ]);
+  clearTimeout(timer);
+  if (closed !== "closed") {
+    // Bounded failure: drop the held socket so the process can exit, then report.
+    server.closeAllConnections();
+    await closing;
+  }
+  assert.equal(closed, "closed");
+  assert.equal(await held, "dropped");
+});
+
+test("every script test file starts with its classification header", () => {
+  const scriptsDir = join(__dirname, "..", "..", "..", "scripts");
+  const files = readdirSync(scriptsDir).filter((name) =>
+    name.endsWith(".test.ts"),
+  );
+  assert.ok(files.length > 10);
+  const offenders = files.filter((name) => {
+    const text = readFileSync(join(scriptsDir, name), "utf8");
+    const head = /^(?:\/\/[^\n]*\n)+|^\/\*\*[\s\S]*?\*\//.exec(text)?.[0];
+    return !(
+      head &&
+      /Test classification: (unit|component|contract|integration|e2e)\b/.test(
+        head,
+      ) &&
+      head.includes("Review status: Not Reviewed") &&
+      /Evidence: (synthetic|real)\b/.test(head) &&
+      /Scope: \S/.test(head)
+    );
+  });
   assert.deepEqual(offenders, []);
 });
 

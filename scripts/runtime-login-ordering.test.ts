@@ -1,8 +1,8 @@
-import { fake } from "./fixtures/fake-playwright";
 // Test classification: unit
 // Review status: Not Reviewed
 // Evidence: synthetic
 // Scope: Checks cancellation-versus-deadline ordering in withFreshLoginPage using mocked timers and in-memory browser, context and page doubles; no real browser is launched.
+import { fake } from "./fixtures/fake-playwright";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Browser } from "@playwright/test";
