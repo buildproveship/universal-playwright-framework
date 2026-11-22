@@ -863,7 +863,7 @@ test("ignores unconsumed cyclic, BigInt and function extras when snapshotting", 
         cyclic,
       })),
     },
-  } as unknown as ReuseReadinessInput;
+  } as ReuseReadinessInput;
   const report = expectReport(assessReuseReadiness(decorated));
   assert.equal(report.inputDigest, baseline.inputDigest);
   assert.equal(report.reportDigest, baseline.reportDigest);
@@ -1061,7 +1061,7 @@ test("rejects malformed or internally inconsistent reports before candidate revi
   const tamper = (edit: (copy: MutableJson) => void) => {
     const copy = json(JSON.parse(JSON.stringify(report)));
     edit(copy);
-    return copy as unknown as ReuseReadinessReport;
+    return copy as ReuseReadinessReport;
   };
   const tampered: [string, ReuseReadinessReport][] = [
     [

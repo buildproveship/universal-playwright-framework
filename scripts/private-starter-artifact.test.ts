@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -69,7 +70,7 @@ test(
           Array.isArray(parsedReport.suites) &&
           isRecord(parsedReport.stats),
       );
-      const report = parsedReport as unknown as JSONReport;
+      const report = fake<JSONReport>(parsedReport);
       const attachment =
         report.suites[0].specs[0].tests[0].results[0].attachments.find(
           (item: { name: string }) => item.name === "owned-demo",

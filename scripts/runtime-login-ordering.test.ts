@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: unit
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -55,7 +56,7 @@ function resources(events: string[]) {
         closed.resolve();
       }),
   };
-  return { browser: browser as unknown as Browser, closed };
+  return { browser: fake<Browser>(browser), closed };
 }
 test("controlled: drain reached and cancellation wins before the 1000 ms deadline", async (t) => {
   t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: 100000 });

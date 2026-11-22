@@ -1,3 +1,4 @@
+import { fake } from "./fixtures/fake-playwright";
 // Test classification: integration
 // Review status: Not Reviewed
 // Evidence: synthetic
@@ -501,7 +502,7 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
     let aborted = 0;
     let disposed = 0;
     let socketClosed = 0;
-    const context = {
+    const context = fake<BrowserContext>({
       route: (_pattern: string, handler: typeof handleRequest) => {
         handleRequest = handler;
         return Promise.resolve();
@@ -510,14 +511,14 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
         handleSocket = handler;
         return Promise.resolve();
       },
-    } as unknown as BrowserContext;
+    });
     const login = "http://127.0.0.1:1/";
     const assertAllowed = await guardLoginRequests(
       context,
       new URL(login).origin,
       login,
     );
-    const route = {
+    const route = fake<Route>({
       request: () => ({
         url: () =>
           reason === "off-origin"
@@ -547,13 +548,15 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
         }),
       fulfill: () =>
         settle(() => assert.fail("Blocked response must not be fulfilled")),
-    } as unknown as Route;
+    });
     if (reason === "websocket")
-      handleSocket({
-        close: () => {
-          socketClosed += 1;
-        },
-      } as unknown as WebSocketRoute);
+      handleSocket(
+        fake<WebSocketRoute>({
+          close: () => {
+            socketClosed += 1;
+          },
+        }),
+      );
     else await handleRequest(route);
     assert.equal(
       fetched,
@@ -563,11 +566,13 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
     assert.equal(aborted, reason === "websocket" ? 0 : 1);
     assert.equal(socketClosed, reason === "websocket" ? 1 : 0);
     // A later failure must not replace the first category.
-    await handleRequest({
-      ...route,
-      fetch: () => Promise.reject(new Error(canary.password)),
-      request: () => ({ url: () => login, isNavigationRequest: () => false }),
-    } as unknown as Route);
+    await handleRequest(
+      fake<Route>({
+        ...route,
+        fetch: () => Promise.reject(new Error(canary.password)),
+        request: () => ({ url: () => login, isNavigationRequest: () => false }),
+      }),
+    );
     let closes = 0;
     let launches = 0;
     await assert.rejects(
@@ -591,25 +596,27 @@ for (const reason of RUNTIME_LOGIN_POLICY_REASONS) {
             {
               launchBrowser: () => {
                 launches += 1;
-                return Promise.resolve({
-                  close: () => {
-                    closes += 1;
-                    return Promise.resolve();
-                  },
-                  newContext: () =>
-                    Promise.resolve({
-                      setOffline: () => Promise.resolve(),
-                      close: () => {
-                        closes += 1;
-                        return Promise.resolve();
-                      },
-                      newPage: () =>
-                        Promise.resolve({
-                          setDefaultTimeout: noop,
-                          setDefaultNavigationTimeout: noop,
-                        }),
-                    }),
-                } as unknown as Browser);
+                return Promise.resolve(
+                  fake<Browser>({
+                    close: () => {
+                      closes += 1;
+                      return Promise.resolve();
+                    },
+                    newContext: () =>
+                      Promise.resolve({
+                        setOffline: () => Promise.resolve(),
+                        close: () => {
+                          closes += 1;
+                          return Promise.resolve();
+                        },
+                        newPage: () =>
+                          Promise.resolve({
+                            setDefaultTimeout: noop,
+                            setDefaultNavigationTimeout: noop,
+                          }),
+                      }),
+                  }),
+                );
               },
             },
           ),
@@ -760,7 +767,7 @@ for (const fault of ["launch", "context", "page"] as const) {
           settle(() => {
             launches += 1;
             if (fault === "launch") throw new Error(canary.password);
-            return {
+            return fake<Browser>({
               close: () => {
                 browserCloses += 1;
                 return Promise.resolve();
@@ -777,7 +784,7 @@ for (const fault of ["launch", "context", "page"] as const) {
                     newPage: () => Promise.reject(new Error(canary.password)),
                   };
                 }),
-            } as unknown as Browser;
+            });
           }),
       }),
       (error) =>
@@ -1440,14 +1447,16 @@ for (const outcome of [
       Promise.resolve();
     let closes = 0;
     const blockedRequest = (): Promise<void> =>
-      requestHandler({
-        request: () => ({
-          url: () => "https://blocked.invalid/",
-          isNavigationRequest: () => false,
+      requestHandler(
+        fake<Route>({
+          request: () => ({
+            url: () => "https://blocked.invalid/",
+            isNavigationRequest: () => false,
+          }),
+          abort: () => Promise.resolve(),
         }),
-        abort: () => Promise.resolve(),
-      } as unknown as Route);
-    const context = {
+      );
+    const context = fake<BrowserContext>({
       setOffline: () => Promise.resolve(),
       routeWebSocket: () => Promise.resolve(),
       route: (_pattern: string, handler: typeof requestHandler) => {
@@ -1468,7 +1477,7 @@ for (const outcome of [
           setDefaultTimeout: noop,
           setDefaultNavigationTimeout: noop,
         }),
-    } as unknown as BrowserContext;
+    });
     await assert.rejects(
       withFreshLoginPage(
         async (_page, setStage) => {
@@ -1482,13 +1491,15 @@ for (const outcome of [
           if (outcome === "cancel") controller.abort();
           if (outcome === "policy-before-error") await blockedRequest();
           if (outcome === "pending-transport") {
-            void requestHandler({
-              request: () => ({
-                url: () => PARTAY_LOGIN_URL,
-                isNavigationRequest: () => false,
+            void requestHandler(
+              fake<Route>({
+                request: () => ({
+                  url: () => PARTAY_LOGIN_URL,
+                  isNavigationRequest: () => false,
+                }),
+                fetch: () => new Promise(() => undefined),
               }),
-              fetch: () => new Promise(() => undefined),
-            } as unknown as Route);
+            );
           }
           if (outcome === "raw-error" || outcome === "navigation")
             throw new Error(canary.password);
@@ -1503,13 +1514,15 @@ for (const outcome of [
           timeoutMs: 50,
           signal: controller.signal,
           launchBrowser: () =>
-            Promise.resolve({
-              newContext: () => Promise.resolve(context),
-              close: () => {
-                closes += 1;
-                return Promise.resolve();
-              },
-            } as unknown as Browser),
+            Promise.resolve(
+              fake<Browser>({
+                newContext: () => Promise.resolve(context),
+                close: () => {
+                  closes += 1;
+                  return Promise.resolve();
+                },
+              }),
+            ),
         },
       ),
       (error) => {
@@ -1811,10 +1824,12 @@ test("Given an unknown explicit policy binding, reject before resolving inputs o
         },
       },
       {
-        authenticationOnlyPolicy: {
+        authenticationOnlyPolicy: fake<
+          import("../src/customer-login/authentication-only").AuthenticationOnlyBinding
+        >({
           id: "unknown",
           revision: "v1",
-        } as unknown as import("../src/customer-login/authentication-only").AuthenticationOnlyBinding,
+        }),
         launchBrowser: () => {
           launches++;
           return Promise.reject(new Error("Unexpected launch"));

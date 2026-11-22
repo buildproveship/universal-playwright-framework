@@ -19,6 +19,21 @@ export default defineConfig(
     ],
   }),
   {
+    // Guard for RRDSCRUM-375: a double cast hides a wrong type. Test doubles go through `fake()` in
+    // scripts/fixtures/fake-playwright.ts, which holds the one documented cast.
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "TSAsExpression > TSAsExpression.expression[typeAnnotation.type='TSUnknownKeyword']",
+          message:
+            "Do not use `as unknown as`. Use a real type or a type guard; for a test double use fake() from scripts/fixtures/fake-playwright.ts.",
+        },
+      ],
+    },
+  },
+  {
     // This repository is a Playwright test framework: its readiness and starter specs follow the Playwright rules.
     files: ["tests/**/*.spec.ts", "starter/templates/**/*.spec.ts"],
     extends: [playwright.configs["flat/recommended"]],
