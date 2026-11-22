@@ -1,61 +1,19 @@
-# Runs on GitHub-hosted ubuntu-24.04 (owner decision, 20 Nov 2026; docs/decisions.md).
-# Light pull request checks. Owner decision of 18 Nov 2026 (docs/decisions.md): build, lint, typecheck and unit tests run on
-# every pull request. Suites that launch a browser or a local server run on demand and weekly (nightly.yml). This replaces the
-# 12 Nov 2026 manual-only Actions decision (RRDPLAT-44) for this light set only. Docs-only pull requests skip it.
+# No `paths-ignore` here: a required check that never starts stays pending, so docs-only PRs are skipped inside the
+# workflow, where the required job `ci` still reports.
 name: Pull request
 on:
   pull_request:
     branches: [main]
-    # Docs-only changes skip the checks (no required status checks exist: branch protection is unavailable on the free plan).
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
     types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
 permissions:
   contents: read
+  pull-requests: read
   packages: read
-concurrency:
-  group: pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
 jobs:
-  checks:
-    if: github.event.pull_request.draft == false
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-          registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
-        run: npm run build
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Lint
-        run: npm run lint
-      - name: Format
-        run: npm run format:check
-      - name: Guardrails
-        run: npm run check:guardrails
-      - name: Unit tests (no browser)
-        run: npm run test:unit
-  security:
-    if: github.event.pull_request.draft == false
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: gitleaks, trivy, semgrep and zizmor
-        uses: releaseready/config/.github/actions/security-scan@0e256fb3dff2777b7a1ca31342eae322935f06d2 # v2.2.1
+  ci:
+    uses: releaseready/config/.github/workflows/reusable-ci.yml@cb14844935500578e1bb2d18c95d8f58c8f9fdd0
+    with:
+      runner: ubuntu-24.04
+      check-command: "npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails && npm run test:unit"

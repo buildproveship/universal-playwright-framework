@@ -1,0 +1,24 @@
+# Runs before the Copilot coding agent starts, so it can run `npx releaseready-hooks verify` and its commit hooks.
+name: Copilot setup steps
+on: workflow_dispatch
+permissions:
+  contents: read
+  packages: read
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@releaseready"
+      - uses: releaseready/config/.github/actions/install-gitleaks@cb14844935500578e1bb2d18c95d8f58c8f9fdd0
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}

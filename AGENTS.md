@@ -37,3 +37,10 @@ helper; import shared code from `@releaseready/test-management`, TDM `dev-fixtur
 `@releaseready/ui-web` or `@releaseready/tokens`, never copy it; depend on published `^` versions only; never weaken
 a lint rule, test or guard to go green, and give every disable comment a reason; READMEs describe today's code.
 The check command is `npm run check`; it runs `npm run check:guardrails`, which `pr.yml` enforces on every PR.
+
+## Local hooks and CI
+
+- Husky runs the shared hooks from `@releaseready/config` (`releaseready-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.
+- `npm install` installs the hooks through the `prepare` script.
+- CI is one required check, `ci`, from the reusable workflow in `releaseready/config`; it runs `npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails && npm run test:unit`. Run the same command locally before you push.
+- This repo is public, so its workflows run on GitHub-hosted `ubuntu-24.04` (a public repo never uses the self-hosted runner).
