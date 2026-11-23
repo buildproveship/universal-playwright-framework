@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     path.join(process.cwd(), "package.json"),
   );
   const exportPath = requireFromConsumer.resolve(
-    "@releaseready/playwright-framework/adapter/v1",
+    "@buildproveship/playwright-framework/adapter/v1",
   );
   const installedRoot = path.join(process.cwd(), "node_modules");
   assert.ok(
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
     );
   }
   const dataExport = requireFromConsumer.resolve(
-    "@releaseready/playwright-framework/data-references/v1",
+    "@buildproveship/playwright-framework/data-references/v1",
   );
   assert.ok(
     realpathSync(dataExport).startsWith(
@@ -49,7 +49,7 @@ async function main(): Promise<void> {
     ),
   );
   const dataReferences = requireFromConsumer(
-    "@releaseready/playwright-framework/data-references/v1",
+    "@buildproveship/playwright-framework/data-references/v1",
   ) as typeof import("../src/input-preparation/data-references");
   const catalogue = {
     datasets: [{ id: "owned-demo", revision: "v1", rows: ["row-a", "row-b"] }],
@@ -106,7 +106,7 @@ async function main(): Promise<void> {
     requireFromConsumer.resolve("@cucumber/cucumber-expressions"),
   );
   const framework = requireFromConsumer(
-    "@releaseready/playwright-framework",
+    "@buildproveship/playwright-framework",
   ) as {
     executeAdapter: typeof executeAdapter;
     InMemoryRuntimeSecretProvider: typeof import("../src/input-preparation/runtime-login").InMemoryRuntimeSecretProvider;
@@ -151,7 +151,7 @@ async function main(): Promise<void> {
     runtimeProvider.dispose();
   }
   const adapter = requireFromConsumer(
-    "@releaseready/playwright-framework/adapter/v1",
+    "@buildproveship/playwright-framework/adapter/v1",
   ) as { executeAdapter: typeof executeAdapter };
   assert.equal(framework.executeAdapter, adapter.executeAdapter);
   const { request, context } = examples();
@@ -189,7 +189,7 @@ async function main(): Promise<void> {
 
   const adapterRequire = createRequire(
     requireFromConsumer.resolve(
-      "@releaseready/playwright-framework/adapter/v1",
+      "@buildproveship/playwright-framework/adapter/v1",
     ),
   );
   const execution = adapterRequire(

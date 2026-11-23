@@ -1,7 +1,7 @@
-// ESLint flat config. The rule set comes from the shared @releaseready/config package; local additions carry
+// ESLint flat config. The rule set comes from the shared @buildproveship/config package; local additions carry
 // their reason. TypeScript (`.mts`) rather than JavaScript because this repository forbids authored JavaScript
 // (scripts/check-typescript-source-policy.ts); ESLint loads it through jiti.
-import { releaseready } from "@releaseready/config/eslint";
+import { releaseready } from "@buildproveship/config/eslint";
 import playwright from "eslint-plugin-playwright";
 import { defineConfig } from "eslint/config";
 

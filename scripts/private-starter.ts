@@ -18,7 +18,7 @@ import { resolvePackedTarball } from "./npm-pack-metadata";
 import { resolveGitExecutable } from "./check-typescript-source-policy";
 
 const FORMAT = "releaseready-private-starter/v1";
-const PACKAGE = "@releaseready/playwright-framework";
+const PACKAGE = "@buildproveship/playwright-framework";
 const sourceRoot = path.resolve(__dirname, "../../..");
 interface Manifest {
   format: string;
@@ -60,7 +60,7 @@ interface LockMetadata {
   packages: Record<string, unknown>;
 }
 /** Repository tooling that the starter does not use and that lives in an authenticated registry. */
-const REPOSITORY_ONLY_DEV_DEPENDENCIES = new Set(["@releaseready/config"]);
+const REPOSITORY_ONLY_DEV_DEPENDENCIES = new Set(["@buildproveship/config"]);
 
 /** Where Node would find `name` when required from the package installed at `from` ("" is the root). */
 function lockLocation(

@@ -22,7 +22,7 @@ inheritance.
 
 ```ts
 import { expect, type Page } from "@playwright/test";
-import { BasePage, BaseComponent } from "@releaseready/playwright-framework";
+import { BasePage, BaseComponent } from "@buildproveship/playwright-framework";
 
 class DraftEditor extends BaseComponent {
   constructor(page: Page) {

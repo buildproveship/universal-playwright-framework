@@ -46,7 +46,7 @@ test(
         readFileSync(
           path.join(
             demo,
-            "node_modules/@releaseready/playwright-framework/package.json",
+            "node_modules/@buildproveship/playwright-framework/package.json",
           ),
           "utf8",
         ),

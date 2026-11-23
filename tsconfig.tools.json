@@ -1,5 +1,5 @@
 {
-  "extends": "@releaseready/config/tsconfig.json",
+  "extends": "@buildproveship/config/tsconfig.json",
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",

@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0 - 2026-11-23
+
+### Breaking
+
+- BPS-49: the package is now `@buildproveship/playwright-framework` (GitHub Packages scope follows the renamed `buildproveship` org). Change the dependency, imports and `.npmrc` (`@buildproveship:registry=https://npm.pkg.github.com`); the API is unchanged. Depends on `@buildproveship/config` ^5.0.0 for development.
+- Guard: `scripts/npm-scope.test.ts` fails on any old-scope package reference outside history docs.
+
 ## 2.1.0 - 2026-11-23
 
 ### Added

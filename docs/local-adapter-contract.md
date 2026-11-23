@@ -16,7 +16,7 @@ import {
   executeAdapter,
   type AdapterRequest,
   type TrustedAdapterContext,
-} from "@releaseready/playwright-framework/adapter/v1";
+} from "@buildproveship/playwright-framework/adapter/v1";
 
 // Load the exact compatible fixture shipped with this reviewed package.
 // The central owner must authorize the caller before constructing this context.
@@ -326,7 +326,7 @@ This evidence paragraph is a subsequent documentation-only addition.
 
 ## Owned local target v2 (RRDSCRUM-139)
 
-The separate `@releaseready/playwright-framework/adapter/v2` export adds
+The separate `@buildproveship/playwright-framework/adapter/v2` export adds
 `executeOwnedLocalAdapter`, `getOwnedLocalReview` and
 `validateOwnedLocalEvidence`. V1 remains fixed-fixture-only and rejects the new
 `local-demo-navigation` scenario. V2 reuses the reviewed execution engine, worker,

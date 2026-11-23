@@ -1,4 +1,4 @@
-import { BasePage } from "@releaseready/playwright-framework";
+import { BasePage } from "@buildproveship/playwright-framework";
 import type { Page } from "@playwright/test";
 export class DemoPage extends BasePage {
   constructor(page: Page, origin: string) {

@@ -1,4 +1,4 @@
-# Publishes @releaseready/playwright-framework to GitHub Packages when a vX.Y.Z tag is pushed.
+# Publishes @buildproveship/playwright-framework to GitHub Packages when a vX.Y.Z tag is pushed.
 # The tag must match package.json "version". `npm publish` builds the package in `prepack`.
 name: Release
 on:
@@ -23,7 +23,7 @@ jobs:
           node-version-file: .nvmrc
           package-manager-cache: false
           registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
+          scope: "@buildproveship"
       - name: Tag matches package.json version
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
       - name: Install dependencies
