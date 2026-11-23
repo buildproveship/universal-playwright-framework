@@ -33,14 +33,14 @@ This is the owner's standing rule for every project. A project's own rules may a
 
 Follow `skills/releaseready-code-quality/SKILL.md` before writing code and before saying a change is done: no legacy
 or compatibility code without a named consumer; search npm, the SDK, the framework or the CLI before writing a
-helper; import shared code from `@releaseready/test-management`, TDM `dev-fixtures`, `@releaseready/config`,
-`@releaseready/ui-web` or `@releaseready/tokens`, never copy it; depend on published `^` versions only; never weaken
+helper; import shared code from `@buildproveship/test-management`, TDM `dev-fixtures`, `@buildproveship/config`,
+`@buildproveship/ui-web` or `@buildproveship/tokens`, never copy it; depend on published `^` versions only; never weaken
 a lint rule, test or guard to go green, and give every disable comment a reason; READMEs describe today's code.
 The check command is `npm run check`; it runs `npm run check:guardrails`, which `pr.yml` enforces on every PR.
 
 ## Local hooks and CI
 
-- Husky runs the shared hooks from `@releaseready/config` (`releaseready-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.
+- Husky runs the shared hooks from `@buildproveship/config` (`releaseready-hooks`): pre-commit (lint-staged, gitleaks), commit-msg (Jira key) and pre-push (never `main`, rebased, type-check, affected tests). Never use `--no-verify` or `HUSKY=0`.
 - `npm install` installs the hooks through the `prepare` script.
 - CI is one required check, `ci`, from the reusable workflow in `releaseready/config`; it runs `npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails && npm run test:unit`. Run the same command locally before you push.
 - This repo is public, so its workflows run on GitHub-hosted `ubuntu-24.04` (a public repo never uses the self-hosted runner).

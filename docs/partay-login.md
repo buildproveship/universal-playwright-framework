@@ -42,7 +42,7 @@ This does not change either command's authorization or input requirements.
 ## Runtime integration
 
 ```typescript
-import { verifyPartayLogin } from "@releaseready/playwright-framework";
+import { verifyPartayLogin } from "@buildproveship/playwright-framework";
 
 await verifyPartayLogin(preparedDescriptor, reviewedRequest, runtimeProvider, {
   signal: cancellationSignal,
@@ -236,7 +236,7 @@ observed Partay controls. Site UI and password-eye behavior remain unverified
 until authorized inspection. These results are local test evidence, not
 customer-login or acceptance evidence.
 `npm run lint` checks every TypeScript file in the repository with ESLint
-(`eslint.config.mts`, from `@releaseready/config`), and `npm run format:check` runs
+(`eslint.config.mts`, from `@buildproveship/config`), and `npm run format:check` runs
 Prettier over every file.
 
 ### Deferred private-account-file input

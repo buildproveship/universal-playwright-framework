@@ -1,6 +1,6 @@
 # universal-playwright-framework
 
-`@releaseready/playwright-framework` runs reviewed Cucumber + Playwright scenarios for
+`@buildproveship/playwright-framework` runs reviewed Cucumber + Playwright scenarios for
 ReleaseReady. It provides:
 
 - execution adapters: `adapter/v1`, `adapter/v2` (owned local) and `adapter/imported-v1`;
@@ -13,8 +13,8 @@ Consumers (ReleaseReady, releaseready-product-tests, test-data-management) depen
 semver range, never a git revision, and never build it:
 
 ```bash
-echo "@releaseready:registry=https://npm.pkg.github.com" >> .npmrc
-npm install @releaseready/playwright-framework@^2.1.0
+echo "@buildproveship:registry=https://npm.pkg.github.com" >> .npmrc
+npm install @buildproveship/playwright-framework@^2.1.0
 ```
 
 It is not a generic template.
@@ -37,7 +37,7 @@ is stale.
 ## Licence
 
 Apache-2.0. See [LICENSE](LICENSE). The package is published to GitHub Packages
-under the `@releaseready` scope.
+under the `@buildproveship` scope.
 
 ## Develop
 
@@ -50,7 +50,7 @@ npm test
 `npm test` runs `npm run check` (build, typecheck, ESLint and Prettier), then
 `npm run test:unit` (no browser) and `npm run test:browser` (the suites that launch
 a browser or a local server, including the readiness tests). ESLint, Prettier and
-the tsconfig base come from the shared `@releaseready/config` package, which
+the tsconfig base come from the shared `@buildproveship/config` package, which
 installs from GitHub Packages: locally, `export NODE_AUTH_TOKEN=$(gh auth token)`
 (a token with `read:packages`) before `npm ci`. Pull requests run the check and
 unit tests in GitHub Actions (`pr.yml`) on GitHub-hosted `ubuntu-24.04`

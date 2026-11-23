@@ -40,7 +40,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           registry-url: https://npm.pkg.github.com
-          scope: "@releaseready"
+          scope: "@buildproveship"
       - name: Install dependencies
         if: steps.gate.outputs.skip != 'true'
         run: npm ci --no-audit --no-fund

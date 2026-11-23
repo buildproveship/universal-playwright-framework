@@ -2,7 +2,7 @@
 
 The existing `executeOwnedLocalAdapter` API and strict v2 result schema are
 unchanged. `executeOwnedLocalAdapterWithDiagnostics`, exported from the same public
-`@releaseready/playwright-framework/adapter/v2` entry, accepts the same arguments and
+`@buildproveship/playwright-framework/adapter/v2` entry, accepts the same arguments and
 performs one execution. It returns a separate envelope:
 
 ```ts

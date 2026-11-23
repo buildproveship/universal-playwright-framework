@@ -1,1 +1,1 @@
-node node_modules/@releaseready/config/hooks/cli.js commit-msg "$@"
+node node_modules/@buildproveship/config/hooks/cli.js commit-msg "$@"

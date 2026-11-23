@@ -56,7 +56,7 @@ test(
       );
       const installed = path.join(
         directory,
-        "node_modules/@releaseready/playwright-framework",
+        "node_modules/@buildproveship/playwright-framework",
       );
       assert.equal((await lstat(installed)).isSymbolicLink(), false);
       for (const file of [
@@ -78,7 +78,7 @@ test(
       partayLoginFailureReport, PARTAY_LOGIN_URL, validateRuntimeLoginRequest,
       verifyPartayLogin, type PreparedInputDescriptor, type RuntimeLoginRequest,
       type RuntimeSecretProvider, type RuntimeLoginBrowserOptions,
-    } from "@releaseready/playwright-framework/runtime-login/v1";
+    } from "@buildproveship/playwright-framework/runtime-login/v1";
     export const values = { withOperatorLoginInputs, InMemoryRuntimeSecretProvider,
       RuntimeLoginFailure, partayLoginFailureReport, PARTAY_LOGIN_URL,
       validateRuntimeLoginRequest, verifyPartayLogin };

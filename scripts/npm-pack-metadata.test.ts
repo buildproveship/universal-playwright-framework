@@ -9,7 +9,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { packedTarballName, resolvePackedTarball } from "./npm-pack-metadata";
 
-const NAME = "@releaseready/playwright-framework";
+const NAME = "@buildproveship/playwright-framework";
 const FILENAME = "releaseready-playwright-framework-1.0.0.tgz";
 
 function entry(overrides: Record<string, unknown> = {}) {

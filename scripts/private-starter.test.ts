@@ -224,7 +224,7 @@ test("templates are reference-only, keep one rulebook and never assign canonical
     "utf8",
   );
   assert.match(page, /extends BasePage/);
-  assert.match(page, /@releaseready\/playwright-framework/);
+  assert.match(page, /@buildproveship\/playwright-framework/);
 });
 
 function runSetup(
@@ -500,9 +500,9 @@ test("the starter built from this repository's lock needs nothing from GitHub Pa
   const lock = JSON.parse(
     readFileSync(path.join(root, "package-lock.json"), "utf8"),
   ) as { packages: Record<string, { resolved?: string } | undefined> };
-  assert.ok("@releaseready/config" in manifest.devDependencies);
+  assert.ok("@buildproveship/config" in manifest.devDependencies);
   const graph = starterDependencyGraph(manifest, lock.packages);
-  assert.equal("@releaseready/config" in graph.devDependencies, false);
+  assert.equal("@buildproveship/config" in graph.devDependencies, false);
   for (const name of [
     ...Object.keys(manifest.dependencies),
     "typescript",

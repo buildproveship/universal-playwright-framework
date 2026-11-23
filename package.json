@@ -1,6 +1,6 @@
 {
-  "name": "@releaseready/playwright-framework",
-  "version": "2.1.0",
+  "name": "@buildproveship/playwright-framework",
+  "version": "3.0.0",
   "description": "Reviewed Cucumber + Playwright execution adapters, runtime login and input preparation for ReleaseReady",
   "exports": {
     ".": {
@@ -36,7 +36,7 @@
     "check": "npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails",
     "check:guardrails": "releaseready-guardrails",
     "test": "npm run check && npm run check:review-pins && npm run test:unit && npm run test:browser",
-    "test:unit": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/reference-only-preparation.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/windows-taskkill.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js dist/cucumber/scripts/paused-work-clock.test.js dist/cucumber/scripts/feature-validation.test.js dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js dist/cucumber/scripts/private-starter.test.js dist/cucumber/scripts/fake-playwright.test.js dist/cucumber/scripts/shared-steps-no-product-copy.test.js && cucumber-js --profile input-preparation && cucumber-js --profile reporting && npm run test:typescript-source-policy",
+    "test:unit": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/reference-only-preparation.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/windows-taskkill.test.js dist/cucumber/scripts/teardown-evidence.test.js dist/cucumber/scripts/guarded-route.test.js dist/cucumber/scripts/paused-work-clock.test.js dist/cucumber/scripts/feature-validation.test.js dist/cucumber/scripts/agentic-rehearsal.test.js dist/cucumber/scripts/reuse-readiness.test.js dist/cucumber/scripts/private-starter.test.js dist/cucumber/scripts/fake-playwright.test.js dist/cucumber/scripts/shared-steps-no-product-copy.test.js dist/cucumber/scripts/npm-scope.test.js && cucumber-js --profile input-preparation && cucumber-js --profile reporting && npm run test:typescript-source-policy",
     "test:browser": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/execution-adapter.test.js dist/cucumber/scripts/reporting.test.js dist/cucumber/scripts/adapter-contract.test.js dist/cucumber/scripts/cucumber-timeouts.test.js dist/cucumber/scripts/login-inspection.test.js dist/cucumber/scripts/login-inspection-cancellation.test.js dist/cucumber/scripts/authentication-only.test.js dist/cucumber/scripts/owned-local-adapter.test.js dist/cucumber/scripts/runtime-login-entry.test.js dist/cucumber/scripts/runtime-login-package.test.js dist/cucumber/scripts/isolated-product-playwright.test.js dist/cucumber/scripts/runtime-login-cancellation-browser.test.js && cucumber-js --config cucumber.json && cucumber-js --profile adapter && cucumber-js --profile retry-regression && npm run test:readiness",
     "test:input-preparation": "npm run build:cucumber && cucumber-js --profile input-preparation && node --test dist/cucumber/scripts/data-references.test.js dist/cucumber/scripts/runtime-login.test.js dist/cucumber/scripts/reference-only-preparation.test.js",
     "test:customer-login": "npm run build:cucumber && node --test --test-concurrency=1 dist/cucumber/scripts/partay-login.test.js dist/cucumber/scripts/runtime-login-cleanup.test.js dist/cucumber/scripts/runtime-login-ordering.test.js dist/cucumber/scripts/shared-helpers.test.js",
@@ -88,7 +88,7 @@
     "url": "git+https://github.com/buildproveship/universal-playwright-framework.git"
   },
   "devDependencies": {
-    "@releaseready/config": "^4.2.0",
+    "@buildproveship/config": "^5.0.0",
     "@types/node": "^22.20.5",
     "eslint": "10.13.0",
     "eslint-plugin-playwright": "^2.12.2",
@@ -131,7 +131,7 @@
     },
     "minimatch@>=9": "11.0.5"
   },
-  "prettier": "@releaseready/config/prettier",
+  "prettier": "@buildproveship/config/prettier",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   }
