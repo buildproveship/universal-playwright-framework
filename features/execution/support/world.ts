@@ -1,3 +1,4 @@
+import type { OwnedLocalLabels } from "../../../src/execution/owned-local-labels";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 
 export interface ExecutionPayload {
@@ -10,6 +11,7 @@ export interface ExecutionPayload {
     readonly initialTargetUrl: string;
   };
   readonly redirectTargetUrl: string;
+  readonly ownedLocalLabels?: Partial<OwnedLocalLabels>;
 }
 
 export interface ExecutionWorld {

@@ -888,6 +888,6 @@ test("v2 registration-navigation evidence retains its exact strict contract", ()
     createHash("sha256")
       .update(JSON.stringify(ownedLocalResultJsonSchema))
       .digest("hex"),
-    "7c9542e66f377068a24c11c0c6f27f61945f7a8b5778ab15fc2ee3f396204b03",
+    "41db72dd275f4db0b578dd59105e0f8e3c31c6438a06bdd411338e92daa0b4df",
   );
 });

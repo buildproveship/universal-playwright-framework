@@ -35,12 +35,18 @@ const resolved = (): Promise<void> => Promise.resolve();
 
 async function requestFor(
   origin = "http://127.0.0.1:34567",
+  labels?: NonNullable<OwnedLocalRequest["target"]["labels"]>,
 ): Promise<OwnedLocalRequest> {
   const review = await getOwnedLocalReview();
   return {
     version: 2,
     run: { id: "synthetic-run", gitRevision: "a".repeat(40) },
-    target: { kind: "owned-local", id: "synthetic-target", origin },
+    target: {
+      kind: "owned-local",
+      id: "synthetic-target",
+      origin,
+      ...(labels ? { labels } : {}),
+    },
     scenarioIds: ["local-demo-navigation"],
     binding: {
       tenantId: "synthetic-tenant",
@@ -164,13 +170,13 @@ test("Given v1, adding an owned-local scenario still rejects without acquiring a
   assert.equal((await executeAdapter(request, context)).accepted, false);
 });
 
-async function syntheticTarget(broken = false) {
+async function syntheticTarget(broken = false, renamed = false) {
   let requests = 0;
   const server = createServer((_request, response) => {
     requests++;
     response.setHeader("content-type", "text/html");
     response.end(
-      `<!doctype html><h1>Sign in to ReleaseReady</h1><button onclick="showRegistration()">New here? Create your ReleaseReady account</button><script>function showRegistration(){document.body.innerHTML='<h1>${broken ? "Wrong screen" : "Create your account"}</h1><button onclick=location.reload()>Already have an account? Sign in</button>'}</script>`,
+      `<!doctype html><h1>${renamed ? "Welcome back" : "Sign in to ReleaseReady"}</h1><button onclick="showRegistration()">${renamed ? "New here? Create an account" : "New here? Create your ReleaseReady account"}</button><script>function showRegistration(){document.body.innerHTML='<h1>${broken ? "Wrong screen" : renamed ? "Your next release starts here." : "Create your account"}</h1><button onclick=location.reload()>Already have an account? Sign in</button>'}</script>`,
     );
   });
   const url = await listenOnLoopback(server);
@@ -258,6 +264,38 @@ test("Given an approved owned loopback target, the real browser navigates it onc
       }),
       false,
     );
+  } finally {
+    await target.stop();
+  }
+});
+
+test("Given a target with renamed sign-in copy, labels passed in the request make the real browser find it", async () => {
+  const labels = {
+    registerButton: "New here? Create an account",
+    registerHeading: "Your next release starts here.",
+    signInHeading: "Welcome back",
+  };
+  const target = await syntheticTarget(false, true);
+  try {
+    const withLabels = await requestFor(target.origin, labels);
+    const passed = await executeOwnedLocalAdapter(
+      withLabels,
+      owner(withLabels),
+      undefined,
+      resolved,
+    );
+    assert.equal(passed.accepted, true);
+    assert.equal(passed.report.status, "passed");
+    // Without labels the 2.0.0 defaults apply and the renamed copy is a real failure.
+    const withoutLabels = await requestFor(target.origin);
+    const failed = await executeOwnedLocalAdapter(
+      withoutLabels,
+      owner(withoutLabels),
+      undefined,
+      resolved,
+    );
+    assert.equal(failed.accepted, true);
+    assert.equal(failed.report.status, "failed");
   } finally {
     await target.stop();
   }

@@ -87,6 +87,15 @@ function parsePayload(value: string | undefined): ExecutionPayload {
   ) {
     throw new Error("Execution target is outside the owned loopback origin");
   }
+  const labels: unknown = candidate.ownedLocalLabels;
+  if (
+    labels !== undefined &&
+    (typeof labels !== "object" ||
+      labels === null ||
+      Object.values(labels).some((value) => typeof value !== "string"))
+  ) {
+    throw new Error("Execution payload is invalid");
+  }
   return candidate as ExecutionPayload;
 }
 

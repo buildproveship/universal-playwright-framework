@@ -14,7 +14,7 @@ semver range, never a git revision, and never build it:
 
 ```bash
 echo "@releaseready:registry=https://npm.pkg.github.com" >> .npmrc
-npm install @releaseready/playwright-framework@^2.0.0
+npm install @releaseready/playwright-framework@^2.1.0
 ```
 
 It is not a generic template.

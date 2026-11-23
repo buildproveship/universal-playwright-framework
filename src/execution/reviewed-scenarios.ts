@@ -17,7 +17,7 @@ export const REVIEWED_SOURCE_REVISION = "rr207-synthetic-source-2";
 const REVIEWED_FEATURE_REVISION =
   "8abf6f3bbe87011a681f2a6468e27004b133967fa1ea98bcc60debbbe7c7e41f";
 export const REVIEWED_IMPLEMENTATION_REVISION =
-  "7bb33988a5259fe0a6fea5de46875c7ab2ef8a52898850575fbc5840f98ac3f4";
+  "323a805e6b9fdf6c37fe9488c6040f6edd50445b221f9e2003b5ca6f52b233c7";
 
 const stepManifest: ReviewedStepManifest = {
   implementationRevision: REVIEWED_IMPLEMENTATION_REVISION,
@@ -181,6 +181,7 @@ export function calculateReviewedImplementationRevision(): string {
     "src/execution/guarded-route.ts",
     "src/execution/owned-evidence.ts",
     "src/execution/owned-evidence-formatter.ts",
+    "src/execution/owned-local-labels.ts",
     "src/reporting/index.ts",
     "src/reporting/output.ts",
     "features/execution/steps.ts",
@@ -202,6 +203,7 @@ export function calculateReviewedImplementationRevision(): string {
     "dist/cucumber/src/execution/guarded-route.js",
     "dist/cucumber/src/execution/owned-evidence.js",
     "dist/cucumber/src/execution/owned-evidence-formatter.js",
+    "dist/cucumber/src/execution/owned-local-labels.js",
     "dist/cucumber/src/execution/cli.js",
     "dist/cucumber/src/execution/reviewed-scenarios.js",
     "dist/cucumber/src/reporting/index.js",

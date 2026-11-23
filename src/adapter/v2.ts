@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import { executeReviewedScenarios, type ExecutionSummary } from "../execution";
 import { EXECUTION_STATUSES } from "../execution/limits";
+import { OWNED_LOCAL_LABEL_MAX_LENGTH } from "../execution/owned-local-labels";
 import {
   loadReviewedScenarios,
   reviewedFixturePolicy,
@@ -28,10 +29,23 @@ const inputsSchema = z
     policyRevision: reference,
   })
   .strict();
+const labelSchema = z.string().min(1).max(OWNED_LOCAL_LABEL_MAX_LENGTH);
+const labelsSchema = z
+  .object({
+    registerButton: labelSchema,
+    registerHeading: labelSchema,
+    signInHeading: labelSchema,
+  })
+  .partial()
+  .strict()
+  .describe(
+    "Optional product copy the owned-local sign-in steps look for; omitted labels keep the 2.0.0 defaults.",
+  );
 const targetSchema = z
   .object({
     kind: z.literal("owned-local"),
     id: reference,
+    labels: labelsSchema.optional(),
     origin: z
       .string()
       .max(100)
@@ -553,7 +567,10 @@ async function executeOwnedLocalAdapterInternal(
     summary = await executeReviewedScenarios({
       ...request.limits,
       scenarioIds: request.scenarioIds,
-      ownedLocalTarget: { origin: request.target.origin },
+      ownedLocalTarget: {
+        origin: request.target.origin,
+        labels: request.target.labels,
+      },
       browserExecutablePath: owner.data.browserExecutablePath,
       authorizationExpiresAt: owner.data.approval.expiresAt,
       beforeBrowserAcquire: async () => {
