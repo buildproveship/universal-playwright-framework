@@ -13,7 +13,7 @@ permissions:
   packages: read
 jobs:
   ci:
-    uses: releaseready/config/.github/workflows/reusable-ci.yml@cb14844935500578e1bb2d18c95d8f58c8f9fdd0
+    uses: buildproveship/config/.github/workflows/reusable-ci.yml@cb14844935500578e1bb2d18c95d8f58c8f9fdd0
     with:
       runner: ubuntu-24.04
       check-command: "npm run build && npm run typecheck && npm run lint && npm run format:check && npm run check:guardrails && npm run test:unit"

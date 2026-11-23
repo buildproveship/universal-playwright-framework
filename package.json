@@ -85,7 +85,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/releaseready/universal-playwright-framework.git"
+    "url": "git+https://github.com/buildproveship/universal-playwright-framework.git"
   },
   "devDependencies": {
     "@releaseready/config": "^4.2.0",
