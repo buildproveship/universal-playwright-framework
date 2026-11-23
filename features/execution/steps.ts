@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { Given, Then, When } from "@cucumber/cucumber";
 import { expect } from "@playwright/test";
+import { resolveOwnedLocalLabels } from "../../src/execution/owned-local-labels";
 import type { ExecutionWorld } from "./support/world";
 
 Given(
@@ -109,7 +110,8 @@ When(
     if (!this.page) throw new Error("Owned browser page is unavailable");
     await this.page
       .getByRole("button", {
-        name: "New here? Create your ReleaseReady account",
+        name: resolveOwnedLocalLabels(this.payload?.ownedLocalLabels)
+          .registerButton,
         exact: true,
       })
       .click();
@@ -121,7 +123,8 @@ Then(
     if (!this.page) throw new Error("Owned browser page is unavailable");
     await expect(
       this.page.getByRole("heading", {
-        name: "Create your account",
+        name: resolveOwnedLocalLabels(this.payload?.ownedLocalLabels)
+          .registerHeading,
         exact: true,
       }),
     ).toBeVisible();
@@ -145,7 +148,8 @@ Then(
     if (!this.page) throw new Error("Owned browser page is unavailable");
     await expect(
       this.page.getByRole("heading", {
-        name: "Sign in to ReleaseReady",
+        name: resolveOwnedLocalLabels(this.payload?.ownedLocalLabels)
+          .signInHeading,
         exact: true,
       }),
     ).toBeVisible();

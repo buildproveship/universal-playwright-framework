@@ -18,6 +18,7 @@ import {
   type PreparedInputDescriptor,
 } from "../input-preparation";
 import type { ExecutionTestSeam } from "./test-seam";
+import type { OwnedLocalLabels } from "./owned-local-labels";
 import { selectApprovedScenarios } from "../validation/scenario-selector";
 import {
   loadReviewedScenarios,
@@ -108,7 +109,10 @@ export interface ExecutionAttemptSummary extends SingleExecutionSummary {
 export interface ExecutionOptions {
   readonly scenarioIds?: readonly string[];
   /** Trusted local composition only; public callers use adapter/v2. */
-  readonly ownedLocalTarget?: { readonly origin: string };
+  readonly ownedLocalTarget?: {
+    readonly origin: string;
+    readonly labels?: Partial<OwnedLocalLabels>;
+  };
   readonly browserExecutablePath?: string;
   readonly authorizationExpiresAt?: number;
   readonly beforeBrowserAcquire?: () => Promise<void>;
@@ -137,6 +141,7 @@ interface WorkerPayload {
   };
   readonly environment: PreparedInputDescriptor["environment"];
   readonly redirectTargetUrl: string;
+  readonly ownedLocalLabels?: Partial<OwnedLocalLabels>;
 }
 
 interface CleanupReport {
@@ -678,6 +683,7 @@ async function executeReviewedScenarioAttempt(
             },
             environment: descriptor.environment,
             redirectTargetUrl: localRuntime.redirectTargetUrl,
+            ownedLocalLabels: options.ownedLocalTarget?.labels,
           };
           results[index] = await executeScenario(
             scenario.id,

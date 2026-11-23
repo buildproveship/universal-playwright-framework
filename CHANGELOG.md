@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.1.0 - 2026-11-23
+
+### Added
+
+- RRDSCRUM-466: the owned-local v2 request accepts an optional `target.labels` object (`registerButton`, `registerHeading`, `signInHeading`) so a product can pass its own sign-in and sign-up copy to the shared owned-local steps. Omitted labels keep the 2.0.0 wording, so existing callers are unaffected. `ExecutionOptions.ownedLocalTarget` takes the same `labels`.
+- Guard: `shared-steps-no-product-copy.test.ts` fails if a product brand name or the default sign-in copy is hard-coded in the shared steps outside `src/execution/owned-local-labels.ts`.
+
+### Changed
+
+- The review pins (`REVIEWED_IMPLEMENTATION_REVISION`, `IMPORTED_IMPLEMENTATION_REVISION`) and the adapter fixtures are recalculated for the changed step files. Test review status remains Not Reviewed.
+
 ## 2026-11-20
 
 ### Changed
