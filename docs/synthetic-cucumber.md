@@ -1,6 +1,6 @@
 # Standalone synthetic Cucumber + Playwright
 
-This maintained Cucumber/Gherkin path runs an assertion-backed browser scenario against a tiny HTTP page owned by this repository. It binds only to loopback on an ephemeral port and requires no ReleaseReady account, portal, database, customer environment, or hosted service.
+This maintained Cucumber/Gherkin path runs an assertion-backed browser scenario against a tiny HTTP page owned by this repository. It binds only to loopback on an ephemeral port and requires no BuildProveShip account, portal, database, customer environment, or hosted service.
 
 ## Setup and run
 
@@ -38,6 +38,6 @@ This command runs the real scenario first, then checks timeout defaults and boun
 
 Owned paths for this standalone bootstrap include `package.json`, `package-lock.json`, `cucumber.json` (its `default` and `regression` profiles), `tsconfig.cucumber.json`, `features/synthetic.feature`, `features/steps/synthetic.steps.ts`, `features/steps/timeout-regression.steps.ts`, `features/support/hooks.ts`, `features/support/world.ts`, `features/support/step-timeout.ts`, `features/support/cleanup-runtime.ts`, `scripts/cucumber-timeouts.test.ts`, this guide, and the README link. Generated JavaScript is written only under ignored `dist/cucumber`. The feature describes observable behavior; TypeScript step definitions contain reviewed Playwright actions and assertions, and support hooks own the local target and browser lifecycle.
 
-This is a small reviewed-step and tag-selection seam for later validator work, not the validator. It does not execute feature-supplied code, add customer journeys, connect to ReleaseReady systems, or use external infrastructure. Existing Playwright Test tooling and suites remain separate and unchanged.
+This is a small reviewed-step and tag-selection seam for later validator work, not the validator. It does not execute feature-supplied code, add customer journeys, connect to BuildProveShip systems, or use external infrastructure. Existing Playwright Test tooling and suites remain separate and unchanged.
 
 The relevant validation level here is browser end-to-end testing: there is no application logic or service contract to unit-, component-, contract-, or integration-test in this synthetic target.

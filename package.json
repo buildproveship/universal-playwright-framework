@@ -1,7 +1,7 @@
 {
   "name": "@buildproveship/playwright-framework",
   "version": "3.0.0",
-  "description": "Reviewed Cucumber + Playwright execution adapters, runtime login and input preparation for ReleaseReady",
+  "description": "Reviewed Cucumber + Playwright execution adapters, runtime login and input preparation for BuildProveShip",
   "exports": {
     ".": {
       "types": "./dist/cucumber/src/index.d.ts",
@@ -79,7 +79,7 @@
     "e2e",
     "testing",
     "typescript",
-    "releaseready"
+    "buildproveship"
   ],
   "author": "Universal Testing Framework Contributors",
   "license": "Apache-2.0",

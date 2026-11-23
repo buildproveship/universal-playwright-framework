@@ -3,7 +3,7 @@
 ## Current integration and acceptance boundary
 
 The synthetic preparation API and standalone provider below remain supported.
-ReleaseReady's automatic portal-to-TDM-to-worker integration already composes
+BuildProveShip's automatic portal-to-TDM-to-worker integration already composes
 these public APIs; it must not be rebuilt as a second provider in this package.
 See the [RRDWEB-3 source and acceptance map](https://github.com/buildproveship/universal-playwright-framework/blob/main/docs/history/rrdweb-3-acceptance-evidence.md)
 for exact source identities, tests, and the distinction between recorded local
@@ -195,7 +195,7 @@ Implementation paths:
   and optional disposal.
 
 These APIs and their runtime types are exported from the package root. No
-ReleaseReady manifest, auth, UI, or startup changes are part of this boundary.
+BuildProveShip manifest, auth, UI, or startup changes are part of this boundary.
 The framework's existing input-preparation test command includes the new canary
 tests; no new test runner is introduced.
 

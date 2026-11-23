@@ -1,4 +1,4 @@
-# Private ReleaseReady test-assets starter v1
+# Private BuildProveShip test-assets starter v1
 
 This is an unregistered synthetic starter, not AI generation or customer execution. See `starter-provenance.json` for the exact framework source revision and trusted artifact digest. `AGENTS.md` is the single authoring rulebook. Canonical case-ID allocation remains a dependency on the established Test Management service: no replacement IDs or registration are performed.
 
