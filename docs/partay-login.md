@@ -284,7 +284,7 @@ attempt; ownership remains **UNKNOWN**. No process was stopped, and no browser
 profile or customer content was accessed.
 
 For RRDSCRUM-62, retain rather than unnecessarily rerun
-[merged PR #21](https://github.com/releaseready/universal-playwright-framework/pull/21)
+[merged PR #21](https://github.com/buildproveship/universal-playwright-framework/pull/21)
 (merged 2026-10-28 05:39:51 UTC). Its recorded evidence is:
 
 - Real OS PTY probe (Python standard-library `pty`, Node 22), exit 0: both

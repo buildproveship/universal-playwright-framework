@@ -1,8 +1,8 @@
 # Local adapter v1 — RRDWEB-6
 
 [Jira RRDWEB-6](https://noisegatemusicstudios.atlassian.net/browse/RRDWEB-6) /
-[issue 16](https://github.com/releaseready/universal-playwright-framework/issues/16).
-[PR15](https://github.com/releaseready/universal-playwright-framework/pull/15)
+[issue 16](https://github.com/buildproveship/universal-playwright-framework/issues/16).
+[PR15](https://github.com/buildproveship/universal-playwright-framework/pull/15)
 is merged. PR17 now targets `main`, verified at
 `e99be5ca53d8eae7eb6b9ff48b25f82eb700b381`, which includes that reporting work.
 Execution, input preparation, approval, and reporting are inherited. New work is
