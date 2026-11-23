@@ -91,7 +91,7 @@ const context: TrustedAdapterContext = {
 Only the central owner should construct it after authenticating and authorizing
 the caller. The adapter checks context syntax, run/revision/input consistency
 and allowed scenarios; **an in-process object is not unforgeable**. This package
-does not authenticate users or replace ReleaseReady authorization.
+does not authenticate users or replace BuildProveShip authorization.
 
 Before any server, browser, worker or temporary report acquisition, the adapter
 validates the request/context, verifies the fixed approval/runtime pin, checks
@@ -139,10 +139,10 @@ pass. Cancellation before a retry prevents further work but retains the failed
 attempt. Unconfirmed cleanup preserves failure/uncertainty, never a successful
 cancellation claim. Deadlines include execution; bounded teardown can take extra time.
 
-ReleaseReady must persist the caller/run mapping, request approval/input references,
+BuildProveShip must persist the caller/run mapping, request approval/input references,
 full ordered report attempts **and** lifecycle evidence durably before acknowledging
 delivery. Do not overload or flatten the stricter central summary to fit this local
-envelope; store/join this evidence alongside it. ReleaseReady owns authorization,
+envelope; store/join this evidence alongside it. BuildProveShip owns authorization,
 durable idempotency, persistence and recovery. **Two calls mean two executions**,
 even with the same central run ID. There is deliberately no in-memory duplicate cache.
 Jira S03 durable duplicate delivery and S06 joined live-portal rehearsal remain
@@ -216,7 +216,7 @@ with production dependencies into an independent `/tmp/rrdweb6-consumer-*`
 directory, rejects symlinks, verifies runtime resolution inside that consumer,
 clears checkout module/environment hints, and invokes the package export for a
 real synthetic browser run. Only the official matching Chromium cache is shared.
-It needs npm access and installed Chromium, not a ReleaseReady account/database,
+It needs npm access and installed Chromium, not a BuildProveShip account/database,
 customer credentials/data, or a live portal. Temporary consumers are removed.
 
 Baseline lint is unavailable because the repository has no ESLint configuration;
@@ -375,7 +375,7 @@ checks with pinned Playwright by default. For an explicit host diagnostic only,
 `RR139_SYSTEM_CHROMIUM=1 npm run test:owned-local` selects `/usr/bin/chromium`;
 its presence alone never changes the default, and arbitrary executable paths are
 not accepted. System-browser diagnostics do not prove pinned-browser compatibility.
-Actual ReleaseReady controller/target/restart acceptance belongs to the central
+Actual BuildProveShip controller/target/restart acceptance belongs to the central
 repository.
 
 ### Owned-local teardown evidence

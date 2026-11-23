@@ -1,4 +1,4 @@
-# ReleaseReady starter authoring rules v1
+# BuildProveShip starter authoring rules v1
 
 Single canonical rulebook for this generated project. Adapters should reference this file, not duplicate it. Scope approved in RRDWEB-34 comments 11373/11506; rules do not grant execution permission or implement a security sandbox.
 

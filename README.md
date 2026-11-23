@@ -1,7 +1,7 @@
 # universal-playwright-framework
 
 `@buildproveship/playwright-framework` runs reviewed Cucumber + Playwright scenarios for
-ReleaseReady. It provides:
+BuildProveShip. It provides:
 
 - execution adapters: `adapter/v1`, `adapter/v2` (owned local) and `adapter/imported-v1`;
 - runtime login (`runtime-login/v1`) and reviewed input preparation (`data-references/v1`);
@@ -9,7 +9,7 @@ ReleaseReady. It provides:
 - optional `BasePage` / `BaseComponent` classes and the `waitForVisible` readiness helper.
 
 It is published to GitHub Packages with built output and an `exports` map.
-Consumers (ReleaseReady, releaseready-product-tests, test-data-management) depend on a
+Consumers (BuildProveShip, releaseready-product-tests, test-data-management) depend on a
 semver range, never a git revision, and never build it:
 
 ```bash
