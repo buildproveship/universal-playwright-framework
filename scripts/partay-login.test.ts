@@ -56,15 +56,9 @@ import {
   PrivateFileLoginDeferredError,
   withPrivateFileLoginInputs,
 } from "../src/input-preparation/private-login-file";
+import { settle } from "./fixtures/settle";
 
 const noop = (): void => undefined;
-
-/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
-function settle<T>(body: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(body());
-  });
-}
 
 const canary = {
   username: "OWNED_WEB8_USERNAME_CANARY",

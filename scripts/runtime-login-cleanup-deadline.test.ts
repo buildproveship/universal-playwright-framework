@@ -11,15 +11,9 @@ import {
   LOGIN_CLEANUP_TIMEOUT_MS,
   withFreshLoginPage,
 } from "../src/execution/runtime-login-browser";
+import { settle } from "./fixtures/settle";
 
 const noop = (): void => undefined;
-
-/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
-function settle<T>(body: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(body());
-  });
-}
 
 for (const scenario of [
   { name: "on-time successful", elapsed: 1, rejects: false },

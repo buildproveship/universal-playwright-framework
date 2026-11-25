@@ -8,16 +8,8 @@ import { test } from "node:test";
 import type { Browser } from "@playwright/test";
 import { withFreshLoginPage } from "../src/execution/runtime-login-browser";
 import { RuntimeLoginFailure } from "../src/input-preparation/runtime-login";
+import { settle } from "./fixtures/settle";
 const noop = (): undefined => undefined;
-/**
- * Runs `work` synchronously like an async function body: a return resolves
- * the promise and a synchronous throw rejects it.
- */
-function settle<T>(work: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(work());
-  });
-}
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => {

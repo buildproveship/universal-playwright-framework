@@ -4,14 +4,12 @@
 // Scope: Fixed synthetic authority, actual isolated browser/HTTP lifecycle and fail-closed imported adapter; no genuine case approval or product execution.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { execFile } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
 import {
   getImportedImplementationReview,
   IMPORTED_IMPLEMENTATION_REVISION,
 } from "../src/adapter/imported-v1";
-const exec = promisify(execFile);
+import { runFixture } from "./fixtures/run-fixture";
 
 interface FixtureOutput {
   readonly acquired: unknown;
@@ -74,19 +72,9 @@ test("installed imported implementation must have an explicit current code revie
 });
 for (const [scenario, expected, count] of cases)
   test(`imported ${scenario} preserves authority, correspondence and owned cleanup`, async () => {
-    const { stdout } = await exec(
-      process.execPath,
-      [path.join(__dirname, "imported-adapter-fixture.js"), scenario],
-      {
-        timeout: 30000,
-        maxBuffer: 200000,
-        env: {
-          PATH: process.env.PATH,
-          HOME: process.env.HOME,
-          TMPDIR: process.env.TMPDIR,
-          PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH,
-        },
-      },
+    const { stdout } = await runFixture(
+      path.join(__dirname, "imported-adapter-fixture.js"),
+      [scenario],
     );
     const actual = parseFixtureOutput(stdout);
     assert.equal(actual.acquired, count);

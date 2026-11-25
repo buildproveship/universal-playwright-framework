@@ -6,16 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Route } from "playwright-core";
 import { settleApprovedRoute } from "../src/execution/guarded-route";
-
-/**
- * Runs `work` synchronously like an async function body: a return resolves
- * the promise and a synchronous throw rejects it.
- */
-function settle<T>(work: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(work());
-  });
-}
+import { settle } from "./fixtures/settle";
 
 function fixture(
   options: {

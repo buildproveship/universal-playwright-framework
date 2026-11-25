@@ -21,9 +21,7 @@ import {
   executeOwnedLocalAdapterWithDiagnostics,
   validateOwnedLocalDiagnosticEnvelope,
   ownedLocalResultJsonSchema,
-  getOwnedLocalReview,
   validateOwnedLocalEvidence,
-  type OwnedLocalRequest,
 } from "../src/adapter/v2";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -42,16 +40,8 @@ import {
   parseOwnedEvidence,
   readOwnedEvidence,
 } from "../src/execution/owned-evidence";
-
-/**
- * Runs `work` synchronously like an async function body: a return resolves
- * the promise and a synchronous throw rejects it.
- */
-function settle<T>(work: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(work());
-  });
-}
+import { requestFor } from "./fixtures/owned-local-request";
+import { settle } from "./fixtures/settle";
 
 const root = path.resolve(__dirname, "../../..");
 const formatter = path.join(
@@ -159,22 +149,7 @@ function runFixture(mode: string) {
         cwd: root,
         timeout: 10000,
         stdio: "ignore",
-        env: {
-          ...process.env,
-          WEB_EXECUTION_PAYLOAD: JSON.stringify({
-            scenario: {
-              id: "local-demo-navigation",
-              values: { displayName: "Synthetic" },
-            },
-            environment: {
-              initialTargetUrl: "http://127.0.0.1:3001/",
-              approvedOrigin: "http://127.0.0.1:3001",
-            },
-            redirectTargetUrl: "http://127.0.0.1:3002/",
-          }),
-          WEB_EXECUTION_BROWSER_ENDPOINT: "ws://127.0.0.1:3003",
-          WEB_EXECUTION_CLEANUP_PATH: marker,
-        },
+        env: executionEnvironment(marker),
       },
     );
     assert.equal(child.error, undefined);
@@ -198,6 +173,26 @@ function runFixture(mode: string) {
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+}
+
+/** The child cucumber environment for the synthetic navigation scenario, writing cleanup to `cleanupPath`. */
+function executionEnvironment(cleanupPath: string) {
+  return {
+    ...process.env,
+    WEB_EXECUTION_PAYLOAD: JSON.stringify({
+      scenario: {
+        id: "local-demo-navigation",
+        values: { displayName: "Synthetic" },
+      },
+      environment: {
+        initialTargetUrl: "http://127.0.0.1:3001/",
+        approvedOrigin: "http://127.0.0.1:3001",
+      },
+      redirectTargetUrl: "http://127.0.0.1:3002/",
+    }),
+    WEB_EXECUTION_BROWSER_ENDPOINT: "ws://127.0.0.1:3003",
+    WEB_EXECUTION_CLEANUP_PATH: cleanupPath,
+  };
 }
 
 test("completed business evidence survives a failing After and AfterAll without raw errors", () => {
@@ -422,37 +417,7 @@ for (const { diagnosticsEnabled, mode } of [
       },
     );
     try {
-      const review = await getOwnedLocalReview();
-      const request: OwnedLocalRequest = {
-        version: 2,
-        run: { id: "synthetic-run", gitRevision: "a".repeat(40) },
-        target: {
-          kind: "owned-local",
-          id: "synthetic-target",
-          origin: "http://127.0.0.1:34567",
-        },
-        scenarioIds: ["local-demo-navigation"],
-        binding: {
-          tenantId: "synthetic-tenant",
-          projectId: "synthetic-project",
-          environmentId: "synthetic-dev",
-          caseId: "synthetic-case",
-          caseRevision: 1,
-          caseSourceHash: "b".repeat(64),
-          dataRevision: "c".repeat(64),
-          configurationRevision: "d".repeat(64),
-          implementationRevision: review.approval.implementationRevision,
-          approvalId: "synthetic-approval",
-          attempt: 1,
-        },
-        ...review,
-        limits: {
-          runTimeoutMs: 20000,
-          scenarioTimeoutMs: 15000,
-          maxConcurrentScenarios: 1,
-          retryCount: 0,
-        },
-      };
+      const request = await requestFor();
       let admissions = 0;
       const execution = diagnosticsEnabled
         ? executeOwnedLocalAdapterWithDiagnostics
@@ -827,22 +792,7 @@ test("actual cleanup hooks preserve sanitized throws and failure precedence with
         cwd: root,
         timeout: 10000,
         encoding: "utf8",
-        env: {
-          ...process.env,
-          WEB_EXECUTION_PAYLOAD: JSON.stringify({
-            scenario: {
-              id: "local-demo-navigation",
-              values: { displayName: "Synthetic" },
-            },
-            environment: {
-              initialTargetUrl: "http://127.0.0.1:3001/",
-              approvedOrigin: "http://127.0.0.1:3001",
-            },
-            redirectTargetUrl: "http://127.0.0.1:3002/",
-          }),
-          WEB_EXECUTION_BROWSER_ENDPOINT: "ws://127.0.0.1:3003",
-          WEB_EXECUTION_CLEANUP_PATH: path.join(directory, "cleanup.json"),
-        },
+        env: executionEnvironment(path.join(directory, "cleanup.json")),
       },
     );
     assert.equal(child.error, undefined);

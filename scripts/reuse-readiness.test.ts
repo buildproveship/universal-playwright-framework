@@ -26,6 +26,7 @@ import {
   type ReviewedCaseSnapshot,
 } from "../src/validation/reuse-readiness";
 import { createValidationManifest } from "../fixtures/input-preparation/reviewed-fixtures";
+import { approvalFor } from "./fixtures/approval";
 
 const repositoryRoot = path.resolve(__dirname, "../../..");
 const fixturePath = "fixtures/validation/reviewed-scenarios.feature";
@@ -49,23 +50,6 @@ async function validate(
   });
   assert.equal(validation.valid, true);
   return validation;
-}
-
-function approvalFor(
-  validation: ValidFeature,
-  ids: readonly string[],
-): ScenarioApproval {
-  return {
-    featurePath: validation.featurePath,
-    sourceRevision: validation.sourceRevision,
-    featureRevision: validation.featureRevision,
-    implementationRevision: validation.implementationRevision,
-    scenarios: ids.map((id) => {
-      const scenario = validation.scenarios.find((item) => item.id === id);
-      assert.ok(scenario, `Expected synthetic scenario ${id}`);
-      return { id, tags: [...scenario.tags] };
-    }),
-  };
 }
 
 function reviewedCase(
