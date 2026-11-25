@@ -30,6 +30,7 @@ import { createValidationManifest } from "../fixtures/input-preparation/reviewed
 // Registers reuse-readiness tests in the validation stage without changing the
 // pinned package.json scripts; see docs/reuse-readiness.md.
 import "./reuse-readiness.test";
+import { approvalFor } from "./fixtures/approval";
 
 const repositoryRoot = path.resolve(__dirname, "../../..");
 const fixturePath = "fixtures/validation/reviewed-scenarios.feature";
@@ -57,25 +58,6 @@ async function validateFixture(
     manifest,
     ...overrides,
   });
-}
-
-function approvalFor(
-  validation: Extract<FeatureValidation, { valid: true }>,
-  ids: readonly string[],
-): ScenarioApproval {
-  return {
-    featurePath: validation.featurePath,
-    sourceRevision: validation.sourceRevision,
-    featureRevision: validation.featureRevision,
-    implementationRevision: validation.implementationRevision,
-    scenarios: ids.map((id) => {
-      const scenario = validation.scenarios.find(
-        (candidate) => candidate.id === id,
-      );
-      assert.ok(scenario, `Expected fixture scenario ${id}`);
-      return { id, tags: scenario.tags };
-    }),
-  };
 }
 
 test("validates synthetic feature metadata, inherited setup, tags, and example rows", async () => {

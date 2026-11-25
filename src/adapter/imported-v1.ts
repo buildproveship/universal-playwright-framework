@@ -366,6 +366,15 @@ export async function executeImportedCase(
   const isAcquired = (): boolean => acquired;
   let interceptionAttempted = false;
   let outcome: ImportedCaseOutcome | undefined;
+  // Read when the result is built, after the callback may have set `outcome`.
+  const reportedCase = () => ({
+    id: request.observation.case.id,
+    revision: request.observation.case.revision,
+    sourceTestId: request.observation.case.sourceTestId,
+    executionState: outcome ? ("executed" as const) : ("unknown" as const),
+    steps: outcome?.steps ?? [],
+    hooksPassed: outcome?.hooksPassed ?? null,
+  });
   const controller = new AbortController();
   const cancel = () => {
     controller.abort();
@@ -522,14 +531,7 @@ export async function executeImportedCase(
         accepted: true,
         request,
         status,
-        case: {
-          id: request.observation.case.id,
-          revision: request.observation.case.revision,
-          sourceTestId: request.observation.case.sourceTestId,
-          executionState: outcome ? "executed" : "unknown",
-          steps: outcome?.steps ?? [],
-          hooksPassed: outcome?.hooksPassed ?? null,
-        },
+        case: reportedCase(),
         cleanup: "confirmed",
         policyPassed: true,
       };
@@ -549,14 +551,7 @@ export async function executeImportedCase(
         accepted: true,
         request,
         status,
-        case: {
-          id: request.observation.case.id,
-          revision: request.observation.case.revision,
-          sourceTestId: request.observation.case.sourceTestId,
-          executionState: outcome ? "executed" : "unknown",
-          steps: outcome?.steps ?? [],
-          hooksPassed: outcome?.hooksPassed ?? null,
-        },
+        case: reportedCase(),
         cleanup:
           failure?.cleanupStatus === "confirmed" ? "confirmed" : "unknown",
         policyPassed:

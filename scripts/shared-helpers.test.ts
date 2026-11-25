@@ -18,18 +18,9 @@ import {
   withLoopbackServer,
 } from "./fixtures/loopback-server";
 import { runLoginCommand } from "./login-command";
+import { settle } from "./fixtures/settle";
 
 const signalNames = ["SIGINT", "SIGTERM"] as const;
-
-/**
- * Runs `work` synchronously like an async function body: a return resolves
- * the promise and a synchronous throw rejects it.
- */
-function settle<T>(work: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(work());
-  });
-}
 
 /** Parses one line of written failure evidence after checking it is an object. */
 function evidence(text: string): Record<string, unknown> {

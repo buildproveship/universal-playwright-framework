@@ -12,6 +12,7 @@ import {
 } from "../src/execution/runtime-login-browser";
 import { createAuthenticationOnlyPolicy } from "../src/customer-login/authentication-only";
 import { withLoopbackServer } from "./fixtures/loopback-server";
+import type { Page } from "@playwright/test";
 
 async function fixture(
   run: (url: string, hits: string[]) => Promise<void>,
@@ -40,17 +41,18 @@ async function fixture(
   );
 }
 
+/** Opens the sign-in page under a fresh authentication-only policy that guards every request. */
+async function openGuarded(page: Page, url: string) {
+  const policy = createAuthenticationOnlyPolicy(page, url);
+  await guardLoginRequests(page.context(), new URL(url).origin, url, policy);
+  await page.goto(url);
+  return policy;
+}
+
 test("Given an explicit authentication policy, only one login POST then one me GET reach the destination", async () => {
   await fixture(async (url, hits) => {
     await withFreshLoginPage(async (page) => {
-      const policy = createAuthenticationOnlyPolicy(page, url);
-      await guardLoginRequests(
-        page.context(),
-        new URL(url).origin,
-        url,
-        policy,
-      );
-      await page.goto(url);
+      const policy = await openGuarded(page, url);
       await policy.armSubmission();
       await page.evaluate(async () => {
         await fetch("/auth/login", {
@@ -96,14 +98,7 @@ for (const activity of [
     await fixture(async (url, hits) => {
       await assert.rejects(
         withFreshLoginPage(async (page) => {
-          const policy = createAuthenticationOnlyPolicy(page, url);
-          await guardLoginRequests(
-            page.context(),
-            new URL(url).origin,
-            url,
-            policy,
-          );
-          await page.goto(url);
+          const policy = await openGuarded(page, url);
           await policy.armSubmission();
           await page.evaluate(async (activity) => {
             const send = (path: string, method = "GET") =>
@@ -182,14 +177,7 @@ for (const status of [302, 401, 428, 500]) {
     await fixture(async (url, hits) => {
       await assert.rejects(
         withFreshLoginPage(async (page) => {
-          const policy = createAuthenticationOnlyPolicy(page, url);
-          await guardLoginRequests(
-            page.context(),
-            new URL(url).origin,
-            url,
-            policy,
-          );
-          await page.goto(url);
+          const policy = await openGuarded(page, url);
           await policy.armSubmission();
           await page.evaluate(async () => {
             await fetch("/auth/login", {
@@ -217,14 +205,7 @@ for (const destination of [
       fixture(async (url, hits) => {
         await assert.rejects(
           withFreshLoginPage(async (page) => {
-            const policy = createAuthenticationOnlyPolicy(page, url);
-            await guardLoginRequests(
-              page.context(),
-              new URL(url).origin,
-              url,
-              policy,
-            );
-            await page.goto(url);
+            const policy = await openGuarded(page, url);
             await page.evaluate(
               async ({ destination, external }) => {
                 if (destination === "external")
@@ -323,14 +304,7 @@ test("Given me requires email verification, abort its 428 response and never fol
     async (url, hits) => {
       await assert.rejects(
         withFreshLoginPage(async (page) => {
-          const policy = createAuthenticationOnlyPolicy(page, url);
-          await guardLoginRequests(
-            page.context(),
-            new URL(url).origin,
-            url,
-            policy,
-          );
-          await page.goto(url);
+          const policy = await openGuarded(page, url);
           await policy.armSubmission();
           await page.evaluate(async () => {
             await fetch("/auth/login", {
@@ -356,14 +330,7 @@ test("Given off-origin activity before sign-in, the failed policy never transmit
     fixture(async (url, hits) => {
       await assert.rejects(
         withFreshLoginPage(async (page) => {
-          const policy = createAuthenticationOnlyPolicy(page, url);
-          await guardLoginRequests(
-            page.context(),
-            new URL(url).origin,
-            url,
-            policy,
-          );
-          await page.goto(url);
+          const policy = await openGuarded(page, url);
           await policy.armSubmission();
           await page.evaluate(async (external) => {
             await fetch(external).catch(() => undefined);

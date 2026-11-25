@@ -12,19 +12,13 @@ import {
   LOGIN_CLEANUP_TIMEOUT_MS,
   withFreshLoginPage,
 } from "../src/execution/runtime-login-browser";
+import { settle } from "./fixtures/settle";
 
 const delay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 const noop = (): void => undefined;
 /** An owned operation that completes immediately without doing anything. */
 const resolved = (): Promise<void> => Promise.resolve();
-
-/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
-function settle<T>(body: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(body());
-  });
-}
 
 function fixture(
   offline: () => Promise<void>,

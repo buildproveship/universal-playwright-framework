@@ -21,7 +21,6 @@ import { chromium } from "@playwright/test";
 import { mock } from "node:test";
 import {
   executeOwnedLocalAdapter,
-  getOwnedLocalReview,
   validateOwnedLocalEvidence,
   type OwnedLocalRequest,
   type OwnedLocalContext,
@@ -29,47 +28,11 @@ import {
 } from "../src/adapter/v2";
 import { executeAdapter } from "../src/adapter/v1";
 import { examples } from "../features/adapter/examples";
+import { requestFor } from "./fixtures/owned-local-request";
 
 /** Acquisition gate double that always admits the run. */
 const resolved = (): Promise<void> => Promise.resolve();
 
-async function requestFor(
-  origin = "http://127.0.0.1:34567",
-  labels?: NonNullable<OwnedLocalRequest["target"]["labels"]>,
-): Promise<OwnedLocalRequest> {
-  const review = await getOwnedLocalReview();
-  return {
-    version: 2,
-    run: { id: "synthetic-run", gitRevision: "a".repeat(40) },
-    target: {
-      kind: "owned-local",
-      id: "synthetic-target",
-      origin,
-      ...(labels ? { labels } : {}),
-    },
-    scenarioIds: ["local-demo-navigation"],
-    binding: {
-      tenantId: "synthetic-tenant",
-      projectId: "synthetic-project",
-      environmentId: "synthetic-dev",
-      caseId: "synthetic-case",
-      caseRevision: 1,
-      caseSourceHash: "b".repeat(64),
-      dataRevision: "c".repeat(64),
-      configurationRevision: "d".repeat(64),
-      implementationRevision: review.approval.implementationRevision,
-      approvalId: "synthetic-approval",
-      attempt: 1,
-    },
-    ...review,
-    limits: {
-      runTimeoutMs: 20000,
-      scenarioTimeoutMs: 15000,
-      maxConcurrentScenarios: 1,
-      retryCount: 0,
-    },
-  };
-}
 function owner(request: OwnedLocalRequest): OwnedLocalContext {
   return {
     version: 2,
@@ -187,16 +150,21 @@ async function syntheticTarget(broken = false, renamed = false) {
   };
 }
 
+/** Runs `request` through the v2 adapter as its owner, with acquisition always admitted. */
+function asOwner(request: OwnedLocalRequest, signal?: AbortSignal) {
+  return executeOwnedLocalAdapter(request, owner(request), signal, resolved);
+}
+/** Runs the reviewed request for `origin` through the v2 adapter as its owner. */
+async function runOwned(origin?: string) {
+  const request = await requestFor(origin);
+  const result = await asOwner(request);
+  return { request, result };
+}
+
 test("Given an approved owned loopback target, the real browser navigates it once and validates saved evidence without replay", async () => {
   const target = await syntheticTarget();
   try {
-    const request = await requestFor(target.origin);
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      undefined,
-      resolved,
-    );
+    const { request, result } = await runOwned(target.origin);
     assert.equal(result.accepted, true);
     assert.equal(result.report.status, "passed");
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
@@ -304,13 +272,7 @@ test("Given a target with renamed sign-in copy, labels passed in the request mak
 test("Given a broken owned target, a genuine assertion failure remains failed with confirmed browser cleanup", async () => {
   const target = await syntheticTarget(true);
   try {
-    const request = await requestFor(target.origin);
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      undefined,
-      resolved,
-    );
+    const { request, result } = await runOwned(target.origin);
     assert.equal(result.accepted, true);
     assert.equal(result.report.status, "failed");
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
@@ -354,12 +316,7 @@ test("Given cancellation before execution, no target request is sent and cancell
     const request = await requestFor(target.origin);
     const abort = new AbortController();
     abort.abort();
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      abort.signal,
-      resolved,
-    );
+    const result = await asOwner(request, abort.signal);
     assert.equal(result.accepted, true);
     assert.equal(result.report.status, "cancelled");
     assert.equal(
@@ -413,12 +370,7 @@ test("Given the packaged implementation changes, approval rejects before acquisi
   });
   try {
     writeFileSync(file, Buffer.concat([original, Buffer.from("\n")]));
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      undefined,
-      resolved,
-    );
+    const result = await asOwner(request);
     assert.equal(result.accepted, false);
     assert.equal(result.error.code, "STALE_REVIEW");
     assert.equal(launch.mock.callCount(), 0);
@@ -433,12 +385,7 @@ test("Given the run deadline expires, the owned browser stops and no retry begin
   try {
     const request = await requestFor(target.origin);
     request.limits.runTimeoutMs = 100;
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      undefined,
-      resolved,
-    );
+    const result = await asOwner(request);
     assert.equal(result.accepted, true);
     assert.equal(result.report.status, "timed_out");
     assert.equal(result.lifecycle.attempts.length, 1);
@@ -452,13 +399,7 @@ test("Given the owned target stops after authorization, the real browser failure
   const target = await syntheticTarget();
   const origin = target.origin;
   await target.stop();
-  const request = await requestFor(origin);
-  const result = await executeOwnedLocalAdapter(
-    request,
-    owner(request),
-    undefined,
-    resolved,
-  );
+  const { request, result } = await runOwned(origin);
   assert.equal(result.accepted, true);
   assert.equal(result.report.status, "failed");
   assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
@@ -475,12 +416,7 @@ test("Given cancellation during a target navigation, only the acquired browser s
   const url = await listenOnLoopback(server);
   try {
     const request = await requestFor(url.replace(/\/$/, ""));
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      abort.signal,
-      resolved,
-    );
+    const result = await asOwner(request, abort.signal);
     assert.equal(result.accepted, true);
     assert.equal(result.report.status, "cancelled");
     assert.equal(result.lifecycle.resourceCleanup.browserProcessStopped, true);
@@ -558,13 +494,7 @@ for (const hasBusinessEvidence of [false, true]) {
           }),
       );
       try {
-        const request = await requestFor();
-        const result = await executeOwnedLocalAdapter(
-          request,
-          owner(request),
-          undefined,
-          resolved,
-        );
+        const { request, result } = await runOwned();
         assert.equal(result.accepted, true);
         assert.equal(result.report.status, "incomplete");
         assert.equal(result.report.attempts[0].status, "incomplete");
@@ -640,12 +570,7 @@ test("RR207-OWNED-001 prior demo approval is stale before browser acquisition af
     throw new Error("Browser must not launch");
   });
   try {
-    const result = await executeOwnedLocalAdapter(
-      request,
-      owner(request),
-      undefined,
-      resolved,
-    );
+    const result = await asOwner(request);
     assert.equal(result.accepted, false);
     assert.equal(result.error.code, "STALE_REVIEW");
     assert.equal(launch.mock.callCount(), 0);

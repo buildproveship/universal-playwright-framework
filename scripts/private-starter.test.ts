@@ -23,16 +23,10 @@ import {
   starterDependencyGraph,
   starterLockPackages,
 } from "./private-starter";
+import { settle } from "./fixtures/settle";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
-function settle<T>(body: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(body());
-  });
 }
 
 const root = path.resolve(__dirname, "../../..");

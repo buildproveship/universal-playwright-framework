@@ -22,18 +22,12 @@ import {
   type RuntimeLoginRequest,
 } from "../src/input-preparation/runtime-login";
 import { withOperatorLoginInputs } from "../src/input-preparation/operator-prompt";
+import { settle } from "./fixtures/settle";
 
 const canary = {
   username: "SYNTHETIC_ACCOUNT_CANARY_2026",
   password: "SYNTHETIC_PASSWORD_CANARY_2026",
 };
-
-/** Runs `body` with async-function semantics: a synchronous throw becomes a rejection. */
-function settle<T>(body: () => T): Promise<T> {
-  return new Promise<T>((resolve) => {
-    resolve(body());
-  });
-}
 
 function fixture() {
   const reviewed = reviewDataReferences(

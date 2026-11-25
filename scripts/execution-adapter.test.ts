@@ -159,6 +159,26 @@ test("cancellation during the first attempt prevents another browser launch", as
   await Promise.all(browserPids.map(assertProcessExited));
 });
 
+/** The one successful attempt is kept as passed with confirmed cleanup. */
+function assertCompletedPass(result: Awaited<ReturnType<typeof run>>) {
+  assert.equal(result.status, "passed");
+  assert.equal(result.attempts[0].status, "passed");
+  assert.equal(result.attempts[0].scenarios[0].status, "passed");
+  assert.equal(result.resourceCleanup.status, "confirmed");
+}
+/** The failed first attempt is kept, its browser has exited and no retry launched. */
+async function assertStoppedAfterFirstFailure(
+  result: Awaited<ReturnType<typeof run>>,
+  browserPids: number[],
+) {
+  assert.equal(result.attemptCount, 1);
+  assert.equal(result.attempts[0].status, "failed");
+  assert.equal(result.attempts[0].scenarios[0].status, "failed");
+  assert.equal(result.attempts[0].resourceCleanup.status, "confirmed");
+  assert.equal(browserPids.length, 1);
+  await Promise.all(browserPids.map(assertProcessExited));
+}
+
 test("cancellation during teardown preserves a completed successful attempt", async () => {
   const controller = new AbortController();
   const result = await run("browser-flow", {
@@ -170,10 +190,7 @@ test("cancellation during teardown preserves a completed successful attempt", as
     },
   });
 
-  assert.equal(result.status, "passed");
-  assert.equal(result.attempts[0].status, "passed");
-  assert.equal(result.attempts[0].scenarios[0].status, "passed");
-  assert.equal(result.resourceCleanup.status, "confirmed");
+  assertCompletedPass(result);
 });
 
 test("a deadline during teardown preserves a completed successful attempt", async () => {
@@ -188,10 +205,7 @@ test("a deadline during teardown preserves a completed successful attempt", asyn
     },
   });
 
-  assert.equal(result.status, "passed");
-  assert.equal(result.attempts[0].status, "passed");
-  assert.equal(result.attempts[0].scenarios[0].status, "passed");
-  assert.equal(result.resourceCleanup.status, "confirmed");
+  assertCompletedPass(result);
 });
 
 test("cancellation between attempts preserves failure and prevents another launch", async () => {
@@ -210,12 +224,7 @@ test("cancellation between attempts preserves failure and prevents another launc
   });
 
   assert.equal(result.status, "cancelled");
-  assert.equal(result.attemptCount, 1);
-  assert.equal(result.attempts[0].status, "failed");
-  assert.equal(result.attempts[0].scenarios[0].status, "failed");
-  assert.equal(result.attempts[0].resourceCleanup.status, "confirmed");
-  assert.equal(browserPids.length, 1);
-  await Promise.all(browserPids.map(assertProcessExited));
+  await assertStoppedAfterFirstFailure(result, browserPids);
 });
 
 test("a deadline between attempts preserves failure and prevents another launch", async () => {
@@ -235,12 +244,7 @@ test("a deadline between attempts preserves failure and prevents another launch"
   });
 
   assert.equal(result.status, "timed_out");
-  assert.equal(result.attemptCount, 1);
-  assert.equal(result.attempts[0].status, "failed");
-  assert.equal(result.attempts[0].scenarios[0].status, "failed");
-  assert.equal(result.attempts[0].resourceCleanup.status, "confirmed");
-  assert.equal(browserPids.length, 1);
-  await Promise.all(browserPids.map(assertProcessExited));
+  await assertStoppedAfterFirstFailure(result, browserPids);
 });
 
 test("unknown browser cleanup during late cancellation remains unknown and non-retriable", async () => {
