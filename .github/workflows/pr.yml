@@ -1,12 +1,11 @@
 # No `paths-ignore` here: a required check that never starts stays pending, so docs-only PRs are skipped inside the
 # workflow, where the required job `ci` still reports.
+# No `push` trigger: `main` requires an up-to-date branch, so the PR run already checked what merges (RRDPLAT-114).
 name: Pull request
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
-  push:
-    branches: [main]
 permissions:
   contents: read
   pull-requests: read
