@@ -18,7 +18,7 @@ jobs:
           cache: npm
           registry-url: https://npm.pkg.github.com
           scope: "@buildproveship"
-      - uses: buildproveship/config/.github/actions/install-gitleaks@2cbada7d9a56183428c9a97ffaef5a66f61b7a16
+      - uses: pamirascent/code-governance/.github/actions/install-gitleaks@2cbada7d9a56183428c9a97ffaef5a66f61b7a16
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
