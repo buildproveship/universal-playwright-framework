@@ -1,6 +1,6 @@
 /** Restores test data after every scenario, whether it passed or failed.
  * The restorer is injected (structurally typed) so the framework does not depend on a particular
- * client; `@buildproveship/test-data-management/test-data-restore/v1` `createRestoreClient` fits it.
+ * client; the API framework `test-data-restore/v1` `createRestoreClient` fits it.
  * The client itself refuses any environment except Dev and UAT.
  */
 export interface ScenarioRestorer {
