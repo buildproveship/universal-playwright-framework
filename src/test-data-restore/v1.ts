@@ -3,7 +3,7 @@
  * client; the API framework `test-data-restore/v1` `createRestoreClient` fits it.
  * The client itself refuses any environment except Dev and UAT.
  */
-export interface ScenarioRestorer {
+interface ScenarioRestorer {
   restoreAll(): Promise<void>;
 }
 
