@@ -13,8 +13,9 @@ test("the hook restores once per call and a failed restore fails the scenario", 
   let calls = 0;
   await restoreAfterScenario({
     restorer: {
-      restoreAll: async () => {
+      restoreAll: () => {
         calls += 1;
+        return Promise.resolve();
       },
     },
   })();
@@ -24,9 +25,7 @@ test("the hook restores once per call and a failed restore fails the scenario", 
   await assert.rejects(
     restoreAfterScenario({
       restorer: {
-        restoreAll: async () => {
-          throw new Error("boom");
-        },
+        restoreAll: () => Promise.reject(new Error("boom")),
       },
       onFailure: (e) => seen.push(e),
     })(),
