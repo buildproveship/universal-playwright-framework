@@ -18,18 +18,6 @@
       "path": "scripts/agentic-rehearsal.test.ts",
       "max": 1,
       "reason": "the text test.skip('x') is input to the rehearsal parser, which must reject unsupported syntax; no test is skipped"
-    },
-    {
-      "rule": "oversized-source-file",
-      "path": "scripts/partay-login.test.ts",
-      "max": 1,
-      "reason": "currently 1859 lines; single test file covering the whole Partay login flow with shared fixtures; splitting by responsibility is tracked as a follow-up split candidate, not done in this config bump"
-    },
-    {
-      "rule": "oversized-source-file",
-      "path": "scripts/reuse-readiness.test.ts",
-      "max": 1,
-      "reason": "currently 1141 lines; test file mirroring src/validation/reuse-readiness.ts one-to-one with shared fixtures; split together with that module in a follow-up"
     }
   ]
 }
