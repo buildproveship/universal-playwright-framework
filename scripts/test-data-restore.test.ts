@@ -42,7 +42,10 @@ test("settings: complete env is read, missing values throw, off works only outsi
   };
   assert.equal(readRestoreSettings(ok)?.baseUrl, "http://x");
   assert.throws(() => readRestoreSettings({}));
-  assert.equal(readRestoreSettings({ BPS_TEST_DATA_RESTORE: "off" }), undefined);
+  assert.equal(
+    readRestoreSettings({ BPS_TEST_DATA_RESTORE: "off" }),
+    undefined,
+  );
   assert.throws(() =>
     readRestoreSettings({ BPS_TEST_DATA_RESTORE: "off", CI: "true" }),
   );
