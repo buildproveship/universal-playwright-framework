@@ -8,8 +8,8 @@ provider, contact a target, or grant run permission.
 The module is split by responsibility: `reuse-readiness.ts` (the entry point and reuse decisions),
 `reuse-readiness-candidate.ts` (candidate review readiness), `reuse-readiness-shared.ts` (snapshot
 projection, limits and digests) and `reuse-readiness-types.ts` (types only). The files may import only
-`node:crypto`, `scenario-selector` and each other; `scripts/reuse-readiness.test.ts` checks each file's
-exact imports.
+`node:crypto`, `scenario-selector` and each other; `scripts/reuse-readiness-reports.test.ts` checks each
+file's exact imports.
 
 ## What it does
 
@@ -161,7 +161,7 @@ The tests run as part of the existing validation stage, so they are included in
 focused feedback, run:
 
 ```sh
-npm run build:cucumber && node --test dist/cucumber/scripts/reuse-readiness.test.js
+npm run build:cucumber && node --test dist/cucumber/scripts/reuse-readiness.test.js dist/cucumber/scripts/reuse-readiness-candidates.test.js dist/cucumber/scripts/reuse-readiness-reports.test.js
 ```
 
 The tests use only `fixtures/validation/reviewed-scenarios.feature` and synthetic

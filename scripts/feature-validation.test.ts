@@ -30,6 +30,8 @@ import { createValidationManifest } from "../fixtures/input-preparation/reviewed
 // Registers reuse-readiness tests in the validation stage without changing the
 // pinned package.json scripts; see docs/reuse-readiness.md.
 import "./reuse-readiness.test";
+import "./reuse-readiness-candidates.test";
+import "./reuse-readiness-reports.test";
 import { approvalFor } from "./fixtures/approval";
 
 const repositoryRoot = path.resolve(__dirname, "../../..");
